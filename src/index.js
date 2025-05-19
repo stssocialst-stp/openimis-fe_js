@@ -18,6 +18,7 @@ import messages_ref from "./translations/ref.json";
 import "./index.css";
 import "./rc-cascader.css";
 
+import logoFull from "./openIMISFull.png";
 
 const loadConfiguration = async () => {
   const response = await fetch(`${baseApiUrl}/graphql`, {
@@ -102,6 +103,7 @@ const AppContainer = () => {
                 messages={messages_ref}
                 logo={logo}
                 disableTextLogo={disableTextLogo}
+                logoFull={logoFull}
               />
             </ModulesManagerProvider>
           </MuiPickersUtilsProvider>

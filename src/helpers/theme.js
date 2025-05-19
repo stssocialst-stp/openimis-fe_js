@@ -2,12 +2,13 @@ import { createTheme } from "@material-ui/core/styles";
 import { alpha } from "@material-ui/core/styles/colorManipulator";
 
 const defaultColors = {
-  primaryColor: "#006273",
+  primaryColor: "#162c28",
   errorColor: "#801a00",
   whiteColor: "#fff",
-  fontColor: "#006273",
-  backgroundColor: "#dbeef0",
-  headerColor: "#b7d4d8",
+  fontColor: "#162c28",
+  backgroundColor: "#b2d6c6",
+  backgroundLightColor: "#ecf4f1",
+  headerColor: "#b2d6c6",
   greyColor: "grey",
   selectedTableRowColor: "rgba(0, 0, 0, 0.08)",
   hoveredTableRowColor: "rgba(0, 0, 0, 0.12)",
@@ -23,6 +24,7 @@ const createAppTheme = (colorOverrides = {}) => {
     whiteColor,
     fontColor,
     backgroundColor,
+    backgroundLightColor,
     headerColor,
     greyColor,
     selectedTableRowColor,
@@ -123,18 +125,19 @@ const createAppTheme = (colorOverrides = {}) => {
       },
       body: {
         marginTop: 10,
-        backgroundColor: backgroundColor,
+        backgroundColor: backgroundLightColor,
       },
       item: {
         padding: 10,
       },
     },
     table: {
+      backgroundColor: backgroundLightColor,
       title: {
         padding: 10,
         fontWeight: 500,
         color: primaryColor,
-        backgroundColor: headerColor,
+        backgroundColor: backgroundColor,
       },
       header: {
         color: primaryColor,
