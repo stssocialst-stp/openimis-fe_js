@@ -113,6 +113,10 @@
     {
       "name": "LanguagePtModule",
       "npm": "@openimis/fe-language_pt_st@git+https://github.com/dpssf-stp/openimis-fe-language_pt_st_js.git#develop"
+    },
+    {
+      "name": "CoreMISLanguageModule",
+      "npm": "@openimis/fe-coremis_language_pack@https://github.com/openimis/openimis-fe-coremis_language_pack_js.git#develop"
     }
   ]
 }
