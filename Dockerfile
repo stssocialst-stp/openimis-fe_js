@@ -6,12 +6,12 @@ COPY ./ /app
 WORKDIR /app
 RUN chown node /app -R
 RUN npm install --global serve
-RUN apt-get update && apt-get install -y nano openssl software-properties-common \
-    && rm -rf /var/lib/apt/lists/*
-RUN openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
-    -keyout /etc/ssl/private/privkey.pem \
-    -out /etc/ssl/private/fullchain.pem \
-    -subj "/C=ST/ST=SaoTome/L=SaoTome/O=STSSTP/OU=IT/CN=localhost"
+#RUN apt-get update && apt-get install -y nano openssl software-properties-common \
+#    && rm -rf /var/lib/apt/lists/*
+#RUN openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+#    -keyout /etc/ssl/private/privkey.pem \
+#    -out /etc/ssl/private/fullchain.pem \
+#    -subj "/C=ST/ST=SaoTome/L=SaoTome/O=STSSTP/OU=IT/CN=localhost"
 
 USER node
 ARG OPENIMIS_CONF_JSON
