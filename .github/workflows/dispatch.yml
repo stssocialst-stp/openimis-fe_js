@@ -1,0 +1,20 @@
+name: Trigger CD in Orchestrator
+on:
+  workflow_run:
+    workflows: ["Create daily Docker image for Kenon Frontend on develop"]
+    types:
+      - completed
+
+jobs:
+  trigger-orchestrator:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger workflow in openimis-dist_dkr
+        uses: peter-evans/workflow-dispatch@v1
+        with:
+          token: ${{ secrets.GHCR_TOKEN }}
+          repository: stssocialst-stp/openimis-dist_dkr
+          workflow: 'deploy-kenon-frontend.yml'
+          ref: main
+          inputs: |
+            image_tag: latest
