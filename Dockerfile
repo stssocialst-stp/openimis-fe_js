@@ -1,5 +1,5 @@
 # Based on official openIMIS frontend Dockerfile
-FROM node:16-bullseye AS build-stage
+FROM node:16-bullseye AS build
 
 RUN mkdir /app
 COPY ./ /app
@@ -56,10 +56,10 @@ RUN npm run build
 FROM nginx:latest
 
 # Copy built app
-COPY --from=build-stage /app/build/ /usr/share/nginx/html
+COPY --from=build /app/build/ /usr/share/nginx/html
 
 # Copy default certs
-COPY --from=build-stage /etc/ssl/private/ /etc/nginx/ssl/live/host
+COPY --from=build /etc/ssl/private/ /etc/nginx/ssl/live/host
 
 # Copy nginx config
 COPY ./conf /conf
