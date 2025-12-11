@@ -22,11 +22,11 @@ jobs:
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          username: ${{ secrets.GHCR_USER }}
+          password: ${{ secrets.GHCR_TOKEN }}
 
       - name: Build the Kenon Frontend Docker image
         run: |
           LABEL=latest
-          docker build --no-cache . --tag ghcr.io/stssocialst-stp/kenon-frontend:${LABEL}
+          docker build . --tag ghcr.io/stssocialst-stp/kenon-frontend:${LABEL}
           docker push ghcr.io/stssocialst-stp/kenon-frontend:${LABEL}
