@@ -27,6 +27,6 @@ jobs:
 
       - name: Build the Kenon Frontend Docker image
         run: |
-          LABEL=develop
-          docker build . --tag ghcr.io/stssocialst-stp/kenon-frontend:latest
-          docker push ghcr.io/stssocialst-stp/kenon-frontend:latest
+          LABEL=latest
+          docker build --no-cache . --tag ghcr.io/stssocialst-stp/kenon-frontend:${LABEL}
+          docker push ghcr.io/stssocialst-stp/kenon-frontend:${LABEL}
