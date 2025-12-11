@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Trigger workflow in openimis-dist_dkr
-        uses: peter-evans/workflow-dispatch@v1
+        uses: peter-evans/workflow-dispatch@v2
         with:
           token: ${{ secrets.GHCR_TOKEN }}
           repository: stssocialst-stp/openimis-dist_dkr
