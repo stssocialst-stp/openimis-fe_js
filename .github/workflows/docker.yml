@@ -1,6 +1,11 @@
 name: Create daily Docker image for Kenon Frontend on develop
 
 on:
+  push:
+    branches:
+      - stp-changes
+  pull_request:
+    branches: [stp-changes]
   workflow_dispatch:
   schedule:
    - cron: "0 2 * * *"  # todo dia às 02:00
@@ -23,5 +28,5 @@ jobs:
       - name: Build the Kenon Frontend Docker image
         run: |
           LABEL=develop
-          docker build . --tag ghcr.io/stssocialst-stp/kenon-frontend:${LABEL}
-          docker push ghcr.io/stssocialst-stp/kenon-frontend:${LABEL}
+          docker build . --tag ghcr.io/stssocialst-stp/kenon-frontend:latest
+          docker push ghcr.io/stssocialst-stp/kenon-frontend:latest
