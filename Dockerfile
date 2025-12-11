@@ -6,7 +6,11 @@ COPY ./ /app
 WORKDIR /app
 RUN chown node /app -R
 RUN npm install --global serve
-RUN apt-get update && apt-get install -y nano openssl software-properties-common \
+RUN set -eux \
+    && echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf.d/99no-check-valid-until \
+    && sed -i 's|deb.debian.org/debian|archive.debian.org/debian|g' /etc/apt/sources.list || true \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends nano openssl software-properties-common \
     && rm -rf /var/lib/apt/lists/*
 RUN openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
     -keyout /etc/ssl/private/privkey.pem \
