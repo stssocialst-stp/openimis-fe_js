@@ -1,39 +1,36 @@
-FROM node:16-bullseye AS build
-
-RUN apt-get update
+FROM node:16-bullseye AS build-stage
 RUN mkdir /app
 COPY ./ /app
 WORKDIR /app
 RUN chown node /app -R
 RUN npm install --global serve
 RUN apt-get update && apt-get install -y nano openssl software-properties-common
-RUN openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
-    -keyout /etc/ssl/private/privkey.pem \
-    -out /etc/ssl/private/fullchain.pem \
-    -subj "/C=DE/ST=_/L=_/O=_/OU=_/CN=localhost"
-
+RUN openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /etc/ssl/private/privkey.pem -out /etc/ssl/private/fullchain.pem -subj "/C=DE/ST=_/L=_/O=_/OU=_/CN=localhost"
 USER node
 ARG OPENIMIS_CONF_JSON
 ENV GENERATE_SOURCEMAP=true
 ENV OPENIMIS_CONF_JSON=${OPENIMIS_CONF_JSON}
 ENV NODE_ENV=production
-
 RUN npm run load-config
 RUN npm install
 RUN npm run build
 
-FROM nginx:latest
 
-COPY --from=build /app/build/ /usr/share/nginx/html
-COPY --from=build /etc/ssl/private/ /etc/nginx/ssl/live/host
+### NGINX
+
+
+FROM nginx:latest
+#COPY APP
+COPY --from=build-stage /app/build/ /usr/share/nginx/html
+#COPY DEFAULT CERTS
+COPY --from=build-stage /etc/ssl/private/ /etc/nginx/ssl/live/host
+
 COPY ./conf /conf
 COPY script/entrypoint.sh /script/entrypoint.sh
-
+# Generate Diffie-Hellman Parameters (2048-bit)
 RUN openssl dhparam -out /etc/nginx/dhparam.pem 2048
 RUN chmod a+x /script/entrypoint.sh
-
 WORKDIR /script
-
 ENV DATA_UPLOAD_MAX_MEMORY_SIZE=12582912
 ENV NEW_OPENIMIS_HOST="localhost"
 ENV PUBLIC_URL="front"
