@@ -18,5 +18,3 @@ jobs:
           token: ${{ secrets.GHCR_TOKEN }}
           repository: stssocialst-stp/openimis-dist_dkr
           event-type: deploy-kenon-frontend
-          client-payload: 
-            image_tag: latest
