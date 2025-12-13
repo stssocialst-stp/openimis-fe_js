@@ -1,8 +1,5 @@
-name: Trigger CD in Orchestrator
+name: trigger cd in orchestrator
 on:
-  push:
-    branches:
-      - stp-changes
   workflow_run:
     workflows: ["Create daily Docker image for Kenon Frontend on develop"]
     types:
