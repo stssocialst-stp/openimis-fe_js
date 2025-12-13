@@ -15,4 +15,8 @@ jobs:
       - name: Trigger workflow in openimis-dist_dkr
         uses: peter-evans/repository-dispatch@v3
         with:
+          token: ${{ secrets.GHCR_TOKEN }}
+          repository: stssocialst-stp/openimis-dist_dkr
           event-type: deploy-kenon-frontend
+          client-payload: 
+            image_tag: latest
