@@ -1,4 +1,60 @@
-/node_modules
-/build
+# Dependencies
+node_modules/
+
+# Build output
+build/
+
+# Package managers
 yarn*
 *.lock
+package-lock.json
+
+# Git
+.git/
+.github/
+.gitignore
+
+# Documentation
+docs/
+README.md
+*.md
+
+# Development
+dev_tools/
+dev_build.ps1
+.idea/
+.vscode/
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Generated files (these are generated inside the container by load-config)
+# DO NOT add src/modules.js or src/locales.js here - they are generated during build
+
+# Test files
+test.txt
+*.test.js
+*.spec.js
+
+# Deployment
+modules-deploy.txt
+modules-installs.txt
+modules-links.txt
+modules-removes.txt
+modules-unlinks.txt
+
+# Windows specific
+Dockerfile_win
+
+# Editor configs
+.prettierrc.json
+.babelrc
+
+# Misc
+.DS_Store
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
