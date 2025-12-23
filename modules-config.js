@@ -35,7 +35,7 @@ function getConfig() {
   }
 }
 
-function processModules(modules) {
+function processModules(modules, localModules = []) {
   const stream = fs.createWriteStream("./src/modules.js");
 
   stream.write(`
@@ -54,6 +54,18 @@ return `
     loadedModules.push(require("${moduleName}").${name ?? "default"}(cfg["${logicalName}"] || {}));
   } catch (error) {
     alert(\`Failed to load module "${moduleName}". More details can be found in the developer console. Look for: \${error}\`);
+    console.error(error);
+  }
+`;
+})
+.join("")}
+${localModules
+.map(({ name, path, logicalName }) => {
+return `
+  try {
+    loadedModules.push(require("${path}").${name}(cfg["${logicalName || path.replace('./', '')}"] || {}));
+  } catch (error) {
+    alert(\`Failed to load local module "${path}". More details can be found in the developer console. Look for: \${error}\`);
     console.error(error);
   }
 `;
@@ -108,7 +120,15 @@ function main() {
       logicalName: logicalName || npm.match(/([^/]*)\/([^@]*).*/)[2],
     });
   }
-  processModules(modules);
+
+  // Process local modules
+  console.log("Process Local Modules");
+  const localModules = config.localModules || [];
+  for (const localModule of localModules) {
+    console.log(`  added local module "${localModule.name}": ${localModule.path}`);
+  }
+
+  processModules(modules, localModules);
 }
 
 main();

@@ -49,8 +49,7 @@
     "@openimis/fe-payroll": "git+https://github.com/dpssf-stp/openimis-fe-payroll_js.git#stp-changes",
     "@openimis/fe-deduplication": "git+https://github.com/openimis/openimis-fe-deduplication_js.git#develop",
     "@openimis/fe-admin": "git+https://github.com/dpssf-stp/openimis-fe-admin_js.git#stp-changes",
-    "@openimis/fe-language_pt_st": "git+https://github.com/dpssf-stp/openimis-fe-language_pt_st_js.git#develop",
-    "@openimis/fe-prl": "file:../openimis-fe-prl_js"
+    "@openimis/fe-language_pt_st": "git+https://github.com/dpssf-stp/openimis-fe-language_pt_st_js.git#develop"
   },
   "scripts": {
     "start": "react-scripts start",
