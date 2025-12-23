@@ -16,13 +16,15 @@ COPY --chown=node:node package*.json ./
 COPY --chown=node:node openimis.json modules-config.js openimis-config.js ./
 COPY --chown=node:node script/ ./script/
 
+# Create src directory for generated files (modules.js and locales.js)
+RUN mkdir -p src
 
 ARG OPENIMIS_CONF_JSON
 ENV GENERATE_SOURCEMAP=true
 ENV OPENIMIS_CONF_JSON=${OPENIMIS_CONF_JSON}
 ENV NODE_ENV=production
 
-
+# Generate src/modules.js and src/locales.js from openimis.json
 RUN npm run load-config
 
 RUN npm install
