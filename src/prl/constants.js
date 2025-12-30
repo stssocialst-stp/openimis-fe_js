@@ -13,6 +13,7 @@ export const PRL_ROUTE_EDUCATIONAL_MODULE = "prl/educationalModule";
 export const PRL_ROUTE_EDUCATIONAL_MODULE_FORM = "prl/educationalModule/form";
 export const PRL_ROUTE_BIMONTHLY_REPORT = "prl/bimonthlyReport";
 export const PRL_ROUTE_BIMONTHLY_SUPERVISION = "prl/bimonthlySupervision";
+export const PRL_ROUTE_BIMONTHLY_SUPERVISION_FORM = "prl/bimonthlySupervision/form";
 export const PRL_ROUTE_SUPERVISION_REPORT = "prl/supervisionReport";
 
 // Module Name
