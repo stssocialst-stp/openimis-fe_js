@@ -1,4 +1,4 @@
-name: Create daily Docker image for Kenon Frontend on develop
+name: Build and Deploy Frontend to Develop
 
 on:
   push:
@@ -6,9 +6,6 @@ on:
       - stp-changes
   pull_request:
     branches: [stp-changes]
-  workflow_dispatch:
-  schedule:
-   - cron: "0 2 * * *"  # todo dia às 02:00
 
 jobs:
   publish-docker-develop-image:
@@ -30,3 +27,14 @@ jobs:
           LABEL=latest
           docker build . --tag ghcr.io/stssocialst-stp/kenon-frontend:${LABEL}
           docker push ghcr.io/stssocialst-stp/kenon-frontend:${LABEL}
+
+  trigger-orchestrator:
+    needs: publish-docker-develop-image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger workflow in openimis-dist_dkr
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.GHCR_TOKEN }}
+          repository: stssocialst-stp/openimis-dist_dkr
+          event-type: deploy-kenon-frontend
