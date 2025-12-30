@@ -51,3 +51,7 @@ jobs:
           token: ${{ secrets.GHCR_TOKEN }}
           repository: stssocialst-stp/openimis-dist_dkr
           event-type: deploy-kenon-prod-frontend
+          client-payload: |
+            {
+              "fe_tag": "${{ steps.extract_tag.outputs.fe_tag }}"
+            }
