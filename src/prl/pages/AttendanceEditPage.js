@@ -65,6 +65,7 @@ function AttendanceEditPage(props) {
   });
 
   const [loading, setLoading] = useState(false);
+  const [sessions, setSessions] = useState([]);
 
   const fetchQuery = `query GetPresencaSessao($id: ID!) {
     presencaSessao(id: $id) {
@@ -79,6 +80,27 @@ function AttendanceEditPage(props) {
       estado
       codigoEncaminhamento
       observacoes
+    }
+  }`;
+
+  const sessionsQuery = `query GetSessoesPep($first: Int) {
+    sessoesPep(first: $first) {
+      edges {
+        node {
+          id
+          codigoSessao
+          dataSessao
+          distrito {
+            id
+            name
+          }
+          grupoFamilia {
+            id
+            codigo
+            nome
+          }
+        }
+      }
     }
   }`;
 
@@ -135,15 +157,61 @@ function AttendanceEditPage(props) {
     }
   }, [fetchQuery]);
 
+  const fetchSessions = async () => {
+    try {
+      const response = await fetch(`${baseApiUrl}/graphql`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCookie('csrftoken'),
+          ...apiHeaders(),
+        },
+        body: JSON.stringify({ query: sessionsQuery, variables: { first: 100 } }),
+      });
+
+      const result = await response.json();
+      if (result.data?.sessoesPep?.edges) {
+        const sessionList = result.data.sessoesPep.edges.map(edge => ({
+          id: edge.node.id,
+          codigo: edge.node.codigoSessao,
+          data: edge.node.dataSessao,
+          distrito: edge.node.distrito?.name || '-',
+          grupoFamilia: edge.node.grupoFamilia,
+          label: `${edge.node.codigoSessao} - ${edge.node.dataSessao} - ${edge.node.distrito?.name || '-'}`,
+        }));
+        setSessions(sessionList);
+      }
+    } catch (error) {
+      console.error('Error fetching sessions:', error);
+    }
+  };
+
   useEffect(() => {
     if (attendanceId) {
       fetchAttendance(attendanceId);
     }
+    // Load sessions on mount
+    fetchSessions();
   }, [attendanceId, fetchAttendance]);
 
   const handleChange = (field) => (event) => {
     const { value } = event.target;
     setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleSessionChange = (event) => {
+    const sessionId = event.target.value;
+    const selectedSession = sessions.find(s => s.id === sessionId);
+
+    if (selectedSession) {
+      setFormData((prev) => ({
+        ...prev,
+        sessaoId: selectedSession.id,
+        grupoId: selectedSession.grupoFamilia?.id || "",
+        familiaId: selectedSession.grupoFamilia?.codigo || "",
+        nomeFamilia: selectedSession.grupoFamilia?.nome || "",
+      }));
+    }
   };
 
   const handleBack = () => {
@@ -152,13 +220,18 @@ function AttendanceEditPage(props) {
 
   const handleSave = async () => {
     try {
+      // Validar campos obrigatórios
+      if (!formData.sessaoId) {
+        alert('Por favor, selecione uma sessão.');
+        return;
+      }
+
       const input = {
-        sessaoId: parseInt(formData.sessaoId),
+        sessaoId: formData.sessaoId, // Relay ID, mantém como string
         familiaId: formData.familiaId,
         nomeFamilia: formData.nomeFamilia,
         grupoId: formData.grupoId || null,
         estado: formData.estado,
-        codigoEncaminhamento: formData.codigoEncaminhamento || null,
         observacoes: formData.observacoes || null,
       };
 
@@ -169,6 +242,8 @@ function AttendanceEditPage(props) {
         mutation = updateMutation;
         variables.input.id = attendanceId;
       }
+
+      setLoading(true);
 
       const response = await fetch(`${baseApiUrl}/graphql`, {
         method: 'POST',
@@ -181,13 +256,17 @@ function AttendanceEditPage(props) {
       });
 
       const result = await response.json();
-      if (result.data) {
+      if (result.data?.createPresencaSessao || result.data?.updatePresencaSessao) {
         handleBack();
       } else if (result.errors) {
         console.error('Error saving attendance:', result.errors);
+        alert('Erro ao salvar presença: ' + result.errors[0].message);
       }
     } catch (error) {
       console.error('Error in handleSave:', error);
+      alert('Erro ao salvar: ' + error.message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -208,16 +287,23 @@ function AttendanceEditPage(props) {
         <Divider style={{ margin: "16px 0" }} />
 
         <Grid container spacing={2}>
-          <Grid item xs={12} sm={6}>
+          <Grid item xs={12} sm={12}>
             <TextField
               fullWidth
+              select
               label={formatMessage(intl, "prl", "attendance.sessionCode")}
               value={formData.sessaoId}
-              onChange={handleChange("sessaoId")}
-              type="number"
+              onChange={handleSessionChange}
               variant="outlined"
               size="small"
-            />
+              required
+            >
+              {sessions.map((session) => (
+                <MenuItem key={session.id} value={session.id}>
+                  {session.label}
+                </MenuItem>
+              ))}
+            </TextField>
           </Grid>
 
           <Grid item xs={12} sm={6}>
@@ -228,7 +314,8 @@ function AttendanceEditPage(props) {
               onChange={handleChange("familiaId")}
               variant="outlined"
               size="small"
-              required
+              disabled
+              helperText="Preenchido automaticamente pela sessão"
             />
           </Grid>
 
@@ -240,7 +327,8 @@ function AttendanceEditPage(props) {
               onChange={handleChange("nomeFamilia")}
               variant="outlined"
               size="small"
-              required
+              disabled
+              helperText="Preenchido automaticamente pela sessão"
             />
           </Grid>
 
@@ -252,6 +340,8 @@ function AttendanceEditPage(props) {
               onChange={handleChange("grupoId")}
               variant="outlined"
               size="small"
+              disabled
+              helperText="Preenchido automaticamente pela sessão"
             />
           </Grid>
 
@@ -281,6 +371,7 @@ function AttendanceEditPage(props) {
               onChange={handleChange("codigoEncaminhamento")}
               variant="outlined"
               size="small"
+              helperText="Opcional"
             />
           </Grid>
 
@@ -311,7 +402,7 @@ function AttendanceEditPage(props) {
             color="primary"
             startIcon={<SaveIcon />}
             onClick={handleSave}
-            disabled={loading || !formData.familiaId || !formData.nomeFamilia}
+            disabled={loading || !formData.sessaoId}
           >
             {formatMessage(intl, "prl", "button.save")}
           </Button>
