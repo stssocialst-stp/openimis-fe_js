@@ -150,6 +150,6 @@ jobs:
             -p ${HTTPS_PORT:-4006}:443 \
             -v ./data/certbot/conf:/etc/letsencrypt \
             -v ./data/certbot/www:/var/www/certbot \
-            -v ./conf/nginx:/conf/ \
+            -v ./conf:/conf/ \
             --network kenon-stp-net \
             ghcr.io/stssocialst-stp/kenon-frontend:${FE_TAG}
