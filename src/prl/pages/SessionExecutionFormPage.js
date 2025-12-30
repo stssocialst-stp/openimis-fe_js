@@ -374,8 +374,8 @@ function SessionExecutionFormPage(props) {
             <TextField
               fullWidth
               label={formatMessage(intl, "prl", "execution.selfAssessmentStrengths")}
-              value={formData.auto_avaliacao_ponto_fortes}
-              onChange={handleChange("auto_avaliacao_ponto_fortes")}
+              value={formData.autoAvaliacaoPontosFortes}
+              onChange={handleChange("autoAvaliacaoPontosFortes")}
               variant="outlined"
               size="small"
               multiline
@@ -388,8 +388,8 @@ function SessionExecutionFormPage(props) {
             <TextField
               fullWidth
               label={formatMessage(intl, "prl", "execution.selfAssessmentAttention")}
-              value={formData.auto_avaliacao_pontos_atencao}
-              onChange={handleChange("auto_avaliacao_pontos_atencao")}
+              value={formData.autoAvaliacaoPontosAtencao}
+              onChange={handleChange("autoAvaliacaoPontosAtencao")}
               variant="outlined"
               size="small"
               multiline
@@ -402,8 +402,8 @@ function SessionExecutionFormPage(props) {
             <TextField
               fullWidth
               label={formatMessage(intl, "prl", "execution.methodologyEvaluation")}
-              value={formData.avaliacao_metodologia}
-              onChange={handleChange("avaliacao_metodologia")}
+              value={formData.avaliacaoMetodologia}
+              onChange={handleChange("avaliacaoMetodologia")}
               variant="outlined"
               size="small"
               multiline

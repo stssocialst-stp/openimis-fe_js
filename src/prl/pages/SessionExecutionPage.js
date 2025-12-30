@@ -8,7 +8,6 @@ import {
 } from "@material-ui/core";
 import AddIcon from "@material-ui/icons/Add";
 import VisibilityIcon from "@material-ui/icons/Visibility";
-import DeleteIcon from "@material-ui/icons/Delete";
 import { formatMessage, withModulesManager, Helmet, withTooltip, baseApiUrl, apiHeaders } from "@openimis/fe-core";
 import PrlFilter from "../components/PrlFilter";
 import { PRL_ROUTE_EXECUTION_FORM } from "../constants";
@@ -41,7 +40,6 @@ function SessionExecutionPage(props) {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [filters, setFilters] = useState({});
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedId, setSelectedId] = useState(null);
 
   const execucaoQuery = `query GetExecucoesSessao($first: Int, $sessaoId: ID, $necessitaEncaminhamento: Boolean, $dataExecucao: DateTime) {
@@ -77,13 +75,6 @@ function SessionExecutionPage(props) {
           dataExecucao
         }
       }
-    }
-  }`;
-
-  const deleteMutation = `mutation DeleteExecucaoSessao($input: DeleteExecucaoSessaoMutationInput!) {
-    deleteExecucaoSessao(input: $input) {
-      clientMutationId
-      ok
     }
   }`;
 
@@ -156,31 +147,6 @@ function SessionExecutionPage(props) {
     return fetchExecutions(params);
   }, [fetchExecutions]);
 
-  const handleDelete = useCallback(async () => {
-    try {
-      const response = await fetch(`${baseApiUrl}/graphql`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRFToken': getCookie('csrftoken'),
-          ...apiHeaders(),
-        },
-        body: JSON.stringify({ query: deleteMutation, variables: { input: { id: selectedId } } }),
-      });
-
-      const result = await response.json();
-      if (result.data?.deleteExecucaoSessao?.ok) {
-        setData(data.filter(item => item.id !== selectedId));
-        setDeleteDialogOpen(false);
-        setSelectedId(null);
-      } else if (result.errors) {
-        console.error('Error deleting execution:', result.errors);
-      }
-    } catch (error) {
-      console.error('Error:', error);
-    }
-  }, [selectedId, data, setData, setDeleteDialogOpen, setSelectedId]);
-
   const handleView = (item) => {
     // Navigate to details page with item data
     history.push(`/prl/session-execution/details/${item.id}`, { data: item.fullNode });
@@ -216,18 +182,6 @@ function SessionExecutionPage(props) {
             onClick={() => handleView(item)}
           >
             <VisibilityIcon fontSize="small" />
-          </IconButton>
-        </Tooltip>
-        <Tooltip title="Eliminar">
-          <IconButton
-            size="small"
-            className={classes.actionIcon}
-            onClick={() => {
-              setSelectedId(item.id);
-              setDeleteDialogOpen(true);
-            }}
-          >
-            <DeleteIcon fontSize="small" />
           </IconButton>
         </Tooltip>
       </div>
@@ -280,17 +234,6 @@ function SessionExecutionPage(props) {
         </div>,
         formatMessage(intl, "prl", "button.add")
       )}
-
-      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
-        <DialogTitle>Confirmar Eliminação</DialogTitle>
-        <DialogContent>
-          Tem a certeza que deseja eliminar esta execução de sessão?
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteDialogOpen(false)}>Cancelar</Button>
-          <Button onClick={handleDelete} color="primary" variant="contained">Eliminar</Button>
-        </DialogActions>
-      </Dialog>
     </div>
   );
 }
