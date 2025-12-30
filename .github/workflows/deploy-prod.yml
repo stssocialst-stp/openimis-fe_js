@@ -148,8 +148,8 @@ jobs:
             -e OPENSEARCH_BASIC_TOKEN=${OPENSEARCH_BASIC_TOKEN} \
             -p ${HTTP_PORT:-4005}:80 \
             -p ${HTTPS_PORT:-4006}:443 \
-            -v ./data/certbot/conf:/etc/letsencrypt \
-            -v ./data/certbot/www:/var/www/certbot \
-            -v ../../conf/ngnix:/conf/ \
+            -v  ~/latest_openimis-dist_dkr/data/certbot/conf:/etc/letsencrypt \
+            -v  ~/latest_openimis-dist_dkr/data/certbot/www:/var/www/certbot \
+            -v  ~/latest_openimis-dist_dkr/conf/ngnix:/conf/ \
             --network kenon-stp-net \
             ghcr.io/stssocialst-stp/kenon-frontend:${FE_TAG}
