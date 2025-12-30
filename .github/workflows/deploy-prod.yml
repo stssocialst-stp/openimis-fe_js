@@ -41,13 +41,13 @@ jobs:
           echo "Pushing Docker image for ${LABEL}..."
           docker push ghcr.io/stssocialst-stp/kenon-frontend:${LABEL}
 
-    trigger-deploy-orchestrator:
-      needs: publish-docker-prod-image
-      runs-on: ubuntu-latest
-      steps:
-        - name: Trigger prod workflow in openimis-dist_dkr
-          uses: peter-evans/repository-dispatch@v3
-          with:
-            token: ${{ secrets.GHCR_TOKEN }}
-            repository: stssocialst-stp/openimis-dist_dkr
-            event-type: deploy-kenon-prod-frontend
+  trigger-deploy-orchestrator:
+    needs: publish-docker-prod-image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger prod workflow in openimis-dist_dkr
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.GHCR_TOKEN }}
+          repository: stssocialst-stp/openimis-dist_dkr
+          event-type: deploy-kenon-prod-frontend
