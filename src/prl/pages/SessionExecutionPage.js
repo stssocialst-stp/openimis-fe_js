@@ -1,62 +1,234 @@
 
+import { useState, useCallback } from "react";
 import { injectIntl } from "react-intl";
 import { connect } from "react-redux";
 import { withTheme, withStyles } from "@material-ui/core/styles";
 import {
-  IconButton, Tooltip, Fab, Typography,
+  IconButton, Tooltip, Fab, Typography, Dialog, DialogTitle, DialogContent, DialogActions, Button,
 } from "@material-ui/core";
 import AddIcon from "@material-ui/icons/Add";
 import VisibilityIcon from "@material-ui/icons/Visibility";
 import DeleteIcon from "@material-ui/icons/Delete";
-import { formatMessage, withModulesManager, Helmet, withTooltip } from "@openimis/fe-core";
-import PrlSearcher from "../components/PrlSearcher";
+import { formatMessage, withModulesManager, Helmet, withTooltip, baseApiUrl, apiHeaders } from "@openimis/fe-core";
 import PrlFilter from "../components/PrlFilter";
+import { PRL_ROUTE_EXECUTION_FORM } from "../constants";
+import PrlSearcher from "../components/PrlSearcher";
 
 const styles = (theme) => ({
   page: theme.page,
   fab: theme.fab,
   actionIcon: { padding: 4 },
-});
-
-const STATUS_OPTIONS = [
-  { value: "Executado", label: "Executado" },
-  { value: "Em Curso", label: "Em Curso" },
-];
-
-const MOCK_DATA = [
-  { id: "1", sessionCode: "SESS-2024-001", module: "Módulo 1", date: "2024-12-15", duration: "2h", status: "Executado" },
-  { id: "2", sessionCode: "SESS-2024-002", module: "Módulo 2", date: "2024-12-20", duration: "1.5h", status: "Em Curso" },
-];
+})
 
 function SessionExecutionPage(props) {
-  const { classes, intl, rights } = props;
+  const { classes, intl, rights, history } = props;
+
+  const getCookie = (name) => {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+      const cookies = document.cookie.split(';');
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  };
+
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [filters, setFilters] = useState({});
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedId, setSelectedId] = useState(null);
+
+  const execucaoQuery = `query GetExecucoesSessao($first: Int, $sessaoId: ID, $necessitaEncaminhamento: Boolean, $dataExecucao: DateTime) {
+    execucoesSessao(first: $first, sessaoId: $sessaoId, necessitaEncaminhamento: $necessitaEncaminhamento, dataExecucao: $dataExecucao) {
+      edges {
+        node {
+          id
+          sessao {
+            id
+            codigoSessao
+            dataSessao
+          }
+          formador {
+            id
+            username
+          }
+          supervisor {
+            id
+            username
+          }
+          localidade {
+            id
+            name
+          }
+          numeroParticipantesCompromissos
+          praticasPositivas
+          desafiosTransmissao
+          necessitaEncaminhamento
+          autoAvaliacaoPontosFortes
+          autoAvaliacaoPontosAtencao
+          avaliacaoMetodologia
+          observacoes
+          dataExecucao
+        }
+      }
+    }
+  }`;
+
+  const deleteMutation = `mutation DeleteExecucaoSessao($input: DeleteExecucaoSessaoMutationInput!) {
+    deleteExecucaoSessao(input: $input) {
+      clientMutationId
+      ok
+    }
+  }`;
+
+  const fetchExecutions = useCallback(async (params = {}) => {
+    setLoading(true);
+    try {
+      const filters = params.filters || {};
+      const variables = {
+        first: params.pageSize || 100,
+      };
+
+      if (filters.sessionCode?.value) {
+        variables.sessaoId = filters.sessionCode.value;
+      }
+      if (filters.necessitaEncaminhamento !== undefined) {
+        variables.necessitaEncaminhamento = filters.necessitaEncaminhamento;
+      }
+      if (filters.dataExecucao?.value) {
+        variables.dataExecucao = filters.dataExecucao.value;
+      }
+
+      console.log('Fetching executions with variables:', variables);
+
+      const response = await fetch(`${baseApiUrl}/graphql`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCookie('csrftoken'),
+          ...apiHeaders(),
+        },
+        body: JSON.stringify({ query: execucaoQuery, variables }),
+      });
+
+      const result = await response.json();
+      console.log('GraphQL response:', result);
+      if (result.data?.execucoesSessao?.edges) {
+        const executions = result.data.execucoesSessao.edges.map(edge => ({
+          id: edge.node.id,
+          sessionCode: edge.node.sessao?.codigoSessao || '',
+          sessionDate: edge.node.sessao?.dataSessao || '',
+          formador: edge.node.formador?.username || '',
+          supervisor: edge.node.supervisor?.username || '',
+          localidade: edge.node.localidade?.name || '',
+          participants: edge.node.numeroParticipantesCompromissos || 0,
+          positivas: edge.node.praticasPositivas || [],
+          desafios: edge.node.desafiosTransmissao || [],
+          necessitaEncaminhamento: edge.node.necessitaEncaminhamento || false,
+          pontosFortes: edge.node.autoAvaliacaoPontosFortes || [],
+          pontosAtencao: edge.node.autoAvaliacaoPontosAtencao || [],
+          avaliacaoMetodologia: edge.node.avaliacaoMetodologia || {},
+          observacoes: edge.node.observacoes || '',
+          dataExecucao: edge.node.dataExecucao || '',
+          fullNode: edge.node,
+        }));
+        setData(executions);
+        return executions;
+      } else if (result.errors) {
+        console.error('Error fetching executions:', result.errors);
+        return [];
+      }
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      return [];
+    } finally {
+      setLoading(false);
+    }
+  }, [setData, setLoading]);
+
+  const handleFetch = useCallback(async (params) => {
+    return fetchExecutions(params);
+  }, [fetchExecutions]);
+
+  const handleDelete = useCallback(async () => {
+    try {
+      const response = await fetch(`${baseApiUrl}/graphql`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCookie('csrftoken'),
+          ...apiHeaders(),
+        },
+        body: JSON.stringify({ query: deleteMutation, variables: { input: { id: selectedId } } }),
+      });
+
+      const result = await response.json();
+      if (result.data?.deleteExecucaoSessao?.ok) {
+        setData(data.filter(item => item.id !== selectedId));
+        setDeleteDialogOpen(false);
+        setSelectedId(null);
+      } else if (result.errors) {
+        console.error('Error deleting execution:', result.errors);
+      }
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  }, [selectedId, data, setData, setDeleteDialogOpen, setSelectedId]);
+
+  const handleView = (item) => {
+    // Navigate to details page with item data
+    history.push(`/prl/session-execution/details/${item.id}`, { data: item.fullNode });
+  };
 
   const headers = [
     "prl.execution.sessionCode",
-    "prl.execution.module",
     "prl.execution.executionDate",
-    "prl.execution.duration",
-    "prl.execution.status",
+    "prl.execution.formador",
+    "prl.execution.supervisor",
+    "prl.execution.participants",
+    "prl.execution.necessitaEncaminhamento",
     "emptyLabel",
   ];
 
   const itemFormatters = [
     (item) => item.sessionCode,
-    (item) => item.module,
-    (item) => item.date,
-    (item) => item.duration,
+    (item) => item.dataExecucao,
+    (item) => item.formador,
+    (item) => item.supervisor,
+    (item) => item.participants,
     (item) => (
       <Typography variant="body2">
-        {item.status}
+        {item.necessitaEncaminhamento ? 'Sim' : 'Não'}
       </Typography>
     ),
     (item) => (
       <div style={{ display: 'flex', justifyContent: 'center' }}>
         <Tooltip title="Ver detalhes">
-          <IconButton size="small" className={classes.actionIcon}><VisibilityIcon fontSize="small" /></IconButton>
+          <IconButton
+            size="small"
+            className={classes.actionIcon}
+            onClick={() => handleView(item)}
+          >
+            <VisibilityIcon fontSize="small" />
+          </IconButton>
         </Tooltip>
         <Tooltip title="Eliminar">
-          <IconButton size="small" className={classes.actionIcon}><DeleteIcon fontSize="small" /></IconButton>
+          <IconButton
+            size="small"
+            className={classes.actionIcon}
+            onClick={() => {
+              setSelectedId(item.id);
+              setDeleteDialogOpen(true);
+            }}
+          >
+            <DeleteIcon fontSize="small" />
+          </IconButton>
         </Tooltip>
       </div>
     ),
@@ -64,15 +236,15 @@ function SessionExecutionPage(props) {
 
   const sorts = [
     ["sessionCode", true],
-    ["module", true],
-    ["date", true],
-    ["duration", true],
-    ["status", true],
+    ["dataExecucao", true],
+    ["formador", true],
+    ["supervisor", true],
+    ["participants", true],
   ];
 
   const filterConfig = [
     { field: "sessionCode", label: "prl.execution.sessionCode", xs: 6 },
-    { field: "status", label: "prl.execution.status", options: STATUS_OPTIONS, xs: 6 },
+    { field: "dataExecucao", label: "prl.execution.executionDate", type: "date", xs: 6 },
   ];
 
   const FilterPane = (filterProps) => (
@@ -83,27 +255,42 @@ function SessionExecutionPage(props) {
     />
   );
 
+  const handleAddExecution = () => {
+    history.push(`/${PRL_ROUTE_EXECUTION_FORM}`);
+  };
+
   return (
     <div className={classes.page}>
       <Helmet title={formatMessage(intl, "prl", "title.sessionExecution")} />
 
       <PrlSearcher
+        fetch={handleFetch}
         FilterPane={FilterPane}
         headers={headers}
         itemFormatters={itemFormatters}
         sorts={sorts}
-        mockData={MOCK_DATA}
         rights={rights}
       />
 
       {withTooltip(
         <div className={classes.fab}>
-          <Fab color="primary">
+          <Fab color="primary" onClick={handleAddExecution}>
             <AddIcon />
           </Fab>
         </div>,
         formatMessage(intl, "prl", "button.add")
       )}
+
+      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
+        <DialogTitle>Confirmar Eliminação</DialogTitle>
+        <DialogContent>
+          Tem a certeza que deseja eliminar esta execução de sessão?
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteDialogOpen(false)}>Cancelar</Button>
+          <Button onClick={handleDelete} color="primary" variant="contained">Eliminar</Button>
+        </DialogActions>
+      </Dialog>
     </div>
   );
 }

@@ -7,9 +7,10 @@ import {
 import AddIcon from "@material-ui/icons/Add";
 import VisibilityIcon from "@material-ui/icons/Visibility";
 import DeleteIcon from "@material-ui/icons/Delete";
-import { formatMessage, withModulesManager, Helmet, withTooltip } from "@openimis/fe-core";
+import { formatMessage, withModulesManager, Helmet, withTooltip, baseApiUrl, apiHeaders } from "@openimis/fe-core";
 import PrlSearcher from "../components/PrlSearcher";
 import PrlFilter from "../components/PrlFilter";
+import { PRL_ROUTE_SUPERVISION_FORM } from "../constants";
 
 const styles = (theme) => ({
   page: theme.page,
@@ -22,28 +23,142 @@ const STATUS_OPTIONS = [
   { value: "Pendente", label: "Pendente" },
 ];
 
-const MOCK_DATA = [
-  { id: "1", sessionCode: "SESS-2024-001", supervisor: "Carlos Alberto", date: "2024-12-16", score: "85%", status: "Aprovado" },
-  { id: "2", sessionCode: "SESS-2024-002", supervisor: "Carlos Alberto", date: "2024-12-21", score: "70%", status: "Pendente" },
-];
-
 function SessionSupervisionPage(props) {
-  const { classes, intl, rights } = props;
+  const { classes, intl, rights, history } = props;
+
+  const getCookie = (name) => {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+      const cookies = document.cookie.split(';');
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  };
+
+  const query = `query GetSupervisoesSessao($first: Int, $offset: Int, $sessaoId: ID, $supervisorId: ID, $formadorId: ID, $dataSupervisao: Date, $identificadorGrupo: String) {
+    supervisoesSessao(
+      first: $first
+      offset: $offset
+      sessaoId: $sessaoId
+      supervisorId: $supervisorId
+      formadorId: $formadorId
+      dataSupervisao: $dataSupervisao
+      identificadorGrupo: $identificadorGrupo
+    ) {
+      edges {
+        node {
+          id
+          sessao {
+            codigoSessao
+            dataSessao
+          }
+          supervisor {
+            id
+            username
+          }
+          formador {
+            id
+            username
+          }
+          dataSupervisao
+          dataModuloAnterior
+          identificadorGrupo
+          perguntasAvaliacao
+          pontosPositivos
+          pontosMelhorar
+          observacoes
+        }
+      }
+      totalCount
+    }
+  }`;
+
+  const fetchSupervisions = async (params) => {
+    const filters = params.filters || {};
+    const pageSize = params.pageSize || 10;
+    const offset = ((params.page || 1) - 1) * pageSize;
+
+    const variables = {
+      first: pageSize,
+      offset,
+      sessaoId: filters.sessao_id?.value || null,
+      supervisorId: filters.supervisor_id?.value || null,
+      formadorId: filters.formador_id?.value || null,
+      dataSupervisao: filters.dataSupervisao?.value || null,
+      identificadorGrupo: filters.identificadorGrupo?.value || null,
+    };
+
+    const response = await fetch(`${baseApiUrl}/graphql`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCookie('csrftoken'),
+        ...apiHeaders(),
+      },
+      body: JSON.stringify({ query, variables }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Network response was not ok');
+    }
+
+    const result = await response.json();
+
+    if (result.errors) {
+      throw new Error(result.errors[0].message);
+    }
+
+    const supervisions = result.data.supervisoesSessao.edges.map(edge => edge.node);
+
+    const mappedData = supervisions.map(supervision => ({
+      id: supervision.id,
+      sessionCode: supervision.sessao?.codigoSessao || '-',
+      sessionDate: supervision.sessao?.dataSessao || '-',
+      supervisor: supervision.supervisor?.username || '-',
+      formador: supervision.formador?.username || '-',
+      supervisionDate: supervision.dataSupervisao || '-',
+      previousModuleDate: supervision.dataModuloAnterior || '-',
+      groupId: supervision.identificadorGrupo || '-',
+      evaluationQuestions: supervision.perguntasAvaliacao || {},
+      positivePoints: supervision.pontosPositivos || '',
+      improvementPoints: supervision.pontosMelhorar || '',
+      observations: supervision.observacoes || '',
+      status: 'Pendente',
+    }));
+
+    return mappedData;
+  };
 
   const headers = [
     "prl.supervision.sessionCode",
+    "prl.supervision.sessionDate",
     "prl.supervision.supervisor",
     "prl.supervision.supervisionDate",
-    "prl.supervision.score",
+    "prl.supervision.formador",
     "prl.supervision.status",
     "emptyLabel",
   ];
 
+  const handleAdd = () => {
+    history.push(`/${PRL_ROUTE_SUPERVISION_FORM}`);
+  };
+
+  const handleView = (item) => {
+    history.push(`/prl/supervision/${item.id}`);
+  };
+
   const itemFormatters = [
     (item) => item.sessionCode,
+    (item) => item.sessionDate,
     (item) => item.supervisor,
-    (item) => item.date,
-    (item) => item.score,
+    (item) => item.supervisionDate,
+    (item) => item.formador,
     (item) => (
       <Typography variant="body2">
         {item.status}
@@ -52,7 +167,13 @@ function SessionSupervisionPage(props) {
     (item) => (
       <div style={{ display: 'flex', justifyContent: 'center' }}>
         <Tooltip title="Ver detalhes">
-          <IconButton size="small" className={classes.actionIcon}><VisibilityIcon fontSize="small" /></IconButton>
+          <IconButton
+            size="small"
+            className={classes.actionIcon}
+            onClick={() => handleView(item)}
+          >
+            <VisibilityIcon fontSize="small" />
+          </IconButton>
         </Tooltip>
         <Tooltip title="Eliminar">
           <IconButton size="small" className={classes.actionIcon}><DeleteIcon fontSize="small" /></IconButton>
@@ -63,15 +184,16 @@ function SessionSupervisionPage(props) {
 
   const sorts = [
     ["sessionCode", true],
+    ["sessionDate", true],
     ["supervisor", true],
-    ["date", true],
-    ["score", true],
+    ["supervisionDate", true],
+    ["formador", true],
     ["status", true],
   ];
 
   const filterConfig = [
-    { field: "sessionCode", label: "prl.supervision.sessionCode", xs: 6 },
-    { field: "status", label: "prl.supervision.status", options: STATUS_OPTIONS, xs: 6 },
+    { field: "sessao_id", label: "prl.supervision.sessionCode", xs: 6 },
+    { field: "identificadorGrupo", label: "prl.supervision.groupId", xs: 6 },
   ];
 
   const FilterPane = (filterProps) => (
@@ -91,13 +213,13 @@ function SessionSupervisionPage(props) {
         headers={headers}
         itemFormatters={itemFormatters}
         sorts={sorts}
-        mockData={MOCK_DATA}
+        fetch={fetchSupervisions}
         rights={rights}
       />
 
       {withTooltip(
         <div className={classes.fab}>
-          <Fab color="primary">
+          <Fab color="primary" onClick={handleAdd}>
             <AddIcon />
           </Fab>
         </div>,

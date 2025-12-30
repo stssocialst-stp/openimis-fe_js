@@ -8,6 +8,7 @@ import {
   PRL_ROUTE_ATTENDANCE,
   PRL_ROUTE_EXECUTION,
   PRL_ROUTE_SUPERVISION,
+  PRL_ROUTE_FAMILY_GROUP,
   PRL_ROUTE_BIMONTHLY_REPORT,
   PRL_ROUTE_BIMONTHLY_SUPERVISION,
   PRL_ROUTE_SUPERVISION_REPORT,
@@ -43,6 +44,13 @@ function PrlMainMenu(props) {
       text: formatMessage(intl, "prl", "menu.supervision") || "Supervisão de Sessão",
       icon: <AssignmentTurnedIn />,
       route: "/" + PRL_ROUTE_SUPERVISION,
+      withDivider: false,
+    },
+    {
+      id: "prl.familyGroup",
+      text: formatMessage(intl, "prl", "menu.familyGroup") || "Grupos Familiares",
+      icon: <AssignmentTurnedIn />,
+      route: "/" + PRL_ROUTE_FAMILY_GROUP,
       withDivider: true,
     },
     {

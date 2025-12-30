@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Searcher,
   useModulesManager,
@@ -11,11 +11,11 @@ function PrlSearcher({
   headers,
   itemFormatters,
   sorts,
-  mockData = [],
   tableTitle,
   rowIdentifier = (item) => item.id,
   onDoubleClick,
   rights = [],
+  fetch: fetchProp,
 }) {
   const modulesManager = useModulesManager();
   const { formatMessage, formatMessageWithValues } = useTranslations(module, modulesManager);
@@ -31,41 +31,38 @@ function PrlSearcher({
     totalCount: 0,
   });
 
-  useEffect(() => {
-    setItems(mockData);
-    setPageInfo(prev => ({ ...prev, totalCount: mockData.length }));
-    setFetched(true);
-  }, [mockData]);
-
-  const fetch = (params) => {
-    console.log('Mock fetch with params:', params);
+  const fetch = useCallback(async (params) => {
+    console.log('Fetch with params:', params);
     setFetching(true);
-    // Simulate API delay
-    setTimeout(() => {
-      setFetching(false);
-      setFetched(true);
-
-      // Basic mock filtering
-      let filteredData = [...mockData];
-      if (params.filters) {
-        Object.keys(params.filters).forEach(key => {
-          const filterVal = params.filters[key]?.value;
-          if (filterVal) {
-            filteredData = filteredData.filter(item =>
-              String(item[key] || '').toLowerCase().includes(String(filterVal).toLowerCase())
-            );
-          }
-        });
+    setError(null);
+    try {
+      if (!fetchProp) {
+        throw new Error('No fetch function provided to PrlSearcher');
       }
 
-      setItems(filteredData);
+      const data = await fetchProp(params);
+      setItems(data);
       setPageInfo(prev => ({
         ...prev,
-        totalCount: filteredData.length,
+        totalCount: data.length,
         page: params.page || 1
       }));
-    }, 500);
-  };
+      setFetched(true);
+    } catch (err) {
+      console.error('Error fetching data:', err);
+      setError(err);
+      setFetched(true);
+    } finally {
+      setFetching(false);
+    }
+  }, [fetchProp]);
+
+  // Load initial data via fetchProp
+  useEffect(() => {
+    if (fetchProp) {
+      fetch({ filters: {}, page: 1, pageSize: 10 });
+    }
+  }, [fetchProp, fetch]);
 
   return (
     <Searcher

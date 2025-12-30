@@ -7,7 +7,7 @@ import {
 import AddIcon from "@material-ui/icons/Add";
 import VisibilityIcon from "@material-ui/icons/Visibility";
 import DeleteIcon from "@material-ui/icons/Delete";
-import { formatMessage, withModulesManager, Helmet, withTooltip } from "@openimis/fe-core";
+import { formatMessage, withModulesManager, Helmet, withTooltip, baseApiUrl, apiHeaders } from "@openimis/fe-core";
 import PrlSearcher from "../components/PrlSearcher";
 import PrlFilter from "../components/PrlFilter";
 import { PRL_ROUTE_SESSION_PLANNING_FORM } from "../constants";
@@ -19,20 +19,112 @@ const styles = (theme) => ({
 });
 
 const STATUS_OPTIONS = [
-  { value: "Planeado", label: "Planeado" },
-  { value: "Confirmado", label: "Confirmado" },
-  { value: "Cancelado", label: "Cancelado" },
-];
-
-const MOCK_DATA = [
-  { id: "1", sessionCode: "SESS-2024-001", module: "Módulo 1 - Comunicação", district: "Maputo", plannedDate: "2024-12-15", trainer: "João Silva", status: "Planeado" },
-  { id: "2", sessionCode: "SESS-2024-002", module: "Módulo 2 - Disciplina Positiva", district: "Gaza", plannedDate: "2024-12-20", trainer: "Maria Santos", status: "Confirmado" },
-  { id: "3", sessionCode: "SESS-2024-003", module: "Módulo 3 - Desenvolvimento Infantil", district: "Inhambane", plannedDate: "2024-12-22", trainer: "Pedro Macamo", status: "Planeado" },
-  { id: "4", sessionCode: "SESS-2024-004", module: "Módulo 4 - Saúde e Nutrição", district: "Sofala", plannedDate: "2024-12-28", trainer: "Ana Cossa", status: "Confirmado" },
+  { value: "PLAN", label: "Planeado" },
+  { value: "EXEC", label: "Executado" },
+  { value: "CANC", label: "Cancelado" },
 ];
 
 function SessionPlanningPage(props) {
   const { classes, intl, rights, history } = props;
+
+  const getCookie = (name) => {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+      const cookies = document.cookie.split(';');
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  };
+
+  const query = `query GetSessoesPep($first: Int, $distritoId: ID, $dataSessao_Gte: Date, $dataSessao_Lte: Date, $status: SessaoPEPStatus, $codigoSessao_Icontains: String, $orderBy: [String]) {
+    sessoesPep(
+      first: $first
+      distritoId: $distritoId
+      dataSessao_Gte: $dataSessao_Gte
+      dataSessao_Lte: $dataSessao_Lte
+      status: $status
+      codigoSessao_Icontains: $codigoSessao_Icontains
+      orderBy: $orderBy
+    ) {
+      totalCount
+      pageInfo {
+        hasNextPage
+        endCursor
+      }
+      edges {
+        node {
+          id
+          codigoSessao
+          dataSessao
+          horaSessao
+          modulo {
+            codigo
+            nome
+          }
+          distrito {
+            name
+          }
+          grupoFamilia {
+            nome
+          }
+          status
+        }
+      }
+    }
+  }`;
+
+  const fetchSessions = async (params) => {
+    const filters = params.filters || {};
+    const variables = {
+      first: params.pageSize || 10,
+      distritoId: filters.distrito_Id?.value || null,
+      dataSessao_Gte: filters.dataSessao_Gte?.value || null,
+      dataSessao_Lte: filters.dataSessao_Lte?.value || null,
+      status: filters.status?.value || null,
+      codigoSessao_Icontains: filters.codigoSessao_Icontains?.value || null,
+      orderBy: params.orderBy || ["-dataSessao"],
+    };
+
+    const response = await fetch(`${baseApiUrl}/graphql`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCookie('csrftoken'),
+        ...apiHeaders(),
+      },
+      body: JSON.stringify({ query, variables }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Network response was not ok');
+    }
+
+    const result = await response.json();
+
+    if (result.errors) {
+      throw new Error(result.errors[0].message);
+    }
+
+    const sessions = result.data.sessoesPep.edges.map(edge => edge.node);
+
+    const mappedData = sessions.map(session => ({
+      id: session.id,
+      sessionCode: session.codigoSessao,
+      module: session.modulo?.nome || '',
+      district: session.distrito?.name || '',
+      plannedDate: session.dataSessao,
+      trainer: session.grupoFamilia?.nome || '',
+      status: session.status === 'PLAN' ? 'Planeado' : session.status === 'EXEC' ? 'Executado' : session.status === 'CANC' ? 'Cancelado' : session.status,
+    }));
+
+    return mappedData;
+  };
 
   const headers = [
     "prl.sessionPlanning.sessionCode",
@@ -49,10 +141,34 @@ function SessionPlanningPage(props) {
   };
 
   const handleView = (item) => {
-    history.push({
-      pathname: `/${PRL_ROUTE_SESSION_PLANNING_FORM}`,
-      state: { readOnly: true, data: item }
+    history.push(`/${PRL_ROUTE_SESSION_PLANNING_FORM}?id=${item.id}`);
+  };
+
+  const deleteMutation = `mutation DeleteSessaoPep($id: ID!) {
+    deleteSessaoPep(input: { id: $id }) {
+      clientMutationId
+    }
+  }`;
+
+  const handleDelete = async (item) => {
+    const response = await fetch(`${baseApiUrl}/graphql`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCookie('csrftoken'),
+        ...apiHeaders(),
+      },
+      body: JSON.stringify({ query: deleteMutation, variables: { id: item.id } }),
     });
+
+    const result = await response.json();
+    if (result.data) {
+      // Refresh the list or show success message
+      console.log('Session deleted successfully');
+      // You might need to trigger a refetch here
+    } else if (result.errors) {
+      console.error('Error deleting session:', result.errors);
+    }
   };
 
   const itemFormatters = [
@@ -78,7 +194,7 @@ function SessionPlanningPage(props) {
           </IconButton>
         </Tooltip>
         <Tooltip title="Eliminar">
-          <IconButton size="small" className={classes.actionIcon}><DeleteIcon fontSize="small" /></IconButton>
+          <IconButton size="small" className={classes.actionIcon} onClick={() => handleDelete(item)}><DeleteIcon fontSize="small" /></IconButton>
         </Tooltip>
       </div>
     ),
@@ -91,9 +207,9 @@ function SessionPlanningPage(props) {
   ];
 
   const filterConfig = [
-    { field: "sessionCode", label: "prl.sessionPlanning.sessionCode", xs: 4 },
+    { field: "codigoSessao_Icontains", label: "prl.sessionPlanning.sessionCode", xs: 4 },
     { field: "status", label: "prl.sessionPlanning.status", options: STATUS_OPTIONS, xs: 4 },
-    { field: "plannedDate", label: "prl.sessionPlanning.plannedDate", xs: 4 },
+    { field: "dataSessao_Gte", label: "prl.sessionPlanning.plannedDate", xs: 4 },
   ];
 
   const FilterPane = (filterProps) => (
@@ -113,7 +229,7 @@ function SessionPlanningPage(props) {
         headers={headers}
         itemFormatters={itemFormatters}
         sorts={sorts}
-        mockData={MOCK_DATA}
+        fetch={fetchSessions}
         rights={rights}
       />
 

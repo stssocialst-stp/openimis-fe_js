@@ -3,12 +3,11 @@ import { injectIntl } from "react-intl";
 import { connect } from "react-redux";
 import { withTheme, withStyles } from "@material-ui/core/styles";
 import {
-  IconButton, Tooltip, Fab, Typography,
+  IconButton, Tooltip, Typography,
 } from "@material-ui/core";
-import AddIcon from "@material-ui/icons/Add";
 import VisibilityIcon from "@material-ui/icons/Visibility";
 import DeleteIcon from "@material-ui/icons/Delete";
-import { formatMessage, withModulesManager, Helmet, withTooltip } from "@openimis/fe-core";
+import { formatMessage, withModulesManager, Helmet, baseApiUrl, apiHeaders } from "@openimis/fe-core";
 import PrlSearcher from "../components/PrlSearcher";
 import PrlFilter from "../components/PrlFilter";
 
@@ -18,23 +17,132 @@ const styles = (theme) => ({
   actionIcon: { padding: 4 },
 });
 
-const STATUS_OPTIONS = [
-  { value: "Submetido", label: "Submetido" },
-  { value: "Rascunho", label: "Rascunho" },
-];
-
-const MOCK_DATA = [
-  { id: "1", period: "Jan-Fev 2024", district: "Maputo", date: "2024-03-05", status: "Submetido" },
-  { id: "2", period: "Mar-Abr 2024", district: "Gaza", date: "2024-05-10", status: "Rascunho" },
+const PERIODO_OPTIONS = [
+  { value: "BIM1", label: "1º Bimestre (Jan-Fev)" },
+  { value: "BIM2", label: "2º Bimestre (Mar-Abr)" },
+  { value: "BIM3", label: "3º Bimestre (Mai-Jun)" },
+  { value: "BIM4", label: "4º Bimestre (Jul-Ago)" },
+  { value: "BIM5", label: "5º Bimestre (Set-Out)" },
+  { value: "BIM6", label: "6º Bimestre (Nov-Dez)" },
 ];
 
 function BimonthlyReportPage(props) {
   const { classes, intl, rights } = props;
 
+  const getCookie = (name) => {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+      const cookies = document.cookie.split(';');
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  };
+
+  const query = `query GetRelatoriosDistritais($first: Int, $offset: Int, $distritoId: ID, $ano: Int, $periodo: RelatorioDistritalBimestralPeriodo) {
+    relatoriosDistritais(
+      first: $first
+      offset: $offset
+      distritoId: $distritoId
+      ano: $ano
+      periodo: $periodo
+    ) {
+      edges {
+        node {
+          id
+          distrito {
+            code
+            name
+          }
+          coordenadorDistrital {
+            username
+          }
+          tecnicoAdministrativo {
+            username
+          }
+          periodo
+          ano
+          periodoInicio
+          periodoFim
+          numeroLocalidadesAtendidas
+          numeroFamiliasAtendidas
+          numeroTecnicosFormadores
+          numeroSessoesConduzidas
+          numeroSessoesEsperadas
+          numeroFamiliasPresentes
+          numeroFamiliasEsperadas
+          percentualSessoes
+          percentualFamilias
+          numeroFamiliasMigraram
+          numeroSessoesPerdidas
+          mediaFamiliaPresente
+          mediaFamiliaEsperada
+          observacoes
+        }
+      }
+      totalCount
+    }
+  }`;
+
+  const fetchReports = async (params) => {
+    const filters = params.filters || {};
+    const pageSize = params.pageSize || 10;
+    const offset = ((params.page || 1) - 1) * pageSize;
+
+    const variables = {
+      first: pageSize,
+      offset,
+      distritoId: filters.distrito_id?.value || null,
+      ano: filters.ano?.value ? parseInt(filters.ano.value) : null,
+      periodo: filters.periodo?.value || null,
+    };
+
+    const response = await fetch(`${baseApiUrl}/graphql`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCookie('csrftoken'),
+        ...apiHeaders(),
+      },
+      body: JSON.stringify({ query, variables }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Network response was not ok');
+    }
+
+    const result = await response.json();
+
+    if (result.errors) {
+      throw new Error(result.errors[0].message);
+    }
+
+    const reports = result.data.relatoriosDistritais.edges.map(edge => edge.node);
+
+    const mappedData = reports.map(report => ({
+      id: report.id,
+      period: `${report.periodo} - ${report.ano}`,
+      district: report.distrito?.name || '-',
+      coordinator: report.coordenadorDistrital?.username || '-',
+      technician: report.tecnicoAdministrativo?.username || '-',
+      date: report.periodoFim || '-',
+      sessionsPercent: report.percentualSessoes || '0%',
+      familiesPercent: report.percentualFamilias || '0%',
+      status: 'Submetido',
+    }));
+
+    return mappedData;
+  };
+
   const headers = [
     "prl.bimonthlyReport.period",
     "prl.bimonthlyReport.district",
-    "Data de Submissão",
+    "prl.bimonthlyReport.completionRate",
     "prl.bimonthlyReport.status",
     "emptyLabel",
   ];
@@ -42,7 +150,7 @@ function BimonthlyReportPage(props) {
   const itemFormatters = [
     (item) => item.period,
     (item) => item.district,
-    (item) => item.date,
+    (item) => `${item.sessionsPercent} (Sessões) / ${item.familiesPercent} (Famílias)`,
     (item) => (
       <Typography variant="body2">
         {item.status}
@@ -63,13 +171,13 @@ function BimonthlyReportPage(props) {
   const sorts = [
     ["period", true],
     ["district", true],
-    ["date", true],
     ["status", true],
   ];
 
   const filterConfig = [
-    { field: "district", label: "prl.bimonthlyReport.district", xs: 6 },
-    { field: "status", label: "prl.bimonthlyReport.status", options: STATUS_OPTIONS, xs: 6 },
+    { field: "distrito_id", label: "prl.bimonthlyReport.district", xs: 4 },
+    { field: "periodo", label: "prl.bimonthlyReport.period", options: PERIODO_OPTIONS, xs: 4 },
+    { field: "ano", label: "prl.bimonthlyReport.year", xs: 4 },
   ];
 
   const FilterPane = (filterProps) => (
@@ -89,18 +197,9 @@ function BimonthlyReportPage(props) {
         headers={headers}
         itemFormatters={itemFormatters}
         sorts={sorts}
-        mockData={MOCK_DATA}
+        fetch={fetchReports}
         rights={rights}
       />
-
-      {withTooltip(
-        <div className={classes.fab}>
-          <Fab color="primary">
-            <AddIcon />
-          </Fab>
-        </div>,
-        formatMessage(intl, "prl", "button.add")
-      )}
     </div>
   );
 }

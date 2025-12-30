@@ -8,9 +8,10 @@ import {
 import AddIcon from "@material-ui/icons/Add";
 import VisibilityIcon from "@material-ui/icons/Visibility";
 import DeleteIcon from "@material-ui/icons/Delete";
-import { formatMessage, withModulesManager, Helmet, withTooltip } from "@openimis/fe-core";
+import { formatMessage, withModulesManager, Helmet, withTooltip, baseApiUrl, apiHeaders } from "@openimis/fe-core";
 import PrlSearcher from "../components/PrlSearcher";
 import PrlFilter from "../components/PrlFilter";
+import { PRL_ROUTE_ATTENDANCE_FORM } from "../constants";
 
 const styles = (theme) => ({
   page: theme.page,
@@ -18,45 +19,201 @@ const styles = (theme) => ({
   actionIcon: { padding: 4 },
 });
 
-const STATUS_OPTIONS = [
-  { value: "Completo", label: "Completo" },
-  { value: "Incompleto", label: "Incompleto" },
-];
-
-const MOCK_DATA = [
-  { id: "1", sessionCode: "SESS-2024-001", date: "2024-12-15", participantsCount: 15, presentCount: 14, status: "Completo" },
-  { id: "2", sessionCode: "SESS-2024-002", date: "2024-12-20", participantsCount: 12, presentCount: 10, status: "Incompleto" },
+const ESTADO_OPTIONS = [
+  { value: "PRES", label: "Presente" },
+  { value: "AUSE", label: "Ausente" },
+  { value: "JUST", label: "Justificado" },
 ];
 
 function AttendanceRegistryPage(props) {
-  const { classes, intl, rights } = props;
+  const { classes, intl, rights, history } = props;
+
+  const getCookie = (name) => {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+      const cookies = document.cookie.split(';');
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  };
+
+  const query = `query GetPresencasSessao($first: Int, $sessaoId: ID, $familiaId: String, $nomeFamilia_Icontains: String, $grupoId: String, $estado: PresencaSessaoEstado, $codigoEncaminhamento_Icontains: String) {
+    presencasSessao(
+      first: $first
+      sessaoId: $sessaoId
+      familiaId: $familiaId
+      nomeFamilia_Icontains: $nomeFamilia_Icontains
+      grupoId: $grupoId
+      estado: $estado
+      codigoEncaminhamento_Icontains: $codigoEncaminhamento_Icontains
+    ) {
+      totalCount
+      pageInfo {
+        hasNextPage
+        endCursor
+      }
+      edges {
+        node {
+          id
+          sessao {
+            id
+            codigoSessao
+            dataSessao
+          }
+          familiaId
+          nomeFamilia
+          grupoId
+          estado
+          codigoEncaminhamento
+          observacoes
+        }
+      }
+    }
+  }`;
+
+  const fetchAttendances = async (params) => {
+    const filters = params.filters || {};
+    const variables = {
+      first: params.pageSize || 10,
+      sessaoId: filters.sessaoId?.value || null,
+      familiaId: filters.familiaId?.value || null,
+      nomeFamilia_Icontains: filters.nomeFamilia?.value || null,
+      grupoId: filters.grupoId?.value || null,
+      estado: filters.estado?.value || null,
+      codigoEncaminhamento_Icontains: filters.codigoEncaminhamento?.value || null,
+    };
+
+    const response = await fetch(`${baseApiUrl}/graphql`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCookie('csrftoken'),
+        ...apiHeaders(),
+      },
+      body: JSON.stringify({ query, variables }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Network response was not ok');
+    }
+
+    const result = await response.json();
+
+    if (result.errors) {
+      throw new Error(result.errors[0].message);
+    }
+
+    const attendances = result.data.presencasSessao.edges.map(edge => edge.node);
+
+    const mappedData = attendances.map(attendance => ({
+      id: attendance.id,
+      sessionCode: attendance.sessao?.codigoSessao || '',
+      sessionDate: attendance.sessao?.dataSessao || '',
+      familyName: attendance.nomeFamilia,
+      familyId: attendance.familiaId,
+      groupId: attendance.grupoId,
+      state: attendance.estado,
+      referralCode: attendance.codigoEncaminhamento,
+      observations: attendance.observacoes,
+    }));
+
+    return mappedData;
+  };
+
+  const getStateLabel = (state) => {
+    const option = ESTADO_OPTIONS.find(opt => opt.value === state);
+    return option ? option.label : state;
+  };
+
+  const handleAdd = () => {
+    history.push(`/${PRL_ROUTE_ATTENDANCE_FORM}`);
+  };
+
+  const handleView = (item) => {
+    history.push(`/${PRL_ROUTE_ATTENDANCE_FORM}?id=${item.id}`);
+  };
+
+  const deleteMutation = `mutation DeletePresencaSessao($id: ID!) {
+    deletePresencaSessao(input: { id: $id }) {
+      clientMutationId
+    }
+  }`;
+
+  const handleDelete = async (item) => {
+    if (!window.confirm('Tem certeza que deseja eliminar este registo de presença?')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`${baseApiUrl}/graphql`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCookie('csrftoken'),
+          ...apiHeaders(),
+        },
+        body: JSON.stringify({ query: deleteMutation, variables: { id: item.id } }),
+      });
+
+      const result = await response.json();
+      if (result.data) {
+        console.log('Attendance record deleted successfully');
+        // You might need to trigger a refetch here
+        window.location.reload();
+      } else if (result.errors) {
+        console.error('Error deleting attendance:', result.errors);
+      }
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  };
 
   const headers = [
     "prl.attendance.sessionCode",
     "prl.attendance.sessionDate",
-    "Participantes",
-    "Presentes",
-    "prl.sessionPlanning.status",
+    "prl.attendance.familyName",
+    "prl.attendance.estado",
+    "prl.attendance.referralCode",
+    "prl.attendance.observations",
     "emptyLabel",
   ];
 
   const itemFormatters = [
     (item) => item.sessionCode,
-    (item) => item.date,
-    (item) => item.participantsCount,
-    (item) => item.presentCount,
+    (item) => item.sessionDate,
+    (item) => item.familyName,
     (item) => (
       <Typography variant="body2">
-        {item.status}
+        {getStateLabel(item.state)}
       </Typography>
     ),
+    (item) => item.referralCode || '-',
+    (item) => item.observations || '-',
     (item) => (
       <div style={{ display: 'flex', justifyContent: 'center' }}>
-        <Tooltip title="Ver detalhes">
-          <IconButton size="small" className={classes.actionIcon}><VisibilityIcon fontSize="small" /></IconButton>
+        <Tooltip title={formatMessage(intl, "prl", "button.view")}>
+          <IconButton
+            size="small"
+            className={classes.actionIcon}
+            onClick={() => handleView(item)}
+          >
+            <VisibilityIcon fontSize="small" />
+          </IconButton>
         </Tooltip>
-        <Tooltip title="Eliminar">
-          <IconButton size="small" className={classes.actionIcon}><DeleteIcon fontSize="small" /></IconButton>
+        <Tooltip title={formatMessage(intl, "prl", "button.delete")}>
+          <IconButton
+            size="small"
+            className={classes.actionIcon}
+            onClick={() => handleDelete(item)}
+          >
+            <DeleteIcon fontSize="small" />
+          </IconButton>
         </Tooltip>
       </div>
     ),
@@ -64,15 +221,17 @@ function AttendanceRegistryPage(props) {
 
   const sorts = [
     ["sessionCode", true],
-    ["date", true],
-    ["participantsCount", true],
-    ["presentCount", true],
-    ["status", true],
+    ["sessionDate", true],
+    ["familyName", true],
+    ["state", true],
+    ["referralCode", true],
   ];
 
   const filterConfig = [
-    { field: "sessionCode", label: "prl.attendance.sessionCode", xs: 6 },
-    { field: "status", label: "prl.sessionPlanning.status", options: STATUS_OPTIONS, xs: 6 },
+    { field: "sessaoId", label: "prl.attendance.sessionCode", xs: 6 },
+    { field: "nomeFamilia_Icontains", label: "prl.attendance.familyName", xs: 6 },
+    { field: "estado", label: "prl.attendance.estado", options: ESTADO_OPTIONS, xs: 6 },
+    { field: "codigoEncaminhamento_Icontains", label: "prl.attendance.referralCode", xs: 6 },
   ];
 
   const FilterPane = (filterProps) => (
@@ -92,13 +251,13 @@ function AttendanceRegistryPage(props) {
         headers={headers}
         itemFormatters={itemFormatters}
         sorts={sorts}
-        mockData={MOCK_DATA}
+        fetch={fetchAttendances}
         rights={rights}
       />
 
       {withTooltip(
         <div className={classes.fab}>
-          <Fab color="primary">
+          <Fab color="primary" onClick={handleAdd}>
             <AddIcon />
           </Fab>
         </div>,
