@@ -53,6 +53,7 @@ const DEFAULT_CONFIG = {
     { path: PRL_ROUTE_EXECUTION, component: SessionExecutionPage },
     { path: PRL_ROUTE_EXECUTION_FORM, component: SessionExecutionFormPage },
     { path: PRL_ROUTE_SUPERVISION, component: SessionSupervisionPage },
+    { path: `${PRL_ROUTE_SUPERVISION_FORM}/:id`, component: SessionSupervisionFormPage },
     { path: PRL_ROUTE_SUPERVISION_FORM, component: SessionSupervisionFormPage },
     { path: PRL_ROUTE_FAMILY_GROUP, component: FamilyGroupPage },
     { path: PRL_ROUTE_FAMILY_GROUP_FORM, component: FamilyGroupFormPage },

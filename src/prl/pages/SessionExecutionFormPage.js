@@ -1,10 +1,9 @@
-import { useState, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { injectIntl } from "react-intl";
 import { withTheme, withStyles } from "@material-ui/core/styles";
 import {
-  Paper, Typography, Grid, TextField, Button, MenuItem, Divider, Box, Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
+  Paper, Typography, Grid, TextField, Button, MenuItem, Divider, Box,
 } from "@material-ui/core";
-import FiberManualRecordIcon from "@material-ui/icons/FiberManualRecord";
 import ChevronLeftIcon from "@material-ui/icons/ChevronLeft";
 import SaveIcon from "@material-ui/icons/Save";
 import { formatMessage, withModulesManager, Helmet, baseApiUrl, apiHeaders } from "@openimis/fe-core";
@@ -28,28 +27,10 @@ const styles = (theme) => ({
     marginLeft: theme.spacing(1),
     fontWeight: 500,
   },
-  tableContainer: {
-    marginBottom: theme.spacing(2),
-  },
-  tableCell: {
-    textAlign: "center",
-    padding: theme.spacing(1),
-    cursor: "pointer",
-  },
-  descriptionCell: {
-    textAlign: "left",
-  },
-  markedCell: {
-    backgroundColor: "#e8f5e9",
-  },
-  markIcon: {
-    color: "#4caf50",
-    fontSize: "24px",
-  },
 });
 
 function SessionExecutionFormPage(props) {
-  const { classes, intl, history } = props;
+  const { classes, intl, history, location } = props;
 
   const getCookie = (name) => {
     let cookieValue = null;
@@ -72,80 +53,46 @@ function SessionExecutionFormPage(props) {
     supervisorId: "",
     localidadeId: "",
     numeroParticipantesCompromissos: 0,
+    praticasPositivas: "",
+    desafiosTransmissao: "",
     necessitaEncaminhamento: false,
-    avaliacoes: [
-      {
-        secao: "Estímulos e Promoção de Brincar",
-        descricao: "O facilitador promoveu oportunidades para estimular a criança a aprender através da brincadeira.",
-        fieldName: "observacoesEstimulos",
-        itens: [
-          { id: 1, descricao: "Promoveu a participação ativa de todas as crianças presentes", resposta: null },
-          { id: 2, descricao: "Realizou comportamentos positivos com crianças na sessão", resposta: null },
-          { id: 3, descricao: "Utilizou adequadamente técnicas de reforço positivo", resposta: null },
-          { id: 4, descricao: "Incentivou a exploração e descoberta durante a sessão", resposta: null },
-          { id: 5, descricao: "Fomentou interações entre as crianças durante as atividades", resposta: null },
-          { id: 6, descricao: "Promoveu a criatividade e imaginação das crianças", resposta: null },
-          { id: 7, descricao: "Utilizou materiais e recursos apropriados para a idade", resposta: null },
-          { id: 8, descricao: "Adaptou as atividades para diferentes níveis de desenvolvimento", resposta: null },
-          { id: 9, descricao: "Estabeleceu limites e regras de forma clara e consistente", resposta: null },
-          { id: 10, descricao: "Proporcionou feedback construtivo às crianças", resposta: null },
-        ]
-      },
-      {
-        secao: "Práticas Positivas e Estratégias Relatadas pelos Cuidadores",
-        descricao: "Responda sim ou não as afirmações abaixo",
-        fieldName: "observacoesPraticas",
-        itens: [
-          { id: 11, descricao: "Cuidaram de si mesmo para garantir melhor qualidade de cuidado para as crianças.", resposta: null },
-          { id: 12, descricao: "Mantiveram rotinas diárias consistentes", resposta: null },
-          { id: 13, descricao: "Comunicaram-se positivamente com as crianças", resposta: null },
-          { id: 14, descricao: "Estimularam a aprendizagem através do brincar", resposta: null },
-          { id: 15, descricao: "Implementaram hábitos alimentares saudáveis", resposta: null },
-        ]
-      },
-      {
-        secao: "Registros de Transmissão das Mensagens Chave",
-        descricao: "Registre as mensagens transmitidas durante a sessão",
-        fieldName: "observacoesTransmissao",
-        itens: [
-          { id: 16, descricao: "Mensagens sobre saúde e higiene foram compartilhadas", resposta: null },
-          { id: 17, descricao: "Mensagens sobre nutrição foram discutidas", resposta: null },
-          { id: 18, descricao: "Mensagens sobre desenvolvimento infantil foram abordadas", resposta: null },
-          { id: 19, descricao: "Mensagens sobre bem-estar psicossocial foram cobertas", resposta: null },
-        ]
-      },
-      {
-        secao: "Momentos Difíceis e Estratégias de Manejo",
-        descricao: "Descreva como foi tratado",
-        fieldName: "observacoesMomentos",
-        itens: [
-          { id: 20, descricao: "Foram identificados momentos desafiadores durante a sessão", resposta: null },
-          { id: 21, descricao: "Estratégias de manejo foram aplicadas adequadamente", resposta: null },
-          { id: 22, descricao: "Os cuidadores responderam bem às estratégias propostas", resposta: null },
-          { id: 23, descricao: "Houve melhoria no comportamento das crianças após intervenção", resposta: null },
-        ]
-      },
-      {
-        secao: "Avaliação e Supervisão",
-        descricao: "Avaliação geral da execução da sessão",
-        fieldName: "observacoesAvaliacao",
-        itens: [
-          { id: 24, descricao: "Os objetivos da sessão foram atingidos", resposta: null },
-          { id: 25, descricao: "A participação dos cuidadores foi adequada", resposta: null },
-          { id: 26, descricao: "O tempo de sessão foi suficiente", resposta: null },
-          { id: 27, descricao: "O ambiente foi apropriado para a atividade", resposta: null },
-          { id: 28, descricao: "Houve necessidade de acompanhamento adicional", resposta: null },
-        ]
-      },
-    ],
-    observacoesEstimulos: "",
-    observacoesPraticas: "",
-    observacoesTransmissao: "",
-    observacoesMomentos: "",
-    observacoesAvaliacao: "",
+    autoAvaliacaoPontosFortes: "",
+    autoAvaliacaoPontosAtencao: "",
+    avaliacaoMetodologia: "",
+    observacoes: "",
   });
 
   const [loading, setLoading] = useState(false);
+  const [sessions, setSessions] = useState([]);
+  const [trainers, setTrainers] = useState([]);
+
+  const sessionsQuery = `query GetSessoesPep($first: Int) {
+    sessoesPep(first: $first) {
+      edges {
+        node {
+          id
+          codigoSessao
+          dataSessao
+          distrito {
+            id
+            name
+          }
+        }
+      }
+    }
+  }`;
+
+  const trainersQuery = `query GetSocialTechnicians {
+    users(first: 100) {
+      edges {
+        node {
+          id
+          username
+          lastName
+        }
+      }
+    }
+  }`;
 
   const createMutation = `mutation CreateExecucaoSessao($input: CreateExecucaoSessaoMutationInput!) {
     createExecucaoSessao(input: $input) {
@@ -153,6 +100,64 @@ function SessionExecutionFormPage(props) {
       internalId
     }
   }`;
+
+  const fetchSessions = async () => {
+    try {
+      const response = await fetch(`${baseApiUrl}/graphql`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCookie('csrftoken'),
+          ...apiHeaders(),
+        },
+        body: JSON.stringify({ query: sessionsQuery, variables: { first: 100 } }),
+      });
+
+      const result = await response.json();
+      if (result.data?.sessoesPep?.edges) {
+        const sessionList = result.data.sessoesPep.edges.map(edge => ({
+          id: edge.node.id,
+          codigo: edge.node.codigoSessao,
+          data: edge.node.dataSessao,
+          distrito: edge.node.distrito?.name || '-',
+          label: `${edge.node.codigoSessao} - ${edge.node.dataSessao} - ${edge.node.distrito?.name || '-'}`,
+        }));
+        setSessions(sessionList);
+      }
+    } catch (error) {
+      console.error('Error fetching sessions:', error);
+    }
+  };
+
+  const fetchTrainers = async () => {
+    try {
+      const response = await fetch(`${baseApiUrl}/graphql`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCookie('csrftoken'),
+          ...apiHeaders(),
+        },
+        body: JSON.stringify({ query: trainersQuery }),
+      });
+
+      const result = await response.json();
+      if (result.data?.users?.edges) {
+        const trainerList = result.data.users.edges.map(edge => ({
+          id: edge.node.id,
+          nome: `${edge.node.username} - ${edge.node.lastName}`,
+        }));
+        setTrainers(trainerList);
+      }
+    } catch (error) {
+      console.error('Error fetching trainers:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchSessions();
+    fetchTrainers();
+  }, []);
 
   const handleChange = (field) => (event) => {
     const { value } = event.target;
@@ -164,21 +169,9 @@ function SessionExecutionFormPage(props) {
     setFormData((prev) => ({ ...prev, [field]: parseInt(value) || 0 }));
   };
 
-  const handleBooleanChange = (field) => (event) => {
+  const handleTrainerChange = (event) => {
     const { value } = event.target;
-    setFormData((prev) => ({ ...prev, [field]: value === 'true' }));
-  };
-
-  const handleAvaliacaoChange = (id, resposta) => {
-    setFormData((prev) => ({
-      ...prev,
-      avaliacoes: prev.avaliacoes.map((secao) => ({
-        ...secao,
-        itens: secao.itens.map((item) =>
-          item.id === id ? { ...item, resposta } : item
-        ),
-      })),
-    }));
+    setFormData((prev) => ({ ...prev, formadorId: value }));
   };
 
   const handleBack = () => {
@@ -187,7 +180,7 @@ function SessionExecutionFormPage(props) {
 
   const handleSave = async () => {
     try {
-      // Validate required fields
+      // Validar campos obrigatórios
       if (!formData.sessaoId) {
         alert('Por favor, selecione uma sessão.');
         return;
@@ -197,14 +190,25 @@ function SessionExecutionFormPage(props) {
         return;
       }
 
+      // Parse array strings to arrays
+      const parseArray = (str) => str.split(',').map(s => s.trim()).filter(s => s.length > 0);
+
       const input = {
-        sessaoId: parseInt(formData.sessaoId),
-        formadorId: parseInt(formData.formadorId),
-        supervisorId: formData.supervisorId ? parseInt(formData.supervisorId) : null,
-        localidadeId: formData.localidadeId ? parseInt(formData.localidadeId) : null,
-        numeroParticipantesCompromissos: formData.numeroParticipantesCompromissos || 0,
+        sessaoId: formData.sessaoId,
+        formadorId: formData.formadorId,
+        supervisorId: formData.supervisorId || null,
+        localidadeId: formData.localidadeId || null,
+        numeroParticipantesCompromissos: formData.numeroParticipantesCompromissos || null,
+        praticasPositivas: formData.praticasPositivas ? JSON.stringify(parseArray(formData.praticasPositivas)) : null,
+        desafiosTransmissao: formData.desafiosTransmissao ? JSON.stringify(parseArray(formData.desafiosTransmissao)) : null,
         necessitaEncaminhamento: formData.necessitaEncaminhamento,
+        autoAvaliacaoPontosFortes: formData.autoAvaliacaoPontosFortes ? JSON.stringify(parseArray(formData.autoAvaliacaoPontosFortes)) : null,
+        autoAvaliacaoPontosAtencao: formData.autoAvaliacaoPontosAtencao ? JSON.stringify(parseArray(formData.autoAvaliacaoPontosAtencao)) : null,
+        avaliacaoMetodologia: formData.avaliacaoMetodologia ? formData.avaliacaoMetodologia : null,
+        observacoes: formData.observacoes || "",
       };
+
+      setLoading(true);
 
       const response = await fetch(`${baseApiUrl}/graphql`, {
         method: 'POST',
@@ -226,6 +230,8 @@ function SessionExecutionFormPage(props) {
     } catch (error) {
       console.error('Error in handleSave:', error);
       alert('Erro ao salvar: ' + error.message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -250,80 +256,64 @@ function SessionExecutionFormPage(props) {
             </Typography>
           </Grid>
 
-          <Grid item xs={12} sm={6}>
+          <Grid item xs={12} sm={12}>
             <TextField
               fullWidth
-              label="ID da Sessão"
+              select
+              label={formatMessage(intl, "prl", "execution.sessionCode")}
               value={formData.sessaoId}
               onChange={handleChange("sessaoId")}
-              type="number"
               variant="outlined"
               size="small"
               required
-              helperText="ID da sessão planejada"
-            />
+            >
+              {sessions.map((session) => (
+                <MenuItem key={session.id} value={session.id}>
+                  {session.label}
+                </MenuItem>
+              ))}
+            </TextField>
           </Grid>
 
-          <Grid item xs={12} sm={6}>
+          <Grid item xs={12} sm={12}>
             <TextField
               fullWidth
-              label="ID do Formador"
+              select
+              label={formatMessage(intl, "prl", "execution.trainer")}
               value={formData.formadorId}
-              onChange={handleChange("formadorId")}
-              type="number"
+              onChange={handleTrainerChange}
               variant="outlined"
               size="small"
               required
-              helperText="ID do técnico social formador"
-            />
+            >
+              {trainers.map((trainer) => (
+                <MenuItem key={trainer.id} value={trainer.id}>
+                  {trainer.nome}
+                </MenuItem>
+              ))}
+            </TextField>
           </Grid>
 
           <Grid item xs={12} sm={6}>
             <TextField
               fullWidth
-              label="ID do Supervisor (Opcional)"
-              value={formData.supervisorId}
-              onChange={handleChange("supervisorId")}
               type="number"
-              variant="outlined"
-              size="small"
-              helperText="ID do supervisor"
-            />
-          </Grid>
-
-          <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              label="ID da Localidade (Opcional)"
-              value={formData.localidadeId}
-              onChange={handleChange("localidadeId")}
-              type="number"
-              variant="outlined"
-              size="small"
-              helperText="ID da localidade onde ocorreu a sessão"
-            />
-          </Grid>
-
-          <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              label="Número de Participantes"
+              label={formatMessage(intl, "prl", "execution.numParticipants")}
               value={formData.numeroParticipantesCompromissos}
               onChange={handleNumberChange("numeroParticipantesCompromissos")}
-              type="number"
               variant="outlined"
               size="small"
-              helperText="Número de participantes com compromissos"
+              inputProps={{ min: 0 }}
             />
           </Grid>
 
           <Grid item xs={12} sm={6}>
             <TextField
-              select
               fullWidth
-              label="Necessita Encaminhamento"
+              select
+              label={formatMessage(intl, "prl", "execution.necessitaEncaminhamento")}
               value={formData.necessitaEncaminhamento}
-              onChange={handleBooleanChange("necessitaEncaminhamento")}
+              onChange={(e) => setFormData(prev => ({ ...prev, necessitaEncaminhamento: e.target.value === 'true' }))}
               variant="outlined"
               size="small"
             >
@@ -338,116 +328,122 @@ function SessionExecutionFormPage(props) {
         <Grid container spacing={2}>
           <Grid item xs={12}>
             <Typography variant="h6" className={classes.sectionTitle}>
-              Avaliações e Observações
+              Detalhes da Sessão
             </Typography>
           </Grid>
 
-          {formData.avaliacoes.map((secao) => (
-            <Grid item xs={12} key={secao.secao}>
-              <Typography variant="body1" style={{ fontWeight: "bold", marginBottom: "8px" }}>
-                {secao.secao}
-              </Typography>
-              <Typography variant="caption" style={{ display: "block", marginBottom: "12px", color: "#666" }}>
-                {secao.descricao}
-              </Typography>
-              <TableContainer className={classes.tableContainer}>
-                <Table>
-                  <TableHead>
-                    <TableRow style={{ backgroundColor: "#f5f5f5" }}>
-                      <TableCell className={classes.descriptionCell}>
-                        <Typography variant="body2" style={{ fontWeight: "bold" }}>
-                          Descrição
-                        </Typography>
-                      </TableCell>
-                      <TableCell className={classes.tableCell}>
-                        <Typography variant="body2" style={{ fontWeight: "bold" }}>
-                          Sim
-                        </Typography>
-                      </TableCell>
-                      <TableCell className={classes.tableCell}>
-                        <Typography variant="body2" style={{ fontWeight: "bold" }}>
-                          Não
-                        </Typography>
-                      </TableCell>
-                      <TableCell className={classes.tableCell}>
-                        <Typography variant="body2" style={{ fontWeight: "bold" }}>
-                          N/A
-                        </Typography>
-                      </TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {secao.itens.map((item) => (
-                      <TableRow key={item.id}>
-                        <TableCell className={classes.descriptionCell}>
-                          <Typography variant="body2">{item.descricao}</Typography>
-                        </TableCell>
-                        <TableCell
-                          className={`${classes.tableCell} ${item.resposta === "sim" ? classes.markedCell : ""}`}
-                          onClick={() => handleAvaliacaoChange(item.id, "sim")}
-                        >
-                          {item.resposta === "sim" && (
-                            <FiberManualRecordIcon className={classes.markIcon} />
-                          )}
-                        </TableCell>
-                        <TableCell
-                          className={`${classes.tableCell} ${item.resposta === "nao" ? classes.markedCell : ""}`}
-                          onClick={() => handleAvaliacaoChange(item.id, "nao")}
-                        >
-                          {item.resposta === "nao" && (
-                            <FiberManualRecordIcon className={classes.markIcon} />
-                          )}
-                        </TableCell>
-                        <TableCell
-                          className={`${classes.tableCell} ${item.resposta === "na" ? classes.markedCell : ""}`}
-                          onClick={() => handleAvaliacaoChange(item.id, "na")}
-                        >
-                          {item.resposta === "na" && (
-                            <FiberManualRecordIcon className={classes.markIcon} />
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-              <Grid container spacing={2} style={{ marginTop: "8px" }}>
-                <Grid item xs={12}>
-                  <TextField
-                    fullWidth
-                    label="Observações"
-                    value={formData[secao.fieldName]}
-                    onChange={handleChange(secao.fieldName)}
-                    variant="outlined"
-                    size="small"
-                    multiline
-                    rows={2}
-                    placeholder="Adicione observações sobre esta seção"
-                  />
-                </Grid>
-              </Grid>
-            </Grid>
-          ))}
+          <Grid item xs={12} sm={6}>
+            <TextField
+              fullWidth
+              label={formatMessage(intl, "prl", "execution.positivePractices")}
+              value={formData.praticasPositivas}
+              onChange={handleChange("praticasPositivas")}
+              variant="outlined"
+              size="small"
+              multiline
+              rows={2}
+              helperText="Separe com vírgulas"
+            />
+          </Grid>
+
+          <Grid item xs={12} sm={6}>
+            <TextField
+              fullWidth
+              label={formatMessage(intl, "prl", "execution.challengesTransmission")}
+              value={formData.desafiosTransmissao}
+              onChange={handleChange("desafiosTransmissao")}
+              variant="outlined"
+              size="small"
+              multiline
+              rows={2}
+              helperText="Separe com vírgulas"
+            />
+          </Grid>
         </Grid>
 
-        <div className={classes.buttonContainer}>
+        <Divider style={{ margin: "24px 0" }} />
+
+        <Grid container spacing={2}>
+          <Grid item xs={12}>
+            <Typography variant="h6" className={classes.sectionTitle}>
+              Auto-Avaliação
+            </Typography>
+          </Grid>
+
+          <Grid item xs={12} sm={6}>
+            <TextField
+              fullWidth
+              label={formatMessage(intl, "prl", "execution.selfAssessmentStrengths")}
+              value={formData.auto_avaliacao_ponto_fortes}
+              onChange={handleChange("auto_avaliacao_ponto_fortes")}
+              variant="outlined"
+              size="small"
+              multiline
+              rows={2}
+              helperText="Separe com vírgulas"
+            />
+          </Grid>
+
+          <Grid item xs={12} sm={6}>
+            <TextField
+              fullWidth
+              label={formatMessage(intl, "prl", "execution.selfAssessmentAttention")}
+              value={formData.auto_avaliacao_pontos_atencao}
+              onChange={handleChange("auto_avaliacao_pontos_atencao")}
+              variant="outlined"
+              size="small"
+              multiline
+              rows={2}
+              helperText="Separe com vírgulas"
+            />
+          </Grid>
+
+          <Grid item xs={12}>
+            <TextField
+              fullWidth
+              label={formatMessage(intl, "prl", "execution.methodologyEvaluation")}
+              value={formData.avaliacao_metodologia}
+              onChange={handleChange("avaliacao_metodologia")}
+              variant="outlined"
+              size="small"
+              multiline
+              rows={3}
+              helperText="JSON format (opcional)"
+            />
+          </Grid>
+
+          <Grid item xs={12}>
+            <TextField
+              fullWidth
+              label={formatMessage(intl, "prl", "execution.observations")}
+              value={formData.observacoes}
+              onChange={handleChange("observacoes")}
+              variant="outlined"
+              size="small"
+              multiline
+              rows={4}
+            />
+          </Grid>
+        </Grid>
+
+        <Box className={classes.buttonContainer}>
           <Button
             variant="outlined"
+            color="primary"
             onClick={handleBack}
-            startIcon={<ChevronLeftIcon />}
           >
             {formatMessage(intl, "prl", "button.cancel")}
           </Button>
           <Button
             variant="contained"
             color="primary"
-            onClick={handleSave}
-            disabled={loading}
             startIcon={<SaveIcon />}
+            onClick={handleSave}
+            disabled={loading || !formData.sessaoId || !formData.formadorId}
           >
             {formatMessage(intl, "prl", "button.save")}
           </Button>
-        </div>
+        </Box>
       </Paper>
     </div>
   );

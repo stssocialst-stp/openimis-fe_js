@@ -18,11 +18,6 @@ const styles = (theme) => ({
   actionIcon: { padding: 4 },
 });
 
-const STATUS_OPTIONS = [
-  { value: "Aprovado", label: "Aprovado" },
-  { value: "Pendente", label: "Pendente" },
-];
-
 function SessionSupervisionPage(props) {
   const { classes, intl, rights, history } = props;
 
@@ -150,7 +145,7 @@ function SessionSupervisionPage(props) {
   };
 
   const handleView = (item) => {
-    history.push(`/prl/supervision/${item.id}`);
+    history.push(`/prl/supervision/form/${item.id}`);
   };
 
   const itemFormatters = [

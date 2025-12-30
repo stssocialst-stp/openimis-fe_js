@@ -1,12 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { injectIntl } from "react-intl";
 import { withTheme, withStyles } from "@material-ui/core/styles";
 import {
-  Paper, Typography, Grid, TextField, Button, MenuItem, Divider, Box, Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
+  Paper, Typography, Grid, TextField, Button, MenuItem, Divider, Box,
+  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, IconButton,
 } from "@material-ui/core";
-import FiberManualRecordIcon from "@material-ui/icons/FiberManualRecord";
 import ChevronLeftIcon from "@material-ui/icons/ChevronLeft";
 import SaveIcon from "@material-ui/icons/Save";
+import DeleteIcon from "@material-ui/icons/Delete";
+import AddIcon from "@material-ui/icons/Add";
 import { formatMessage, withModulesManager, Helmet, baseApiUrl, apiHeaders } from "@openimis/fe-core";
 import { PRL_ROUTE_SUPERVISION } from "../constants";
 
@@ -50,7 +52,9 @@ const styles = (theme) => ({
 });
 
 function SessionSupervisionFormPage(props) {
-  const { classes, intl, history } = props;
+  const { classes, intl, history, match } = props;
+  const supervisionId = match?.params?.id;
+  const isEditMode = !!supervisionId;
 
   const getCookie = (name) => {
     let cookieValue = null;
@@ -69,68 +73,58 @@ function SessionSupervisionFormPage(props) {
 
   const [formData, setFormData] = useState({
     sessaoId: "",
+    dataSupervisao: "",
     supervisorId: "",
     formadorId: "",
-    dataSupervisao: "",
-    dataModuloAnterior: "",
     identificadorGrupo: "",
-    avaliacoes: [
-      {
-        secao: "Práticas Positivas e Estratégias Relatadas",
-        descricao: "Avalie as práticas e estratégias observadas durante a supervisão",
-        fieldName: "observacoesPraticas",
-        itens: [
-          { id: 1, descricao: "Cuidadores mantêm rotinas diárias consistentes", resposta: null },
-          { id: 2, descricao: "Comunicam-se positivamente com as crianças", resposta: null },
-          { id: 3, descricao: "Estimulam a aprendizagem através do brincar", resposta: null },
-          { id: 4, descricao: "Implementam hábitos alimentares saudáveis", resposta: null },
-          { id: 5, descricao: "Promovem comportamentos positivos", resposta: null },
-        ]
-      },
-      {
-        secao: "Transmissão de Mensagens Chave",
-        descricao: "Avalie a transmissão das mensagens chave durante a sessão",
-        fieldName: "observacoesTransmissao",
-        itens: [
-          { id: 6, descricao: "Mensagens sobre saúde e higiene foram transmitidas", resposta: null },
-          { id: 7, descricao: "Mensagens sobre nutrição foram abordadas", resposta: null },
-          { id: 8, descricao: "Mensagens sobre desenvolvimento infantil foram cobertas", resposta: null },
-          { id: 9, descricao: "Mensagens sobre bem-estar psicossocial foram discutidas", resposta: null },
-        ]
-      },
-      {
-        secao: "Gestão de Desafios",
-        descricao: "Avalie como os desafios foram gerenciados",
-        fieldName: "observacoesDesafios",
-        itens: [
-          { id: 10, descricao: "Foram identificados momentos desafiadores", resposta: null },
-          { id: 11, descricao: "Estratégias de manejo foram aplicadas adequadamente", resposta: null },
-          { id: 12, descricao: "Os cuidadores responderam bem às estratégias", resposta: null },
-          { id: 13, descricao: "Houve melhoria no comportamento das crianças", resposta: null },
-        ]
-      },
-      {
-        secao: "Alcance dos Objetivos",
-        descricao: "Avalie o alcance dos objetivos da sessão",
-        fieldName: "observacoesObjetivos",
-        itens: [
-          { id: 14, descricao: "Os objetivos da sessão foram atingidos", resposta: null },
-          { id: 15, descricao: "A participação dos cuidadores foi adequada", resposta: null },
-          { id: 16, descricao: "O tempo de sessão foi suficiente", resposta: null },
-          { id: 17, descricao: "O ambiente foi apropriado para a atividade", resposta: null },
-        ]
-      },
-    ],
-    observacoesPraticas: "",
-    observacoesTransmissao: "",
-    observacoesDesafios: "",
-    observacoesObjetivos: "",
     pontosPositivos: "",
     pontosMelhorar: "",
     observacoes: "",
   });
 
   const [loading, setLoading] = useState(false);
+  const [sessions, setSessions] = useState([]);
+  const [trainers, setTrainers] = useState([]);
+  const [supervisors, setSupervisors] = useState([]);
+  const [selectedSession, setSelectedSession] = useState(null);
+  const [perguntas, setPerguntas] = useState([]);
+  const [novaPergunta, setNovaPergunta] = useState("");
+
+  const sessionsQuery = `query GetSessoesPep($first: Int) {
+    sessoesPep(first: $first) {
+      edges {
+        node {
+          id
+          codigoSessao
+          dataSessao
+          horaSessao
+          modulo {
+            codigo
+            nome
+          }
+          distrito {
+            name
+          }
+          grupoFamilia {
+            nome
+          }
+          status
+        }
+      }
+    }
+  }`;
+
+  const trainersQuery = `query GetUsers($first: Int) {
+    users(first: $first) {
+      edges {
+        node {
+          id
+          username
+          lastName
+        }
+      }
+    }
+  }`;
 
   const createMutation = `mutation CreateSupervisaoSessao($input: CreateSupervisaoSessaoMutationInput!) {
     createSupervisaoSessao(input: $input) {
@@ -139,25 +133,216 @@ function SessionSupervisionFormPage(props) {
     }
   }`;
 
+  const updateMutation = `mutation UpdateSupervisaoSessao($input: UpdateSupervisaoSessaoMutationInput!) {
+    updateSupervisaoSessao(input: $input) {
+      clientMutationId
+      internalId
+    }
+  }`;
+
+  const getSupervisionQuery = `query GetSupervision($id: ID!) {
+    supervisaoSessao(id: $id) {
+      id
+      sessao {
+        id
+        codigoSessao
+        dataSessao
+        modulo {
+          codigo
+          nome
+        }
+        distrito {
+          name
+        }
+        grupoFamilia {
+          nome
+        }
+        status
+      }
+      supervisor {
+        id
+        username
+        lastName
+      }
+      formador {
+        id
+        username
+        lastName
+      }
+      dataSupervisao
+      identificadorGrupo
+      perguntasAvaliacao
+      pontosPositivos
+      pontosMelhorar
+      observacoes
+    }
+  }`;
+
+  useEffect(() => {
+    fetchSessions();
+    fetchTrainersAndSupervisors();
+    if (isEditMode) {
+      fetchSupervisionData();
+    }
+  }, [supervisionId]);
+
+  const fetchSessions = async () => {
+    try {
+      const response = await fetch(`${baseApiUrl}/graphql`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCookie('csrftoken'),
+          ...apiHeaders(),
+        },
+        body: JSON.stringify({ query: sessionsQuery, variables: { first: 100 } }),
+      });
+
+      const result = await response.json();
+      if (result.data?.sessoesPep?.edges) {
+        const sessionList = result.data.sessoesPep.edges.map(edge => ({
+          id: edge.node.id,
+          codigoSessao: edge.node.codigoSessao,
+          dataSessao: edge.node.dataSessao,
+          horaSessao: edge.node.horaSessao,
+          moduloCodigo: edge.node.modulo?.codigo,
+          moduloNome: edge.node.modulo?.nome,
+          distrito: edge.node.distrito?.name,
+          grupoFamilia: edge.node.grupoFamilia?.nome,
+          status: edge.node.status,
+          label: `${edge.node.codigoSessao} - ${edge.node.dataSessao} - ${edge.node.modulo?.nome || '-'}`,
+        }));
+        setSessions(sessionList);
+      }
+    } catch (error) {
+      console.error('Error fetching sessions:', error);
+    }
+  };
+
+  const fetchTrainersAndSupervisors = async () => {
+    try {
+      const response = await fetch(`${baseApiUrl}/graphql`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCookie('csrftoken'),
+          ...apiHeaders(),
+        },
+        body: JSON.stringify({ query: trainersQuery, variables: { first: 100 } }),
+      });
+
+      const result = await response.json();
+      if (result.data?.users?.edges) {
+        const userList = result.data.users.edges.map(edge => ({
+          id: edge.node.id,
+          nome: `${edge.node.username} - ${edge.node.lastName}`,
+        }));
+        setTrainers(userList);
+        setSupervisors(userList);
+      }
+    } catch (error) {
+      console.error('Error fetching trainers and supervisors:', error);
+    }
+  };
+
+  const fetchSupervisionData = async () => {
+    try {
+      const response = await fetch(`${baseApiUrl}/graphql`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCookie('csrftoken'),
+          ...apiHeaders(),
+        },
+        body: JSON.stringify({ query: getSupervisionQuery, variables: { id: supervisionId } }),
+      });
+
+      const result = await response.json();
+      if (result.data?.supervisaoSessao) {
+        const data = result.data.supervisaoSessao;
+        
+        // Populate form data
+        setFormData({
+          sessaoId: data.sessao?.id || "",
+          dataSupervisao: data.dataSupervisao || "",
+          supervisorId: data.supervisor?.id || "",
+          formadorId: data.formador?.id || "",
+          identificadorGrupo: data.identificadorGrupo || "",
+          pontosPositivos: data.pontosPositivos || "",
+          pontosMelhorar: data.pontosMelhorar || "",
+          observacoes: data.observacoes || "",
+        });
+
+        // Set selected session for display
+        if (data.sessao) {
+          setSelectedSession({
+            id: data.sessao.id,
+            codigoSessao: data.sessao.codigoSessao,
+            dataSessao: data.sessao.dataSessao,
+            moduloNome: data.sessao.modulo?.nome,
+            distrito: data.sessao.distrito?.name,
+            grupoFamilia: data.sessao.grupoFamilia?.nome,
+            status: data.sessao.status,
+          });
+        }
+
+        // Parse perguntas
+        if (data.perguntasAvaliacao) {
+          try {
+            const perguntasObj = typeof data.perguntasAvaliacao === 'string' 
+              ? JSON.parse(data.perguntasAvaliacao) 
+              : data.perguntasAvaliacao;
+            
+            const perguntasList = Object.entries(perguntasObj).map(([texto, resposta]) => ({
+              texto,
+              resposta
+            }));
+            setPerguntas(perguntasList);
+          } catch (e) {
+            console.error('Error parsing perguntas:', e);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching supervision data:', error);
+      alert('Erro ao carregar supervisão: ' + error.message);
+    }
+  };
+
   const handleChange = (field) => (event) => {
     const { value } = event.target;
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleAvaliacaoChange = (id, resposta) => {
+  const handleSessionChange = (event) => {
+    const { value } = event.target;
+    const session = sessions.find(s => s.id === value);
+    setSelectedSession(session);
     setFormData((prev) => ({
       ...prev,
-      avaliacoes: prev.avaliacoes.map((secao) => ({
-        ...secao,
-        itens: secao.itens.map((item) =>
-          item.id === id ? { ...item, resposta } : item
-        ),
-      })),
+      sessaoId: value,
     }));
   };
 
   const handleBack = () => {
     history.push(`/${PRL_ROUTE_SUPERVISION}`);
+  };
+
+  const adicionarPergunta = () => {
+    if (novaPergunta.trim()) {
+      setPerguntas([...perguntas, { texto: novaPergunta, resposta: "Sim" }]);
+      setNovaPergunta("");
+    }
+  };
+
+  const removerPergunta = (index) => {
+    setPerguntas(perguntas.filter((_, i) => i !== index));
+  };
+
+  const atualizarResposta = (index, resposta) => {
+    const novasPerguntas = [...perguntas];
+    novasPerguntas[index].resposta = resposta;
+    setPerguntas(novasPerguntas);
   };
 
   const handleSave = async () => {
@@ -180,30 +365,34 @@ function SessionSupervisionFormPage(props) {
         return;
       }
       if (!formData.identificadorGrupo) {
-        alert('Por favor, defina o identificador do grupo.');
+        alert('Por favor, preenchaa o identificador do grupo.');
+        return;
+      }
+      if (perguntas.length === 0) {
+        alert('Por favor, adicione pelo menos uma pergunta de avaliação.');
         return;
       }
 
-      // Construir perguntasAvaliacao como JSON string
-      const perguntasAvaliacao = {};
-      formData.avaliacoes.forEach((secao) => {
-        secao.itens.forEach((item) => {
-          perguntasAvaliacao[`pergunta_${item.id}`] = item.resposta || "nao_respondido";
-        });
-      });
-
       const input = {
-        sessaoId: parseInt(formData.sessaoId),
-        supervisorId: parseInt(formData.supervisorId),
-        formadorId: parseInt(formData.formadorId),
-        dataSupervisao: formData.dataSupervisao,
+        sessaoId: formData.sessaoId,
+        supervisorId: formData.supervisorId,
+        formadorId: formData.formadorId,
         identificadorGrupo: formData.identificadorGrupo,
-        dataModuloAnterior: formData.dataModuloAnterior || null,
-        perguntasAvaliacao: JSON.stringify(perguntasAvaliacao),
-        pontosPositivos: formData.pontosPositivos || null,
-        pontosMelhorar: formData.pontosMelhorar || null,
-        observacoes: formData.observacoes || null,
+        dataSupervisao: formData.dataSupervisao,
+        perguntasAvaliacao: JSON.stringify(
+          perguntas.reduce((acc, p) => {
+            acc[p.texto] = p.resposta;
+            return acc;
+          }, {})
+        ),
+        pontosPositivos: formData.pontosPositivos || "",
+        pontosMelhorar: formData.pontosMelhorar || "",
+        observacoes: formData.observacoes || "",
       };
+
+      if (isEditMode) {
+        input.id = supervisionId;
+      }
 
       setLoading(true);
 
@@ -214,15 +403,15 @@ function SessionSupervisionFormPage(props) {
           'X-CSRFToken': getCookie('csrftoken'),
           ...apiHeaders(),
         },
-        body: JSON.stringify({ query: createMutation, variables: { input } }),
+        body: JSON.stringify({ query: isEditMode ? updateMutation : createMutation, variables: { input } }),
       });
 
       const result = await response.json();
-      if (result.data?.createSupervisaoSessao) {
+      if (result.data?.createSupervisaoSessao || result.data?.updateSupervisaoSessao) {
         handleBack();
       } else if (result.errors) {
-        console.error('Error creating session supervision:', result.errors);
-        alert('Erro ao criar supervisão de sessão: ' + result.errors[0].message);
+        console.error('Error saving supervision:', result.errors);
+        alert('Erro ao salvar supervisão de sessão: ' + result.errors[0].message);
       }
     } catch (error) {
       console.error('Error in handleSave:', error);
@@ -240,7 +429,7 @@ function SessionSupervisionFormPage(props) {
         <Button onClick={handleBack}>
           <ChevronLeftIcon fontSize="small" />
           <Typography className={classes.headerTitle}>
-            {formatMessage(intl, "prl", "title.supervision")}
+            {isEditMode ? "Editar Supervisão" : formatMessage(intl, "prl", "title.supervision")}
           </Typography>
         </Button>
 
@@ -253,47 +442,89 @@ function SessionSupervisionFormPage(props) {
             </Typography>
           </Grid>
 
-          <Grid item xs={12} sm={6}>
+          <Grid item xs={12} sm={12}>
             <TextField
               fullWidth
-              label="ID da Sessão"
+              select
+              label="Sessão"
               value={formData.sessaoId}
-              onChange={handleChange("sessaoId")}
-              type="number"
+              onChange={handleSessionChange}
               variant="outlined"
               size="small"
               required
-              helperText="ID da sessão a ser supervisionada"
-            />
+            >
+              {sessions.map((session) => (
+                <MenuItem key={session.id} value={session.id}>
+                  {session.label}
+                </MenuItem>
+              ))}
+            </TextField>
           </Grid>
 
-          <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              label="ID do Supervisor"
-              value={formData.supervisorId}
-              onChange={handleChange("supervisorId")}
-              type="number"
-              variant="outlined"
-              size="small"
-              required
-              helperText="ID do supervisor responsável"
-            />
-          </Grid>
-
-          <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              label="ID do Formador"
-              value={formData.formadorId}
-              onChange={handleChange("formadorId")}
-              type="number"
-              variant="outlined"
-              size="small"
-              required
-              helperText="ID do técnico social formador"
-            />
-          </Grid>
+          {selectedSession && (
+            <>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="Código da Sessão"
+                  value={selectedSession.codigoSessao}
+                  variant="outlined"
+                  size="small"
+                  disabled
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="Data da Sessão"
+                  value={selectedSession.dataSessao}
+                  variant="outlined"
+                  size="small"
+                  disabled
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="Módulo"
+                  value={selectedSession.moduloNome}
+                  variant="outlined"
+                  size="small"
+                  disabled
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="Distrito"
+                  value={selectedSession.distrito}
+                  variant="outlined"
+                  size="small"
+                  disabled
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="Grupo Familiar"
+                  value={selectedSession.grupoFamilia}
+                  variant="outlined"
+                  size="small"
+                  disabled
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="Status"
+                  value={selectedSession.status}
+                  variant="outlined"
+                  size="small"
+                  disabled
+                />
+              </Grid>
+            </>
+          )}
 
           <Grid item xs={12} sm={6}>
             <TextField
@@ -312,14 +543,39 @@ function SessionSupervisionFormPage(props) {
           <Grid item xs={12} sm={6}>
             <TextField
               fullWidth
-              label="Data do Módulo Anterior (Opcional)"
-              value={formData.dataModuloAnterior}
-              onChange={handleChange("dataModuloAnterior")}
-              type="date"
+              select
+              label="Supervisor"
+              value={formData.supervisorId}
+              onChange={(e) => setFormData(prev => ({ ...prev, supervisorId: e.target.value }))}
               variant="outlined"
               size="small"
-              InputLabelProps={{ shrink: true }}
-            />
+              required
+            >
+              {supervisors.map((supervisor) => (
+                <MenuItem key={supervisor.id} value={supervisor.id}>
+                  {supervisor.nome}
+                </MenuItem>
+              ))}
+            </TextField>
+          </Grid>
+
+          <Grid item xs={12} sm={6}>
+            <TextField
+              fullWidth
+              select
+              label="Formador"
+              value={formData.formadorId}
+              onChange={(e) => setFormData(prev => ({ ...prev, formadorId: e.target.value }))}
+              variant="outlined"
+              size="small"
+              required
+            >
+              {trainers.map((trainer) => (
+                <MenuItem key={trainer.id} value={trainer.id}>
+                  {trainer.nome}
+                </MenuItem>
+              ))}
+            </TextField>
           </Grid>
 
           <Grid item xs={12} sm={6}>
@@ -331,7 +587,7 @@ function SessionSupervisionFormPage(props) {
               variant="outlined"
               size="small"
               required
-              helperText="Identificador único do grupo (ex: GRP01)"
+              placeholder="ex: GRP01"
             />
           </Grid>
         </Grid>
@@ -341,73 +597,82 @@ function SessionSupervisionFormPage(props) {
         <Grid container spacing={2}>
           <Grid item xs={12}>
             <Typography variant="h6" className={classes.sectionTitle}>
-              Avaliações e Observações
+              Perguntas de Avaliação
             </Typography>
           </Grid>
 
-          {formData.avaliacoes.map((secao) => (
-            <Grid item xs={12} key={secao.secao}>
-              <Typography variant="body1" style={{ fontWeight: "bold", marginBottom: "8px" }}>
-                {secao.secao}
-              </Typography>
-              <Typography variant="caption" style={{ display: "block", marginBottom: "12px", color: "#666" }}>
-                {secao.descricao}
-              </Typography>
-              <TableContainer className={classes.tableContainer}>
-                <Table>
+          <Grid item xs={12} sm={10}>
+            <TextField
+              fullWidth
+              label="Adicionar pergunta"
+              value={novaPergunta}
+              onChange={(e) => setNovaPergunta(e.target.value)}
+              variant="outlined"
+              size="small"
+              placeholder="Digite a pergunta"
+              onKeyPress={(e) => {
+                if (e.key === 'Enter') {
+                  adicionarPergunta();
+                }
+              }}
+            />
+          </Grid>
+
+          <Grid item xs={12} sm={2}>
+            <Button
+              fullWidth
+              variant="contained"
+              color="primary"
+              startIcon={<AddIcon />}
+              onClick={adicionarPergunta}
+              style={{ height: '100%' }}
+            >
+              Adicionar
+            </Button>
+          </Grid>
+
+          {perguntas.length > 0 && (
+            <Grid item xs={12}>
+              <TableContainer>
+                <Table size="small">
                   <TableHead>
-                    <TableRow style={{ backgroundColor: "#f5f5f5" }}>
-                      <TableCell className={classes.descriptionCell}>
-                        <Typography variant="body2" style={{ fontWeight: "bold" }}>
-                          Descrição
-                        </Typography>
-                      </TableCell>
-                      <TableCell className={classes.tableCell}>
-                        <Typography variant="body2" style={{ fontWeight: "bold" }}>
-                          Sim
-                        </Typography>
-                      </TableCell>
-                      <TableCell className={classes.tableCell}>
-                        <Typography variant="body2" style={{ fontWeight: "bold" }}>
-                          Não
-                        </Typography>
-                      </TableCell>
-                      <TableCell className={classes.tableCell}>
-                        <Typography variant="body2" style={{ fontWeight: "bold" }}>
-                          N/A
-                        </Typography>
-                      </TableCell>
+                    <TableRow style={{ backgroundColor: '#f5f5f5' }}>
+                      <TableCell><strong>Pergunta</strong></TableCell>
+                      <TableCell align="center" width="100"><strong>Sim</strong></TableCell>
+                      <TableCell align="center" width="100"><strong>Não</strong></TableCell>
+                      <TableCell align="center" width="60"><strong>Ação</strong></TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {secao.itens.map((item) => (
-                      <TableRow key={item.id}>
-                        <TableCell className={classes.descriptionCell}>
-                          <Typography variant="body2">{item.descricao}</Typography>
+                    {perguntas.map((pergunta, index) => (
+                      <TableRow key={index}>
+                        <TableCell>{pergunta.texto}</TableCell>
+                        <TableCell align="center">
+                          <input
+                            type="radio"
+                            name={`pergunta-${index}`}
+                            value="Sim"
+                            checked={pergunta.resposta === "Sim"}
+                            onChange={() => atualizarResposta(index, "Sim")}
+                          />
                         </TableCell>
-                        <TableCell
-                          className={`${classes.tableCell} ${item.resposta === "sim" ? classes.markedCell : ""}`}
-                          onClick={() => handleAvaliacaoChange(item.id, "sim")}
-                        >
-                          {item.resposta === "sim" && (
-                            <FiberManualRecordIcon className={classes.markIcon} />
-                          )}
+                        <TableCell align="center">
+                          <input
+                            type="radio"
+                            name={`pergunta-${index}`}
+                            value="Não"
+                            checked={pergunta.resposta === "Não"}
+                            onChange={() => atualizarResposta(index, "Não")}
+                          />
                         </TableCell>
-                        <TableCell
-                          className={`${classes.tableCell} ${item.resposta === "nao" ? classes.markedCell : ""}`}
-                          onClick={() => handleAvaliacaoChange(item.id, "nao")}
-                        >
-                          {item.resposta === "nao" && (
-                            <FiberManualRecordIcon className={classes.markIcon} />
-                          )}
-                        </TableCell>
-                        <TableCell
-                          className={`${classes.tableCell} ${item.resposta === "na" ? classes.markedCell : ""}`}
-                          onClick={() => handleAvaliacaoChange(item.id, "na")}
-                        >
-                          {item.resposta === "na" && (
-                            <FiberManualRecordIcon className={classes.markIcon} />
-                          )}
+                        <TableCell align="center">
+                          <IconButton
+                            size="small"
+                            color="secondary"
+                            onClick={() => removerPergunta(index)}
+                          >
+                            <DeleteIcon fontSize="small" color='#ff0000' />
+                          </IconButton>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -415,7 +680,7 @@ function SessionSupervisionFormPage(props) {
                 </Table>
               </TableContainer>
             </Grid>
-          ))}
+          )}
         </Grid>
 
         <Divider style={{ margin: "24px 0" }} />
@@ -423,7 +688,7 @@ function SessionSupervisionFormPage(props) {
         <Grid container spacing={2}>
           <Grid item xs={12}>
             <Typography variant="h6" className={classes.sectionTitle}>
-              Resumo da Supervisão
+              Observações
             </Typography>
           </Grid>
 
@@ -437,7 +702,7 @@ function SessionSupervisionFormPage(props) {
               size="small"
               multiline
               rows={3}
-              placeholder="Descreva os pontos positivos observados durante a supervisão"
+              placeholder="Descreva os pontos positivos observados"
             />
           </Grid>
 
@@ -465,33 +730,32 @@ function SessionSupervisionFormPage(props) {
               size="small"
               multiline
               rows={3}
-              placeholder="Adicione observações gerais sobre a supervisão"
+              placeholder="Adicione observações gerais"
             />
           </Grid>
         </Grid>
 
-        <div className={classes.buttonContainer}>
+        <Box className={classes.buttonContainer}>
           <Button
             variant="outlined"
+            color="primary"
             onClick={handleBack}
-            startIcon={<ChevronLeftIcon />}
           >
             {formatMessage(intl, "prl", "button.cancel")}
           </Button>
           <Button
             variant="contained"
             color="primary"
-            onClick={handleSave}
-            disabled={loading}
             startIcon={<SaveIcon />}
+            onClick={handleSave}
+            disabled={loading || !formData.sessaoId || !formData.supervisorId || !formData.formadorId || !formData.identificadorGrupo || !formData.dataSupervisao || perguntas.length === 0}
           >
-            {formatMessage(intl, "prl", "button.save")}
+            {isEditMode ? "Atualizar" : "Salvar"}
           </Button>
-        </div>
+        </Box>
       </Paper>
     </div>
   );
 }
 
-const mapStateToProps = (state) => ({});
 export default withModulesManager(injectIntl(withTheme(withStyles(styles)(SessionSupervisionFormPage))));
