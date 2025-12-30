@@ -41,7 +41,7 @@ jobs:
           echo "Pushing Docker image for ${LABEL}..."
           docker push ghcr.io/stssocialst-stp/kenon-frontend:${LABEL}
 
-  trigger-deploy-orchestrator:
+  trigger-deploy:
     needs: publish-docker-prod-image
     runs-on: ubuntu-latest
     steps:
