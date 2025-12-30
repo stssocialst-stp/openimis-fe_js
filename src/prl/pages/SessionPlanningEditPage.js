@@ -176,6 +176,31 @@ function SessionPlanningEditPage(props) {
     }
   }`;
 
+  const modulesQuery = `query GetModulosEducacionais($first: Int) {
+    modulosEducacionais(first: $first, orderBy: ["ordem"]) {
+      edges {
+        node {
+          id
+          codigo
+          nome
+          ordem
+        }
+      }
+    }
+  }`;
+
+  const familyGroupsQuery = `query GetGruposFamiliares($first: Int) {
+    gruposFamiliares(first: $first) {
+      edges {
+        node {
+          id
+          codigo
+          nome
+        }
+      }
+    }
+  }`;
+
   const createMultipleMutation = `mutation CreateMultipleSessoesPEP($input: CreateMultipleSessoesPEPMutationInput!) {
     createMultipleSessoesPep(input: $input) {
       clientMutationId
@@ -220,6 +245,8 @@ function SessionPlanningEditPage(props) {
   const [districts, setDistricts] = useState([]);
   const [coordinators, setCoordinators] = useState([]);
   const [socialTechnicians, setSocialTechnicians] = useState([]);
+  const [modules, setModules] = useState([]);
+  const [familyGroups, setFamilyGroups] = useState([]);
 
   useEffect(() => {
     if (initialData?.id) {
@@ -229,6 +256,8 @@ function SessionPlanningEditPage(props) {
     fetchDistricts();
     fetchCoordinators();
     fetchSocialTechnicians();
+    fetchModules();
+    fetchFamilyGroups();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchSession = async (id) => {
@@ -322,6 +351,56 @@ function SessionPlanningEditPage(props) {
       }
     } catch (error) {
       console.error('Error fetching social technicians:', error);
+    }
+  };
+
+  const fetchModules = async () => {
+    try {
+      const response = await fetch(`${baseApiUrl}/graphql`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCookie('csrftoken'),
+          ...apiHeaders(),
+        },
+        body: JSON.stringify({ query: modulesQuery, variables: { first: 100 } }),
+      });
+
+      const result = await response.json();
+      if (result.data?.modulosEducacionais?.edges) {
+        const moduleList = result.data.modulosEducacionais.edges.map(edge => ({
+          value: edge.node.id,
+          label: `${edge.node.codigo} - ${edge.node.nome}`,
+        }));
+        setModules(moduleList);
+      }
+    } catch (error) {
+      console.error('Error fetching modules:', error);
+    }
+  };
+
+  const fetchFamilyGroups = async () => {
+    try {
+      const response = await fetch(`${baseApiUrl}/graphql`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCookie('csrftoken'),
+          ...apiHeaders(),
+        },
+        body: JSON.stringify({ query: familyGroupsQuery, variables: { first: 100 } }),
+      });
+
+      const result = await response.json();
+      if (result.data?.gruposFamiliares?.edges) {
+        const groupList = result.data.gruposFamiliares.edges.map(edge => ({
+          value: edge.node.id,
+          label: `${edge.node.codigo} - ${edge.node.nome}`,
+        }));
+        setFamilyGroups(groupList);
+      }
+    } catch (error) {
+      console.error('Error fetching family groups:', error);
     }
   };
 
@@ -574,7 +653,7 @@ function SessionPlanningEditPage(props) {
               required
               disabled={readOnly}
             >
-              {MODULES.map((option) => (
+              {modules.map((option) => (
                 <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>
               ))}
             </TextField>
@@ -690,7 +769,7 @@ function SessionPlanningEditPage(props) {
               required
               disabled={readOnly}
             >
-              {FAMILY_GROUPS.map((option) => (
+              {familyGroups.map((option) => (
                 <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>
               ))}
             </TextField>
