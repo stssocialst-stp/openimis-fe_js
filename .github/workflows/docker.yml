@@ -6,7 +6,7 @@ on:
       - stp-changes
   pull_request:
     branches: [stp-changes]
-
+ 
 jobs:
   publish-docker-develop-image:
     runs-on: ubuntu-latest
