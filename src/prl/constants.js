@@ -15,6 +15,7 @@ export const PRL_ROUTE_BIMONTHLY_REPORT = "prl/bimonthlyReport";
 export const PRL_ROUTE_BIMONTHLY_SUPERVISION = "prl/bimonthlySupervision";
 export const PRL_ROUTE_BIMONTHLY_SUPERVISION_FORM = "prl/bimonthlySupervision/form";
 export const PRL_ROUTE_SUPERVISION_REPORT = "prl/supervisionReport";
+export const PRL_ROUTE_SUPERVISION_REPORT_FORM = "prl/supervisionReport/form";
 
 // Module Name
 export const MODULE_NAME = "prl";

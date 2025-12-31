@@ -19,6 +19,7 @@ import BimonthlyReportPage from "./pages/BimonthlyReportPage";
 import BimonthlySupervisionPage from "./pages/BimonthlySupervisionPage";
 import BimonthlySupervisionFormPage from "./pages/BimonthlySupervisionFormPage";
 import SupervisionReportPage from "./pages/SupervisionReportPage";
+import SupervisionReportFormPage from "./pages/SupervisionReportFormPage";
 import SessionExecutionPage from "./pages/SessionExecutionPage";
 
 // Constants
@@ -39,6 +40,7 @@ import {
   PRL_ROUTE_BIMONTHLY_SUPERVISION,
   PRL_ROUTE_BIMONTHLY_SUPERVISION_FORM,
   PRL_ROUTE_SUPERVISION_REPORT,
+  PRL_ROUTE_SUPERVISION_REPORT_FORM,
 } from "./constants";
 
 const DEFAULT_CONFIG = {
@@ -66,6 +68,8 @@ const DEFAULT_CONFIG = {
     { path: `${PRL_ROUTE_BIMONTHLY_SUPERVISION}/:id`, component: BimonthlySupervisionFormPage },
     { path: PRL_ROUTE_BIMONTHLY_SUPERVISION_FORM, component: BimonthlySupervisionFormPage },
     { path: PRL_ROUTE_SUPERVISION_REPORT, component: SupervisionReportPage },
+    { path: `${PRL_ROUTE_SUPERVISION_REPORT}/form/:action`, component: SupervisionReportFormPage },
+    { path: `${PRL_ROUTE_SUPERVISION_REPORT}/:id`, component: SupervisionReportFormPage },
   ],
   refs: [
     { key: "prl.route.sessionPlanning", ref: PRL_ROUTE_SESSION_PLANNING },
