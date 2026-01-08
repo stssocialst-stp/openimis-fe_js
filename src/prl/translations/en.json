@@ -25,6 +25,7 @@
   "prl.sessionPlanning.module": "PEP+ Module",
   "prl.sessionPlanning.district": "District",
   "prl.sessionPlanning.plannedDate": "Planned Date",
+  "prl.sessionPlanning.planningDate": "Planning Date",
   "prl.sessionPlanning.trainer": "Trainer",
   "prl.sessionPlanning.status": "Status",
   "prl.sessionPlanning.actions": "Actions",
