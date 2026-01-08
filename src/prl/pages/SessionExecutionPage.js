@@ -64,9 +64,11 @@ function SessionExecutionPage(props) {
             id
             name
           }
-          numeroParticipantesCompromissos
+          numeroCuidadores
           praticasPositivas
+          outrasPraticasPositivas
           desafiosTransmissao
+          outrosDesafios
           necessitaEncaminhamento
           autoAvaliacaoPontosFortes
           autoAvaliacaoPontosAtencao
@@ -118,9 +120,11 @@ function SessionExecutionPage(props) {
           formador: edge.node.formador?.username || '',
           supervisor: edge.node.supervisor?.username || '',
           localidade: edge.node.localidade?.name || '',
-          participants: edge.node.numeroParticipantesCompromissos || 0,
+          participants: edge.node.numeroCuidadores || '',
           positivas: edge.node.praticasPositivas || [],
+          outrasPraticasPositivas: edge.node.outrasPraticasPositivas || '',
           desafios: edge.node.desafiosTransmissao || [],
+          outrosDesafios: edge.node.outrosDesafios || '',
           necessitaEncaminhamento: edge.node.necessitaEncaminhamento || false,
           pontosFortes: edge.node.autoAvaliacaoPontosFortes || [],
           pontosAtencao: edge.node.autoAvaliacaoPontosAtencao || [],
@@ -152,11 +156,20 @@ function SessionExecutionPage(props) {
     history.push(`/prl/session-execution/details/${item.id}`, { data: item.fullNode });
   };
 
+  const formatDate = (dateString) => {
+    if (!dateString) return '-';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('pt-PT', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
+  };
+
   const headers = [
     "prl.execution.sessionCode",
     "prl.execution.executionDate",
     "prl.execution.formador",
-    "prl.execution.supervisor",
     "prl.execution.participants",
     "prl.execution.necessitaEncaminhamento",
     "emptyLabel",
@@ -164,9 +177,8 @@ function SessionExecutionPage(props) {
 
   const itemFormatters = [
     (item) => item.sessionCode,
-    (item) => item.dataExecucao,
+    (item) => formatDate(item.dataExecucao),
     (item) => item.formador,
-    (item) => item.supervisor,
     (item) => item.participants,
     (item) => (
       <Typography variant="body2">

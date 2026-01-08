@@ -7,6 +7,7 @@ import {
 import ChevronLeftIcon from "@material-ui/icons/ChevronLeft";
 import SaveIcon from "@material-ui/icons/Save";
 import { formatMessage, withModulesManager, Helmet, baseApiUrl, apiHeaders } from "@openimis/fe-core";
+import PracticesTable from "../components/PracticesTable";
 
 const styles = (theme) => ({
   page: theme.page,
@@ -30,7 +31,7 @@ const styles = (theme) => ({
 });
 
 function SessionExecutionFormPage(props) {
-  const { classes, intl, history, location } = props;
+  const { classes, intl, history } = props;
 
   const getCookie = (name) => {
     let cookieValue = null;
@@ -52,19 +53,91 @@ function SessionExecutionFormPage(props) {
     formadorId: "",
     supervisorId: "",
     localidadeId: "",
-    numeroParticipantesCompromissos: 0,
-    praticasPositivas: "",
-    desafiosTransmissao: "",
-    necessitaEncaminhamento: false,
-    autoAvaliacaoPontosFortes: "",
-    autoAvaliacaoPontosAtencao: "",
-    avaliacaoMetodologia: "",
+    numeroCuidadores: "",
     observacoes: "",
   });
 
   const [loading, setLoading] = useState(false);
   const [sessions, setSessions] = useState([]);
   const [trainers, setTrainers] = useState([]);
+  const [selectedSession, setSelectedSession] = useState(null);
+  const [districts, setDistricts] = useState([]);
+  const [practicesSelections, setPracticesSelections] = useState({});
+  const [otherPractices, setOtherPractices] = useState("");
+  const [challengesSelections, setChallengesSelections] = useState({});
+  const [otherChallenges, setOtherChallenges] = useState("");
+  const [necessitaEncaminhamento, setNecessitaEncaminhamento] = useState(false);
+  const [strengthsSelections, setStrengthsSelections] = useState({});
+  const [otherStrengths, setOtherStrengths] = useState("");
+  const [attentionSelections, setAttentionSelections] = useState({});
+  const [otherAttention, setOtherAttention] = useState("");
+  const [metodologySelections, setMetodologySelections] = useState({});
+
+  const practicesRows = [
+    { id: "p1", description: "Cuidaram de si mesmo para garantir melhor qualidade de cuidado para as crianças." },
+    { id: "p2", description: "Mantiveram rotinas diárias consistentes" },
+    { id: "p3", description: "Comunicaram-se positivamente com as crianças" },
+    { id: "p4", description: "Estimularam a aprendizagem através do brincar" },
+    { id: "p5", description: "Implementaram hábitos alimentares saudáveis" },
+    { id: "p6", description: "Garantiram a segurança da criança em casa" },
+    { id: "p7", description: "Garantiram a segurança da criança fora de casa" },
+    { id: "p8", description: "Promoveram hábitos de higiene e cuidados com a saúde de toda a família." },
+    { id: "p9", description: "Conversaram sobre consentimento e mudanças no corpo" },
+    { id: "p10", description: "Ajudaram ao adolescente a estabelecer metas e pensar sobre o futuro." },
+    { id: "p11", description: "Praticaram técnicas de gestão do estresse para cuidar de si e da criança." },
+    { id: "p12", description: "Respeitaram e promoveram os direitos da criança dentro do ambiente familiar." },
+    { id: "p13", description: "Implementaram práticas de planeamento financeiro para administrar os recursos da família." },
+  ];
+
+  const challengesRows = [
+    { id: "c1", description: "Dificuldade em adaptar a linguagem do conteúdo para o nível de compreensão das famílias." },
+    { id: "c2", description: "Resistência dos cuidadores em aceitar novas práticas ou conceitos propostos." },
+    { id: "c3", description: "Pouco tempo disponível para abordar todas as mensagens-chave de maneira aprofundada." },
+    { id: "c4", description: "Desinteresse ou falta de engajamento dos cuidadores durante a sessão." },
+    { id: "c5", description: "Distrações no ambiente da sessão (barulho, interrupções, falta de atenção)." },
+    { id: "c6", description: "Dificuldade em manter o foco dos cuidadores na discussão do tema." },
+    { id: "c7", description: "Material visual insuficiente para a discussão" },
+    { id: "c8", description: "Dificuldade em abordar temas sensíveis sem causar desconforto." },
+    { id: "c9", description: "Falta de exemplos práticos na rotina das famílias que ajudem a reforçar a mensagem." },
+    { id: "c10", description: "Desafios em promover a participação de todos, com alguns cuidadores permanecendo em silêncio." },
+    { id: "c11", description: "Necessidade de reforçar conceitos complexos ou desconhecidos pelos cuidadores." },
+  ];
+
+  const strengthsRows = [
+    { id: "s1", description: "a: Promoveu a participação ativa de todos os cuidadores presentes." },
+    { id: "s2", description: "b: Reforçou o compartilhamento de experiências pessoais e reflexões pelos cuidadores." },
+    { id: "s3", description: "c: Envolveu as famílias de forma que elas demonstraram interesse e envolvimento com o tema da sessão." },
+    { id: "s4", description: "d: Incentivou o compartilhamento de compromissos e estratégias discutidas na sessão anterior pelos cuidadores." },
+    { id: "s5", description: "f: Proporcionou um ambiente acolhedor, garantindo tempo de fala e respeito aos participantes." },
+    { id: "s6", description: "g: Executou a escuta ativa e promoveu a empatia entre os cuidadores." },
+    { id: "s7", description: "h: Garantiu amplo entendimento e aceitação das mensagens-chave transmitidas dentre as famílias." },
+    { id: "s8", description: "i: Proporcionou um ambiente acolhedor aos cuidadores, permitindo que demonstrassem curiosidade e desejo de aprender." },
+    { id: "s9", description: "j: Incentivou a colaboração durante a sessão" },
+  ];
+
+  const attentionRows = [
+    { id: "a1", description: "a: Precisa trabalhar formas diferentes de engajar todos os cuidadores durante a sessão para evitar participação passiva ou limitada dos cuidadores." },
+    { id: "a2", description: "b: Precisa dedicar mais tempo para abordar todas as atividades e os tópicos previstos durante a sessão." },
+    { id: "a3", description: "c: Precisa explorar outras formas de comunicar as mensagens-chave tendo em vista as dificuldades de entendimento pelos cuidadores." },
+    { id: "a4", description: "d: Precisa atuar em prol de acolher e incluir a participação das famílias a fim de eliminar desconforto em compartilhar experiências pessoais." },
+    { id: "a5", description: "f: Precisa atuar de forma a estabelecer um ambiente colaborativo e de apoio mútuo entre as famílias da sessão, incentivando o diálogo e valorizando a participação." },
+    { id: "a6", description: "g: Precisa comunicar de maneira diferente sobre a importância das práticas positivas discutidas em sessão." },
+    { id: "a7", description: "h: Precisa estar apto para lidar com temas sensíveis ou complexos durante a sessão, explorando o conteúdo com base na participação e sem julgar as famílias." },
+    { id: "a8", description: "i: Precisa se colocar com mais confiança na condução da sessão" },
+  ];
+
+  const metodologyRows = [
+    { id: "m1", description: "a: Anotou a presença dos cuidadores." },
+    { id: "m2", description: "b: Deu boas-vindas aos cuidadores." },
+    { id: "m3", description: "c: Reviu os compromissos do mês passado." },
+    { id: "m4", description: "d: Fez a discussão com a imagem com perguntas no guia." },
+    { id: "m5", description: "e: Compartilhou as mensagens chave." },
+    { id: "m6", description: "f: Facilitou a prática de acordo com o guia." },
+    { id: "m7", description: "g: Fez a reflexão de acordo com o guia." },
+    { id: "m8", description: "h: Pediu os compromissos aos cuidadores." },
+    { id: "m9", description: "i: Informou sobre a próxima sessão." },
+    { id: "m10", description: "j: Preencheu o relatório de execução da sessão." },
+  ];
 
   const sessionsQuery = `query GetSessoesPep($first: Int) {
     sessoesPep(first: $first) {
@@ -72,10 +145,27 @@ function SessionExecutionFormPage(props) {
         node {
           id
           codigoSessao
+          dataPlanejamento
           dataSessao
+          horaSessao
+          nomeModulo
+          tecnicoSocial {
+            id
+            lastName
+            otherNames
+          }
+          coordenadorDistrital {
+            id
+            lastName
+            otherNames
+          }
           distrito {
             id
             name
+          }
+          grupoFamilia {
+            id
+            nome
           }
         }
       }
@@ -89,6 +179,19 @@ function SessionExecutionFormPage(props) {
           id
           username
           lastName
+          otherNames
+        }
+      }
+    }
+  }`;
+
+  const districtQuery = `query GetDistritos($first: Int) {
+    locations(first: $first, type: "D") {
+      edges {
+        node {
+          id
+          code
+          name
         }
       }
     }
@@ -117,9 +220,15 @@ function SessionExecutionFormPage(props) {
       if (result.data?.sessoesPep?.edges) {
         const sessionList = result.data.sessoesPep.edges.map(edge => ({
           id: edge.node.id,
-          codigo: edge.node.codigoSessao,
-          data: edge.node.dataSessao,
-          distrito: edge.node.distrito?.name || '-',
+          codigoSessao: edge.node.codigoSessao,
+          dataPlanejamento: edge.node.dataPlanejamento,
+          dataSessao: edge.node.dataSessao,
+          horaSessao: edge.node.horaSessao,
+          nomeModulo: edge.node.nomeModulo,
+          tecnicoSocial: edge.node.tecnicoSocial,
+          coordenadorDistrital: edge.node.coordenadorDistrital,
+          distrito: edge.node.distrito,
+          grupoFamilia: edge.node.grupoFamilia,
           label: `${edge.node.codigoSessao} - ${edge.node.dataSessao} - ${edge.node.distrito?.name || '-'}`,
         }));
         setSessions(sessionList);
@@ -145,7 +254,7 @@ function SessionExecutionFormPage(props) {
       if (result.data?.users?.edges) {
         const trainerList = result.data.users.edges.map(edge => ({
           id: edge.node.id,
-          nome: `${edge.node.username} - ${edge.node.lastName}`,
+          nome: `${edge.node.lastName} ${edge.node.otherNames}`.trim(),
         }));
         setTrainers(trainerList);
       }
@@ -154,9 +263,38 @@ function SessionExecutionFormPage(props) {
     }
   };
 
+  const fetchDistricts = async () => {
+    try {
+      const response = await fetch(`${baseApiUrl}/graphql`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCookie('csrftoken'),
+          ...apiHeaders(),
+        },
+        body: JSON.stringify({ query: districtQuery, variables: { first: 100 } }),
+      });
+
+      const result = await response.json();
+      if (result.data?.locations?.edges) {
+        const districtList = result.data.locations.edges.map(edge => ({
+          id: edge.node.id,
+          code: edge.node.code,
+          name: edge.node.name,
+        }));
+        setDistricts(districtList);
+      } else if (result.errors) {
+        console.error('Error fetching districts:', result.errors);
+      }
+    } catch (error) {
+      console.error('Error fetching districts:', error);
+    }
+  };
+
   useEffect(() => {
     fetchSessions();
     fetchTrainers();
+    fetchDistricts();
   }, []);
 
   const handleChange = (field) => (event) => {
@@ -164,16 +302,113 @@ function SessionExecutionFormPage(props) {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleNumberChange = (field) => (event) => {
-    const { value } = event.target;
-    setFormData((prev) => ({ ...prev, [field]: parseInt(value) || 0 }));
-  };
-
   const handleTrainerChange = (event) => {
     const { value } = event.target;
     setFormData((prev) => ({ ...prev, formadorId: value }));
   };
 
+  const handleSessionChange = (event) => {
+    const sessionId = event.target.value;
+    const session = sessions.find(s => s.id === sessionId);
+
+    if (session) {
+      setSelectedSession(session);
+      setFormData((prev) => ({
+        ...prev,
+        sessaoId: session.id,
+      }));
+    } else {
+      setSelectedSession(null);
+      setFormData((prev) => ({
+        ...prev,
+        sessaoId: "",
+      }));
+    }
+  };
+
+  const handlePracticesSelectionChange = (selections) => {
+    setPracticesSelections(selections);
+  };
+
+  const handleOtherPracticesChange = (event) => {
+    setOtherPractices(event.target.value);
+  };
+
+  const handleChallengesSelectionChange = (selections) => {
+    setChallengesSelections(selections);
+  };
+
+  const handleOtherChallengesChange = (event) => {
+    setOtherChallenges(event.target.value);
+  };
+
+  const handleNecessitaEncaminhamentoChange = (event) => {
+    setNecessitaEncaminhamento(event.target.value === "sim");
+  };
+
+  const handleStrengthsSelectionChange = (selections) => {
+    setStrengthsSelections(selections);
+  };
+
+  const handleOtherStrengthsChange = (event) => {
+    setOtherStrengths(event.target.value);
+  };
+
+  const handleAttentionSelectionChange = (selections) => {
+    setAttentionSelections(selections);
+  };
+
+  const handleOtherAttentionChange = (event) => {
+    setOtherAttention(event.target.value);
+  };
+
+  const handleMetodologySelectionChange = (selections) => {
+    setMetodologySelections(selections);
+  };
+
+  const convertPracticesToArray = () => {
+    return Object.values(practicesSelections)
+      .filter(item => item !== null)
+      .map(item => ({
+        descricao: item.descricao,
+        confirmacao: item.confirmacao,
+      }));
+  };
+
+  const convertChallengesToArray = () => {
+    return Object.values(challengesSelections)
+      .filter(item => item !== null)
+      .map(item => ({
+        descricao: item.descricao,
+        confirmacao: item.confirmacao,
+      }));
+  };
+
+  const convertStrengthsToArray = () => {
+    return Object.values(strengthsSelections)
+      .filter(item => item !== null)
+      .map(item => ({
+        descricao: item.descricao,
+        avaliacao: item.confirmacao,
+      }));
+  };
+
+  const convertAttentionToArray = () => {
+    return Object.values(attentionSelections)
+      .filter(item => item !== null)
+      .map(item => ({
+        descricao: item.descricao,
+        avaliacao: item.confirmacao,
+      }));
+  };
+  const convertMetodologyToArray = () => {
+    return Object.values(metodologySelections)
+      .filter(item => item !== null)
+      .map(item => ({
+        descricao: item.descricao,
+        avaliacao: item.avaliacao,
+      }));
+  };
   const handleBack = () => {
     history.push('/prl/execution');
   };
@@ -190,21 +425,20 @@ function SessionExecutionFormPage(props) {
         return;
       }
 
-      // Parse array strings to arrays
-      const parseArray = (str) => str.split(',').map(s => s.trim()).filter(s => s.length > 0);
-
       const input = {
         sessaoId: formData.sessaoId,
         formadorId: formData.formadorId,
         supervisorId: formData.supervisorId || null,
-        localidadeId: formData.localidadeId || null,
-        numeroParticipantesCompromissos: formData.numeroParticipantesCompromissos || null,
-        praticasPositivas: formData.praticasPositivas ? JSON.stringify(parseArray(formData.praticasPositivas)) : null,
-        desafiosTransmissao: formData.desafiosTransmissao ? JSON.stringify(parseArray(formData.desafiosTransmissao)) : null,
-        necessitaEncaminhamento: formData.necessitaEncaminhamento,
-        autoAvaliacaoPontosFortes: formData.autoAvaliacaoPontosFortes ? JSON.stringify(parseArray(formData.autoAvaliacaoPontosFortes)) : null,
-        autoAvaliacaoPontosAtencao: formData.autoAvaliacaoPontosAtencao ? JSON.stringify(parseArray(formData.autoAvaliacaoPontosAtencao)) : null,
-        avaliacaoMetodologia: formData.avaliacaoMetodologia ? formData.avaliacaoMetodologia : null,
+        localidadeId: formData.localidadeId && formData.localidadeId !== "" ? String(formData.localidadeId) : null,
+        numeroCuidadores: formData.numeroCuidadores || "0",
+        praticasPositivas: convertPracticesToArray().length > 0 ? JSON.stringify(convertPracticesToArray()) : null,
+        outrasPraticasPositivas: otherPractices || null,
+        desafiosTransmissao: convertChallengesToArray().length > 0 ? JSON.stringify(convertChallengesToArray()) : null,
+        outrosDesafios: otherChallenges || null,
+        necessitaEncaminhamento: necessitaEncaminhamento,
+        autoAvaliacaoPontosFortes: convertStrengthsToArray().length > 0 ? JSON.stringify(convertStrengthsToArray()) : null,
+        autoAvaliacaoPontosAtencao: convertAttentionToArray().length > 0 ? JSON.stringify(convertAttentionToArray()) : null,
+        avaliacaoMetodologia: convertMetodologyToArray().length > 0 ? JSON.stringify(convertMetodologyToArray()) : null,
         observacoes: formData.observacoes || "",
       };
 
@@ -252,7 +486,7 @@ function SessionExecutionFormPage(props) {
         <Grid container spacing={2}>
           <Grid item xs={12}>
             <Typography variant="h6" className={classes.sectionTitle}>
-              Informações Básicas
+              A. Detalhes do planeamento da Sessão
             </Typography>
           </Grid>
 
@@ -260,9 +494,9 @@ function SessionExecutionFormPage(props) {
             <TextField
               fullWidth
               select
-              label={formatMessage(intl, "prl", "execution.sessionCode")}
+              label={formatMessage(intl, "prl", "attendance.selectSession")}
               value={formData.sessaoId}
-              onChange={handleChange("sessaoId")}
+              onChange={handleSessionChange}
               variant="outlined"
               size="small"
               required
@@ -275,7 +509,124 @@ function SessionExecutionFormPage(props) {
             </TextField>
           </Grid>
 
-          <Grid item xs={12} sm={12}>
+          <Grid item xs={12} sm={6}>
+            <TextField
+              fullWidth
+              label={formatMessage(intl, "prl", "attendance.sessionCode")}
+              value={selectedSession?.codigoSessao || ""}
+              variant="outlined"
+              size="small"
+              disabled
+            />
+          </Grid>
+
+          <Grid item xs={12} sm={6}>
+            <TextField
+              fullWidth
+              label={formatMessage(intl, "prl", "attendance.planningDate")}
+              value={selectedSession?.dataPlanejamento || ""}
+              variant="outlined"
+              size="small"
+              disabled
+            />
+          </Grid>
+
+          <Grid item xs={12} sm={6}>
+            <TextField
+              fullWidth
+              label={formatMessage(intl, "prl", "attendance.moduleName")}
+              value={selectedSession?.nomeModulo || ""}
+              variant="outlined"
+              size="small"
+              disabled
+            />
+          </Grid>
+
+          <Grid item xs={12} sm={6}>
+            <TextField
+              fullWidth
+              label={formatMessage(intl, "prl", "attendance.sessionDate")}
+              value={selectedSession?.dataSessao || ""}
+              variant="outlined"
+              size="small"
+              disabled
+            />
+          </Grid>
+
+          <Grid item xs={12} sm={6}>
+            <TextField
+              fullWidth
+              label={formatMessage(intl, "prl", "attendance.sessionTime")}
+              value={selectedSession?.horaSessao || ""}
+              variant="outlined"
+              size="small"
+              disabled
+            />
+          </Grid>
+
+          <Grid item xs={12} sm={6}>
+            <TextField
+              fullWidth
+              label={formatMessage(intl, "prl", "attendance.socialTechnician")}
+              value={`${selectedSession?.tecnicoSocial?.lastName || ''} ${selectedSession?.tecnicoSocial?.otherNames || ''}`.trim() || ""}
+              variant="outlined"
+              size="small"
+              disabled
+            />
+          </Grid>
+
+          <Grid item xs={12} sm={6}>
+            <TextField
+              fullWidth
+              label={formatMessage(intl, "prl", "attendance.districtCoordinator")}
+              value={`${selectedSession?.coordenadorDistrital?.lastName || ''} ${selectedSession?.coordenadorDistrital?.otherNames || ''}`.trim() || ""}
+              variant="outlined"
+              size="small"
+              disabled
+            />
+          </Grid>
+
+          <Grid item xs={12} sm={6}>
+            <TextField
+              fullWidth
+              label={formatMessage(intl, "prl", "attendance.district")}
+              value={selectedSession?.distrito?.name || ""}
+              variant="outlined"
+              size="small"
+              disabled
+            />
+          </Grid>
+
+          <Grid item xs={12} sm={6}>
+            <TextField
+              fullWidth
+              label={formatMessage(intl, "prl", "attendance.familyGroup")}
+              value={selectedSession?.grupoFamilia?.nome || ""}
+              variant="outlined"
+              size="small"
+              disabled
+            />
+          </Grid>
+
+          <Grid item xs={12} sm={6}>
+            <TextField
+              fullWidth
+              select
+              label={formatMessage(intl, "prl", "execution.supervisor")}
+              value={formData.supervisorId}
+              onChange={handleChange("supervisorId")}
+              variant="outlined"
+              size="small"
+            >
+              {trainers.map((trainer) => (
+                <MenuItem key={trainer.id} value={trainer.id}>
+                  {trainer.nome}
+                </MenuItem>
+              ))}
+            </TextField>
+          </Grid>
+
+          <Grid item xs={12} sm={6}>
             <TextField
               fullWidth
               select
@@ -297,157 +648,221 @@ function SessionExecutionFormPage(props) {
           <Grid item xs={12} sm={6}>
             <TextField
               fullWidth
-              type="number"
-              label={formatMessage(intl, "prl", "execution.numParticipants")}
-              value={formData.numeroParticipantesCompromissos}
-              onChange={handleNumberChange("numeroParticipantesCompromissos")}
-              variant="outlined"
-              size="small"
-              inputProps={{ min: 0 }}
-            />
-          </Grid>
-
-          <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
               select
-              label={formatMessage(intl, "prl", "execution.necessitaEncaminhamento")}
-              value={formData.necessitaEncaminhamento}
-              onChange={(e) => setFormData(prev => ({ ...prev, necessitaEncaminhamento: e.target.value === 'true' }))}
+              label={formatMessage(intl, "prl", "attendance.locality")}
+              value={formData.localidadeId}
+              onChange={handleChange("localidadeId")}
               variant="outlined"
               size="small"
             >
-              <MenuItem value={false}>Não</MenuItem>
-              <MenuItem value={true}>Sim</MenuItem>
+              {districts.map((district) => (
+                <MenuItem key={district.id} value={district.id}>
+                  {district.name}
+                </MenuItem>
+              ))}
             </TextField>
           </Grid>
         </Grid>
-
-        <Divider style={{ margin: "24px 0" }} />
-
-        <Grid container spacing={2}>
-          <Grid item xs={12}>
-            <Typography variant="h6" className={classes.sectionTitle}>
-              Detalhes da Sessão
-            </Typography>
-          </Grid>
-
-          <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              label={formatMessage(intl, "prl", "execution.positivePractices")}
-              value={formData.praticasPositivas}
-              onChange={handleChange("praticasPositivas")}
-              variant="outlined"
-              size="small"
-              multiline
-              rows={2}
-              helperText="Separe com vírgulas"
-            />
-          </Grid>
-
-          <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              label={formatMessage(intl, "prl", "execution.challengesTransmission")}
-              value={formData.desafiosTransmissao}
-              onChange={handleChange("desafiosTransmissao")}
-              variant="outlined"
-              size="small"
-              multiline
-              rows={2}
-              helperText="Separe com vírgulas"
-            />
-          </Grid>
-        </Grid>
-
-        <Divider style={{ margin: "24px 0" }} />
-
-        <Grid container spacing={2}>
-          <Grid item xs={12}>
-            <Typography variant="h6" className={classes.sectionTitle}>
-              Auto-Avaliação
-            </Typography>
-          </Grid>
-
-          <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              label={formatMessage(intl, "prl", "execution.selfAssessmentStrengths")}
-              value={formData.autoAvaliacaoPontosFortes}
-              onChange={handleChange("autoAvaliacaoPontosFortes")}
-              variant="outlined"
-              size="small"
-              multiline
-              rows={2}
-              helperText="Separe com vírgulas"
-            />
-          </Grid>
-
-          <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              label={formatMessage(intl, "prl", "execution.selfAssessmentAttention")}
-              value={formData.autoAvaliacaoPontosAtencao}
-              onChange={handleChange("autoAvaliacaoPontosAtencao")}
-              variant="outlined"
-              size="small"
-              multiline
-              rows={2}
-              helperText="Separe com vírgulas"
-            />
-          </Grid>
-
-          <Grid item xs={12}>
-            <TextField
-              fullWidth
-              label={formatMessage(intl, "prl", "execution.methodologyEvaluation")}
-              value={formData.avaliacaoMetodologia}
-              onChange={handleChange("avaliacaoMetodologia")}
-              variant="outlined"
-              size="small"
-              multiline
-              rows={3}
-              helperText="JSON format (opcional)"
-            />
-          </Grid>
-
-          <Grid item xs={12}>
-            <TextField
-              fullWidth
-              label={formatMessage(intl, "prl", "execution.observations")}
-              value={formData.observacoes}
-              onChange={handleChange("observacoes")}
-              variant="outlined"
-              size="small"
-              multiline
-              rows={4}
-            />
-          </Grid>
-        </Grid>
-
-        <Box className={classes.buttonContainer}>
-          <Button
-            variant="outlined"
-            color="primary"
-            onClick={handleBack}
-          >
-            {formatMessage(intl, "prl", "button.cancel")}
-          </Button>
-          <Button
-            variant="contained"
-            color="primary"
-            startIcon={<SaveIcon />}
-            onClick={handleSave}
-            disabled={loading || !formData.sessaoId || !formData.formadorId}
-          >
-            {formatMessage(intl, "prl", "button.save")}
-          </Button>
-        </Box>
       </Paper>
+
+      <Paper className={classes.paper}>
+        <Grid container spacing={2}>
+          <Grid item xs={12}>
+            <Typography variant="h6" className={classes.sectionTitle}>
+              B. Detalhes de Execução da Sessão PEP+
+            </Typography>
+          </Grid>
+
+          <Grid item xs={12} sm={12}>
+            <TextField
+              fullWidth
+              select
+              label={formatMessage(intl, "prl", "execution.numberOfParticipants")}
+              value={formData.numeroCuidadores}
+              onChange={handleChange("numeroCuidadores")}
+              variant="outlined"
+              size="small"
+              required
+            >
+              <MenuItem value="0">0 cuidadores</MenuItem>
+              <MenuItem value="1-5">1-5 cuidadores</MenuItem>
+              <MenuItem value="6-10">6-10 cuidadores</MenuItem>
+              <MenuItem value="15+">Mais de 15 cuidadores</MenuItem>
+            </TextField>
+          </Grid>
+
+          <Grid item xs={12}>
+            <PracticesTable
+              title={formatMessage(intl, "prl", "execution.positivePracticesTitle")}
+              subtitle={formatMessage(intl, "prl", "execution.positivePracticesSubtitle")}
+              rows={practicesRows}
+              options={["Sim", "Não", "N/A"]}
+              onSelectionChange={handlePracticesSelectionChange}
+              selections={practicesSelections}
+              showOtherPractices={true}
+              otherPracticesLabel={formatMessage(intl, "prl", "execution.otherPositivePractices")}
+              otherPracticesPlaceholder={formatMessage(intl, "prl", "execution.otherPositivePracticesPlaceholder")}
+              otherPracticesValue={otherPractices}
+              onOtherPracticesChange={handleOtherPracticesChange}
+            />
+          </Grid>
+        </Grid>
+
+        {/* Transmission section */}
+        <Divider style={{ margin: "16px 0" }} />
+        <Grid container spacing={2}>
+          <Grid item xs={12}>
+            <PracticesTable
+              title={formatMessage(intl, "prl", "execution.challengesTitle")}
+              subtitle={formatMessage(intl, "prl", "execution.challengesSubtitle")}
+              rows={challengesRows}
+              options={["Sim", "Não", "N/A"]}
+              onSelectionChange={handleChallengesSelectionChange}
+              selections={challengesSelections}
+              showOtherPractices={true}
+              otherPracticesLabel={formatMessage(intl, "prl", "execution.otherChallenges")}
+              otherPracticesPlaceholder={formatMessage(intl, "prl", "execution.otherChallengesPlaceholder")}
+              otherPracticesValue={otherChallenges}
+              onOtherPracticesChange={handleOtherChallengesChange}
+            />
+          </Grid>
+        </Grid>
+
+        {/* Referral and Self-Assessment section */}
+        <Divider style={{ margin: "16px 0" }} />
+        <Grid container spacing={2}>
+          <Grid item xs={12}>
+            <Typography variant="h6" className={classes.sectionTitle}>
+              3.4. {formatMessage(intl, "prl", "execution.referralQuestion")}
+            </Typography>
+          </Grid>
+
+          <Grid item xs={12}>
+            <div style={{ display: "flex", gap: "20px" }}>
+              <label style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <input
+                  type="radio"
+                  name="necessitaEncaminhamento"
+                  value="sim"
+                  checked={necessitaEncaminhamento === true}
+                  onChange={handleNecessitaEncaminhamentoChange}
+                />
+                Sim
+              </label>
+              <label style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <input
+                  type="radio"
+                  name="necessitaEncaminhamento"
+                  value="nao"
+                  checked={necessitaEncaminhamento === false}
+                  onChange={handleNecessitaEncaminhamentoChange}
+                />
+                Não
+              </label>
+            </div>
+          </Grid>
+        </Grid>
+
+        {/* Strengths Self-Assessment section */}
+        <Divider style={{ margin: "16px 0" }} />
+        <Grid container spacing={2}>
+          <Grid item xs={12}>
+            <PracticesTable
+              title={formatMessage(intl, "prl", "execution.selfAssessmentStrengths")}
+              subtitle={formatMessage(intl, "prl", "execution.selfAssessmentStrengthsSubtitle")}
+              rows={strengthsRows}
+              options={["1", "2", "N/A"]}
+              onSelectionChange={handleStrengthsSelectionChange}
+              selections={strengthsSelections}
+              showOtherPractices={true}
+              otherPracticesLabel={formatMessage(intl, "prl", "execution.otherStrengths")}
+              otherPracticesPlaceholder={formatMessage(intl, "prl", "execution.otherStrengthsPlaceholder")}
+              otherPracticesValue={otherStrengths}
+              onOtherPracticesChange={handleOtherStrengthsChange}
+            />
+          </Grid>
+        </Grid>
+
+        {/* Attention Self-Assessment section */}
+        <Divider style={{ margin: "16px 0" }} />
+        <Grid container spacing={2}>
+          <Grid item xs={12}>
+            <PracticesTable
+              title={formatMessage(intl, "prl", "execution.selfAssessmentAttention")}
+              subtitle={formatMessage(intl, "prl", "execution.selfAssessmentAttentionSubtitle")}
+              rows={attentionRows}
+              options={["1", "2", "N/A"]}
+              onSelectionChange={handleAttentionSelectionChange}
+              selections={attentionSelections}
+              showOtherPractices={true}
+              otherPracticesLabel={formatMessage(intl, "prl", "execution.otherAttention")}
+              otherPracticesPlaceholder={formatMessage(intl, "prl", "execution.otherAttentionPlaceholder")}
+              otherPracticesValue={otherAttention}
+              onOtherPracticesChange={handleOtherAttentionChange}
+            />
+          </Grid>
+        </Grid>
+
+        {/* Metodologia section */}
+        <Divider style={{ margin: "16px 0" }} />
+        <Grid container spacing={2}>
+          <Grid item xs={12}>
+            <PracticesTable
+              title={formatMessage(intl, "prl", "execution.methodologyTitle")}
+              subtitle={formatMessage(intl, "prl", "execution.methodologySubtitle")}
+              rows={metodologyRows}
+              options={["Não fez", "Não adequado", "Adequado", "Excelente", "N/A"]}
+              onSelectionChange={handleMetodologySelectionChange}
+              selections={metodologySelections}
+              showOtherPractices={false}
+            />
+          </Grid>
+        </Grid>
+      </Paper>
+
+      <Paper className={classes.paper}>
+        <Grid container spacing={2}>
+          <Grid item xs={12}>
+            <Typography variant="h6" className={classes.sectionTitle}>
+              Observações da Sessão
+            </Typography>
+          </Grid>
+        </Grid>
+
+        <Grid item xs={12}>
+          <TextField
+            fullWidth
+            label={formatMessage(intl, "prl", "execution.observations")}
+            value={formData.observacoes}
+            onChange={handleChange("observacoes")}
+            variant="outlined"
+            size="small"
+            multiline
+            rows={4}
+          />
+        </Grid>
+      </Paper>
+
+      <Box className={classes.buttonContainer}>
+        <Button
+          variant="outlined"
+          color="primary"
+          onClick={handleBack}
+        >
+          {formatMessage(intl, "prl", "button.cancel")}
+        </Button>
+        <Button
+          variant="contained"
+          color="primary"
+          startIcon={<SaveIcon />}
+          onClick={handleSave}
+          disabled={loading || !formData.sessaoId || !formData.formadorId}
+        >
+          {formatMessage(intl, "prl", "button.save")}
+        </Button>
+      </Box>
     </div>
   );
 }
 
-const mapStateToProps = (state) => ({});
 export default withModulesManager(injectIntl(withTheme(withStyles(styles)(SessionExecutionFormPage))));
