@@ -21,8 +21,8 @@ const styles = (theme) => ({
 
 const ESTADO_OPTIONS = [
   { value: "PRES", label: "Presente" },
-  { value: "AUSE", label: "Ausente" },
-  { value: "JUST", label: "Justificado" },
+  { value: "FALT", label: "Faltou" },
+  { value: "ENCA", label: "Encaminhado" },
 ];
 
 function AttendanceRegistryPage(props) {
@@ -71,6 +71,7 @@ function AttendanceRegistryPage(props) {
           grupoId
           estado
           codigoEncaminhamento
+          nomeInstituicao
           observacoes
         }
       }
@@ -120,6 +121,7 @@ function AttendanceRegistryPage(props) {
       groupId: attendance.grupoId,
       state: attendance.estado,
       referralCode: attendance.codigoEncaminhamento,
+      institutionName: attendance.nomeInstituicao,
       observations: attendance.observacoes,
     }));
 
@@ -180,6 +182,7 @@ function AttendanceRegistryPage(props) {
     "prl.attendance.familyName",
     "prl.attendance.estado",
     "prl.attendance.referralCode",
+    "prl.attendance.institutionName",
     "prl.attendance.observations",
     "emptyLabel",
   ];
@@ -194,6 +197,7 @@ function AttendanceRegistryPage(props) {
       </Typography>
     ),
     (item) => item.referralCode || '-',
+    (item) => item.institutionName || '-',
     (item) => item.observations || '-',
     (item) => (
       <div style={{ display: 'flex', justifyContent: 'center' }}>
@@ -225,6 +229,7 @@ function AttendanceRegistryPage(props) {
     ["familyName", true],
     ["state", true],
     ["referralCode", true],
+    ["institutionName", true],
   ];
 
   const filterConfig = [

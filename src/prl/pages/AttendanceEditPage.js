@@ -3,11 +3,14 @@ import { injectIntl } from "react-intl";
 import { withTheme, withStyles } from "@material-ui/core/styles";
 import {
   Paper, Typography, Grid, TextField, Button, MenuItem, Divider, Box,
+  Chip, IconButton, Tooltip,
 } from "@material-ui/core";
 import ChevronLeftIcon from "@material-ui/icons/ChevronLeft";
 import SaveIcon from "@material-ui/icons/Save";
+import DeleteIcon from "@material-ui/icons/Delete";
 import { formatMessage, withModulesManager, Helmet, baseApiUrl, apiHeaders } from "@openimis/fe-core";
 import { PRL_ROUTE_ATTENDANCE } from "../constants";
+import AddIcon from "@material-ui/icons/Add";
 
 const styles = (theme) => ({
   page: theme.page,
@@ -31,9 +34,9 @@ const styles = (theme) => ({
 });
 
 const ESTADO_OPTIONS = [
-  { value: "PRES", label: "Presente" },
-  { value: "AUSE", label: "Ausente" },
-  { value: "JUST", label: "Justificado" },
+  { value: "PRES", labelKey: "attendance.estado.presente" },
+  { value: "FALT", labelKey: "attendance.estado.faltou" },
+  { value: "ENCA", labelKey: "attendance.estado.encaminhado" },
 ];
 
 function AttendanceEditPage(props) {
@@ -62,10 +65,17 @@ function AttendanceEditPage(props) {
     estado: "PRES",
     codigoEncaminhamento: "",
     observacoes: "",
+    localidade: "",
+    formador: "",
   });
 
   const [loading, setLoading] = useState(false);
   const [sessions, setSessions] = useState([]);
+  const [selectedSession, setSelectedSession] = useState(null);
+  const [districts, setDistricts] = useState([]);
+  const [formadores, setFormadores] = useState([]);
+  const [familias, setFamilias] = useState([]);
+  const [presencas, setPresencas] = useState([]);
 
   const fetchQuery = `query GetPresencaSessao($id: ID!) {
     presencaSessao(id: $id) {
@@ -89,7 +99,20 @@ function AttendanceEditPage(props) {
         node {
           id
           codigoSessao
+          dataPlanejamento
+          nomeModulo
           dataSessao
+          horaSessao
+          tecnicoSocial {
+            id
+            lastName
+            otherNames
+          }
+          coordenadorDistrital {
+            id
+            lastName
+            otherNames
+          }
           distrito {
             id
             name
@@ -104,12 +127,64 @@ function AttendanceEditPage(props) {
     }
   }`;
 
-  const createMutation = `mutation CreatePresencaSessao($input: CreatePresencaSessaoMutationInput!) {
-    createPresencaSessao(input: $input) {
+  const districtQuery = `query GetDistritos($first: Int) {
+    locations(first: $first, type: "D") {
+      edges {
+        node {
+          id
+          code
+          name
+        }
+      }
+    }
+  }`;
+
+  const formadoresQuery = `query GetFormadores {
+    users(first: 100) {
+      edges {
+        node {
+          id
+          username
+          lastName
+          otherNames
+        }
+      }
+    }
+  }`;
+
+  const familiasQuery = `query GetFamilias($first: Int) {
+    families(first: $first) {
+      edges {
+        node {
+          uuid
+          headInsuree {
+            uuid
+            lastName
+            otherNames
+            chfId
+          }
+          location {
+            uuid
+            name
+          }
+        }
+      }
+    }
+  }`;
+
+  const registrarPresencasBatchMutation = `mutation RegistrarPresencasBatch($input: RegistrarPresencasBatchMutationInput!) {
+    registrarPresencasBatch(input: $input) {
       clientMutationId
       internalId
     }
   }`;
+
+  // const createMutation = `mutation CreatePresencaSessao($input: CreatePresencaSessaoMutationInput!) {
+  //   createPresencaSessao(input: $input) {
+  //     clientMutationId
+  //     internalId
+  //   }
+  // }`;
 
   const updateMutation = `mutation UpdatePresencaSessao($input: UpdatePresencaSessaoMutationInput!) {
     updatePresencaSessao(input: $input) {
@@ -146,6 +221,8 @@ function AttendanceEditPage(props) {
           estado: attendance.estado || "PRES",
           codigoEncaminhamento: attendance.codigoEncaminhamento || "",
           observacoes: attendance.observacoes || "",
+          localidade: attendance.localidade || "",
+          formador: attendance.formador || "",
         });
       } else if (result.errors) {
         console.error('Error fetching attendance:', result.errors);
@@ -173,9 +250,14 @@ function AttendanceEditPage(props) {
       if (result.data?.sessoesPep?.edges) {
         const sessionList = result.data.sessoesPep.edges.map(edge => ({
           id: edge.node.id,
-          codigo: edge.node.codigoSessao,
-          data: edge.node.dataSessao,
-          distrito: edge.node.distrito?.name || '-',
+          codigoSessao: edge.node.codigoSessao,
+          dataPlanejamento: edge.node.dataPlanejamento,
+          nomeModulo: edge.node.nomeModulo,
+          dataSessao: edge.node.dataSessao,
+          horaSessao: edge.node.horaSessao,
+          tecnicoSocial: edge.node.tecnicoSocial,
+          coordenadorDistrital: edge.node.coordenadorDistrital,
+          distrito: edge.node.distrito,
           grupoFamilia: edge.node.grupoFamilia,
           label: `${edge.node.codigoSessao} - ${edge.node.dataSessao} - ${edge.node.distrito?.name || '-'}`,
         }));
@@ -186,12 +268,100 @@ function AttendanceEditPage(props) {
     }
   };
 
+  const fetchDistricts = async () => {
+    try {
+      const response = await fetch(`${baseApiUrl}/graphql`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCookie('csrftoken'),
+          ...apiHeaders(),
+        },
+        body: JSON.stringify({ query: districtQuery, variables: { first: 100 } }),
+      });
+
+      const result = await response.json();
+      if (result.data?.locations?.edges) {
+        const districtList = result.data.locations.edges.map(edge => ({
+          id: edge.node.id,
+          code: edge.node.code,
+          name: edge.node.name,
+        }));
+        setDistricts(districtList);
+      }
+    } catch (error) {
+      console.error('Error fetching districts:', error);
+    }
+  };
+
+  const fetchFormadores = async () => {
+    try {
+      const response = await fetch(`${baseApiUrl}/graphql`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCookie('csrftoken'),
+          ...apiHeaders(),
+        },
+        body: JSON.stringify({ query: formadoresQuery }),
+      });
+
+      const result = await response.json();
+      if (result.data?.users?.edges) {
+        const formadorList = result.data.users.edges.map(edge => ({
+          id: edge.node.id,
+          username: edge.node.username,
+          lastName: edge.node.lastName,
+          otherNames: edge.node.otherNames,
+        }));
+        setFormadores(formadorList);
+      }
+    } catch (error) {
+      console.error('Error fetching formadores:', error);
+    }
+  };
+
+  const fetchFamilias = async () => {
+    try {
+      const response = await fetch(`${baseApiUrl}/graphql`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCookie('csrftoken'),
+          ...apiHeaders(),
+        },
+        body: JSON.stringify({ query: familiasQuery, variables: { first: 100 } }),
+      });
+
+      const result = await response.json();
+      if (result.data?.families?.edges) {
+        const familiasList = result.data.families.edges.map(edge => ({
+          id: edge.node.uuid,
+          codigo: edge.node.headInsuree?.chfId || edge.node.uuid,
+          nome: `${edge.node.headInsuree?.lastName || ''} ${edge.node.headInsuree?.otherNames || ''}`.trim(),
+          localidade: edge.node.location?.name || '',
+          grupoFamiliar: {
+            id: edge.node.uuid,
+            codigo: edge.node.headInsuree?.chfId || edge.node.uuid,
+            nome: `${edge.node.headInsuree?.lastName || ''} ${edge.node.headInsuree?.otherNames || ''}`.trim(),
+          },
+        }));
+        setFamilias(familiasList);
+      }
+    } catch (error) {
+      console.error('Error fetching familias:', error);
+    }
+  };
+
   useEffect(() => {
     if (attendanceId) {
       fetchAttendance(attendanceId);
     }
     // Load sessions on mount
     fetchSessions();
+    fetchDistricts();
+    fetchFormadores();
+    fetchFamilias();
   }, [attendanceId, fetchAttendance]);
 
   const handleChange = (field) => (event) => {
@@ -201,17 +371,67 @@ function AttendanceEditPage(props) {
 
   const handleSessionChange = (event) => {
     const sessionId = event.target.value;
-    const selectedSession = sessions.find(s => s.id === sessionId);
+    const session = sessions.find(s => s.id === sessionId);
 
-    if (selectedSession) {
+    if (session) {
+      setSelectedSession(session);
       setFormData((prev) => ({
         ...prev,
-        sessaoId: selectedSession.id,
-        grupoId: selectedSession.grupoFamilia?.id || "",
-        familiaId: selectedSession.grupoFamilia?.codigo || "",
-        nomeFamilia: selectedSession.grupoFamilia?.nome || "",
+        sessaoId: session.id,
+        grupoId: session.grupoFamilia?.id || "",
+        familiaId: session.grupoFamilia?.codigo || "",
+        nomeFamilia: session.grupoFamilia?.nome || "",
       }));
     }
+  };
+
+  const handleAddPresenca = () => {
+    const newPresenca = {
+      id: Date.now().toString(),
+      familiaId: "",
+      familiaCode: "",
+      familiaName: "",
+      grupoId: "",
+      grupoCode: "",
+      grupoName: "",
+      sequencia: presencas.length + 1,
+      estado: "PRES",
+      codigoEncaminhamento: "",
+      nomeInstituicao: "",
+      localidade: "",
+    };
+    setPresencas((prev) => [...prev, newPresenca]);
+  };
+
+  const handlePresencaFamiliaChange = (index, familiaId) => {
+    const familia = familias.find(f => f.id === familiaId);
+    if (familia) {
+      setPresencas((prev) =>
+        prev.map((p, i) =>
+          i === index
+            ? {
+              ...p,
+              familiaId: familia.id,
+              familiaCode: familia.codigo,
+              familiaName: familia.nome,
+              grupoId: familia.grupoFamiliar?.id || "",
+              grupoCode: familia.grupoFamiliar?.codigo || "",
+              grupoName: familia.grupoFamiliar?.nome || "",
+            }
+            : p
+        )
+      );
+    }
+  };
+
+  const handlePresencaChange = (index, field, value) => {
+    setPresencas((prev) =>
+      prev.map((p, i) => (i === index ? { ...p, [field]: value } : p))
+    );
+  };
+
+  const handleRemovePresenca = (index) => {
+    setPresencas((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleBack = () => {
@@ -222,26 +442,52 @@ function AttendanceEditPage(props) {
     try {
       // Validar campos obrigatórios
       if (!formData.sessaoId) {
-        alert('Por favor, selecione uma sessão.');
+        alert(formatMessage(intl, "prl", "attendance.selectSessionMessage"));
         return;
       }
 
-      const input = {
-        sessaoId: formData.sessaoId, // Relay ID, mantém como string
-        familiaId: formData.familiaId,
-        nomeFamilia: formData.nomeFamilia,
-        grupoId: formData.grupoId || null,
-        estado: formData.estado,
-        observacoes: formData.observacoes || null,
-      };
-
-      let mutation = createMutation;
-      let variables = { input };
-
-      if (attendanceId) {
-        mutation = updateMutation;
-        variables.input.id = attendanceId;
+      if (presencas.length === 0) {
+        alert(formatMessage(intl, "prl", "attendance.noFamiliesMessage"));
+        return;
       }
+
+      if (!formData.formador) {
+        alert(formatMessage(intl, "prl", "attendance.selectFormadorMessage"));
+        return;
+      }
+
+      // Validar presenças com estado ENCA
+      for (let presenca of presencas) {
+        if (presenca.estado === 'ENCA') {
+          if (!presenca.codigoEncaminhamento) {
+            alert(formatMessage(intl, "prl", "attendance.codigoEncaminhamentoRequired"));
+            return;
+          }
+          if (!presenca.nomeInstituicao) {
+            alert(formatMessage(intl, "prl", "attendance.institutionNameRequired"));
+            return;
+          }
+        }
+      }
+
+      // Preparar input para mutation batch
+      const input = {
+        sessaoId: formData.sessaoId,
+        dataSessao: new Date().toISOString().split('T')[0], // Data de hoje
+        distritoId: selectedSession?.distrito?.id || "",
+        formadorId: formData.formador,
+        localidadeId: formData.localidade || null,
+        nomeModulo: selectedSession?.nomeModulo || "",
+        codigoSessao: selectedSession?.codigoSessao || "",
+        grupoFamiliaId: selectedSession?.grupoFamilia?.id || "",
+        presencas: presencas.map(p => ({
+          familiaId: p.familiaId,
+          nomeFamilia: p.familiaName || null,
+          estado: p.estado,
+          codigoEncaminhamento: p.codigoEncaminhamento || null,
+          nomeInstituicao: p.nomeInstituicao || null,
+        })),
+      };
 
       setLoading(true);
 
@@ -252,19 +498,19 @@ function AttendanceEditPage(props) {
           'X-CSRFToken': getCookie('csrftoken'),
           ...apiHeaders(),
         },
-        body: JSON.stringify({ query: mutation, variables }),
+        body: JSON.stringify({ query: registrarPresencasBatchMutation, variables: { input } }),
       });
 
       const result = await response.json();
-      if (result.data?.createPresencaSessao || result.data?.updatePresencaSessao) {
+      if (result.data?.registrarPresencasBatch) {
         handleBack();
       } else if (result.errors) {
         console.error('Error saving attendance:', result.errors);
-        alert('Erro ao salvar presença: ' + result.errors[0].message);
+        alert(formatMessage(intl, "prl", "attendance.saveError") + ': ' + result.errors[0].message);
       }
     } catch (error) {
       console.error('Error in handleSave:', error);
-      alert('Erro ao salvar: ' + error.message);
+      alert(formatMessage(intl, "prl", "attendance.error") + ': ' + error.message);
     } finally {
       setLoading(false);
     }
@@ -284,14 +530,19 @@ function AttendanceEditPage(props) {
           </Typography>
         </Button>
 
-        <Divider style={{ margin: "16px 0" }} />
+        <Grid item xs={12}>
+          <Divider style={{ margin: "16px 0" }} />
+          <Typography variant="h6" className={classes.sectionTitle}>
+            {formatMessage(intl, "prl", "attendance.sessionDetails")}
+          </Typography>
+        </Grid>
 
         <Grid container spacing={2}>
           <Grid item xs={12} sm={12}>
             <TextField
               fullWidth
               select
-              label={formatMessage(intl, "prl", "attendance.sessionCode")}
+              label={formatMessage(intl, "prl", "attendance.selectSession")}
               value={formData.sessaoId}
               onChange={handleSessionChange}
               variant="outlined"
@@ -309,39 +560,99 @@ function AttendanceEditPage(props) {
           <Grid item xs={12} sm={6}>
             <TextField
               fullWidth
-              label={formatMessage(intl, "prl", "attendance.familyId")}
-              value={formData.familiaId}
-              onChange={handleChange("familiaId")}
+              label={formatMessage(intl, "prl", "attendance.sessionCode")}
+              value={selectedSession?.codigoSessao || ""}
               variant="outlined"
               size="small"
               disabled
-              helperText="Preenchido automaticamente pela sessão"
             />
           </Grid>
 
           <Grid item xs={12} sm={6}>
             <TextField
               fullWidth
-              label={formatMessage(intl, "prl", "attendance.familyName")}
-              value={formData.nomeFamilia}
-              onChange={handleChange("nomeFamilia")}
+              label={formatMessage(intl, "prl", "attendance.planningDate")}
+              value={selectedSession?.dataPlanejamento || ""}
               variant="outlined"
               size="small"
               disabled
-              helperText="Preenchido automaticamente pela sessão"
             />
           </Grid>
 
           <Grid item xs={12} sm={6}>
             <TextField
               fullWidth
-              label={formatMessage(intl, "prl", "attendance.groupId")}
-              value={formData.grupoId}
-              onChange={handleChange("grupoId")}
+              label={formatMessage(intl, "prl", "attendance.moduleName")}
+              value={selectedSession?.nomeModulo || ""}
               variant="outlined"
               size="small"
               disabled
-              helperText="Preenchido automaticamente pela sessão"
+            />
+          </Grid>
+
+          <Grid item xs={12} sm={6}>
+            <TextField
+              fullWidth
+              label={formatMessage(intl, "prl", "attendance.sessionDate")}
+              value={selectedSession?.dataSessao || ""}
+              variant="outlined"
+              size="small"
+              disabled
+            />
+          </Grid>
+
+          <Grid item xs={12} sm={6}>
+            <TextField
+              fullWidth
+              label={formatMessage(intl, "prl", "attendance.sessionTime")}
+              value={selectedSession?.horaSessao || ""}
+              variant="outlined"
+              size="small"
+              disabled
+            />
+          </Grid>
+
+          <Grid item xs={12} sm={6}>
+            <TextField
+              fullWidth
+              label={formatMessage(intl, "prl", "attendance.socialTechnician")}
+              value={`${selectedSession?.tecnicoSocial?.lastName || ''} ${selectedSession?.tecnicoSocial?.otherNames || ''}`.trim() || ""}
+              variant="outlined"
+              size="small"
+              disabled
+            />
+          </Grid>
+
+          <Grid item xs={12} sm={6}>
+            <TextField
+              fullWidth
+              label={formatMessage(intl, "prl", "attendance.districtCoordinator")}
+              value={`${selectedSession?.coordenadorDistrital?.lastName || ''} ${selectedSession?.coordenadorDistrital?.otherNames || ''}`.trim() || ""}
+              variant="outlined"
+              size="small"
+              disabled
+            />
+          </Grid>
+
+          <Grid item xs={12} sm={6}>
+            <TextField
+              fullWidth
+              label={formatMessage(intl, "prl", "attendance.district")}
+              value={selectedSession?.distrito?.name || ""}
+              variant="outlined"
+              size="small"
+              disabled
+            />
+          </Grid>
+
+          <Grid item xs={12} sm={6}>
+            <TextField
+              fullWidth
+              label={formatMessage(intl, "prl", "attendance.familyGroup")}
+              value={selectedSession?.grupoFamilia?.nome || ""}
+              variant="outlined"
+              size="small"
+              disabled
             />
           </Grid>
 
@@ -349,15 +660,15 @@ function AttendanceEditPage(props) {
             <TextField
               fullWidth
               select
-              label={formatMessage(intl, "prl", "attendance.estado")}
-              value={formData.estado}
-              onChange={handleChange("estado")}
+              label={formatMessage(intl, "prl", "attendance.locality")}
+              value={formData.localidade}
+              onChange={handleChange("localidade")}
               variant="outlined"
               size="small"
             >
-              {ESTADO_OPTIONS.map((option) => (
-                <MenuItem key={option.value} value={option.value}>
-                  {option.label}
+              {districts.map((district) => (
+                <MenuItem key={district.id} value={district.id}>
+                  {district.name}
                 </MenuItem>
               ))}
             </TextField>
@@ -366,48 +677,175 @@ function AttendanceEditPage(props) {
           <Grid item xs={12} sm={6}>
             <TextField
               fullWidth
-              label={formatMessage(intl, "prl", "attendance.referralCode")}
-              value={formData.codigoEncaminhamento}
-              onChange={handleChange("codigoEncaminhamento")}
+              select
+              label={formatMessage(intl, "prl", "attendance.formadorName")}
+              value={formData.formador}
+              onChange={handleChange("formador")}
               variant="outlined"
               size="small"
-              helperText="Opcional"
-            />
-          </Grid>
-
-          <Grid item xs={12}>
-            <TextField
-              fullWidth
-              label={formatMessage(intl, "prl", "attendance.observations")}
-              value={formData.observacoes}
-              onChange={handleChange("observacoes")}
-              variant="outlined"
-              multiline
-              rows={4}
-              size="small"
-            />
+            >
+              {formadores.map((formador) => (
+                <MenuItem key={formador.id} value={formador.id}>
+                  {formador.lastName} {formador.otherNames}
+                </MenuItem>
+              ))}
+            </TextField>
           </Grid>
         </Grid>
+      </Paper>
 
-        <Box className={classes.buttonContainer}>
-          <Button
-            variant="outlined"
-            color="primary"
-            onClick={handleBack}
-          >
-            {formatMessage(intl, "prl", "button.cancel")}
-          </Button>
+      <Paper className={classes.paper}>
+        <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+          <div>
+            <Typography variant="h6" className={classes.sectionTitle}>
+              {formatMessage(intl, "prl", "attendance.familyAttendanceTitle")}
+            </Typography>
+            <Typography variant="body2">
+              {formatMessage(intl, "prl", "attendance.familyAttendanceDesc")}
+            </Typography>
+          </div>
           <Button
             variant="contained"
             color="primary"
-            startIcon={<SaveIcon />}
-            onClick={handleSave}
-            disabled={loading || !formData.sessaoId}
+            startIcon={<AddIcon />}
+            onClick={handleAddPresenca}
+            size="small"
           >
-            {formatMessage(intl, "prl", "button.save")}
+            {formatMessage(intl, "prl", "button.addFamily")}
           </Button>
         </Box>
+
+        {presencas.length > 0 && (
+          <Box style={{ marginBottom: "16px", padding: "12px", backgroundColor: "#e8f5e9", borderRadius: "4px" }}>
+            <Grid container spacing={2}>
+              <Grid item xs={12} sm={2}>
+                <Typography variant="subtitle2" style={{ fontWeight: "bold", color: "#2e7d32" }}>{formatMessage(intl, "prl", "attendance.familyName")}</Typography>
+              </Grid>
+              <Grid item xs={12} sm={2}>
+                <Typography variant="subtitle2" style={{ fontWeight: "bold", color: "#2e7d32" }}>{formatMessage(intl, "prl", "attendance.estado")}</Typography>
+              </Grid>
+              <Grid item xs={12} sm={3}>
+                <Typography variant="subtitle2" style={{ fontWeight: "bold", color: "#2e7d32" }}>{formatMessage(intl, "prl", "attendance.code")}</Typography>
+              </Grid>
+              <Grid item xs={12} sm={3}>
+                <Typography variant="subtitle2" style={{ fontWeight: "bold", color: "#2e7d32" }}>{formatMessage(intl, "prl", "attendance.others")}</Typography>
+              </Grid>
+            </Grid>
+          </Box>
+        )}
+
+        {presencas.length > 0 ? (
+          presencas.map((presenca, index) => (
+            <Box
+              key={presenca.id}
+              style={{
+                marginBottom: "16px",
+                padding: "16px",
+                border: "1px solid #c8e6c9",
+                borderRadius: "8px",
+                backgroundColor: "#f1f8f6",
+              }}
+            >
+              <Grid container spacing={2} alignItems="center">
+                <Grid item xs={12} sm={2}>
+                  <TextField
+                    select
+                    fullWidth
+                    size="small"
+                    variant="outlined"
+                    value={presenca.familiaId}
+                    onChange={(e) => handlePresencaFamiliaChange(index, e.target.value)}
+                    displayEmpty
+                  >
+                    <MenuItem value="">{formatMessage(intl, "prl", "attendance.selectFamily")}</MenuItem>
+                    {familias.map((familia) => (
+                      <MenuItem key={familia.id} value={familia.id}>
+                        {familia.nome}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                </Grid>
+
+                <Grid item xs={12} sm={2}>
+                  <TextField
+                    select
+                    fullWidth
+                    size="small"
+                    variant="outlined"
+                    value={presenca.estado}
+                    onChange={(e) => handlePresencaChange(index, "estado", e.target.value)}
+                  >
+                    {ESTADO_OPTIONS.map((option) => (
+                      <MenuItem key={option.value} value={option.value}>
+                        {formatMessage(intl, "prl", option.labelKey)}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                </Grid>
+
+                <Grid item xs={12} sm={2}>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    variant="outlined"
+                    placeholder={formatMessage(intl, "prl", "attendance.code")}
+                    value={presenca.codigoEncaminhamento}
+                    onChange={(e) => handlePresencaChange(index, "codigoEncaminhamento", e.target.value)}
+                    disabled={presenca.estado !== 'ENCA'}
+                  />
+                </Grid>
+
+                <Grid item xs={12} sm={2}>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    variant="outlined"
+                    placeholder={formatMessage(intl, "prl", "attendance.institutionName")}
+                    value={presenca.nomeDaInstituicao}
+                    onChange={(e) => handlePresencaChange(index, "nomeDaInstituicao", e.target.value)}
+                    disabled={presenca.estado !== 'ENCA'}
+                  />
+                </Grid>
+
+                <Grid item xs={12} sm="auto">
+                  <Tooltip title={formatMessage(intl, "prl", "button.remove")}>
+                    <IconButton
+                      size="small"
+                      onClick={() => handleRemovePresenca(index)}
+                      style={{ color: "#d32f2f" }}
+                    >
+                      <DeleteIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                </Grid>
+              </Grid>
+            </Box>
+          ))
+        ) : (
+          <Typography variant="body2" style={{ padding: "16px", textAlign: "center", color: "#999" }}>
+            {formatMessage(intl, "prl", "attendance.noFamiliesMessage")}
+          </Typography>
+        )}
+
       </Paper>
+      <Box className={classes.buttonContainer}>
+        <Button
+          variant="outlined"
+          color="primary"
+          onClick={handleBack}
+        >
+          {formatMessage(intl, "prl", "button.cancel")}
+        </Button>
+        <Button
+          variant="contained"
+          color="primary"
+          startIcon={<SaveIcon />}
+          onClick={handleSave}
+          disabled={loading || !formData.sessaoId}
+        >
+          {formatMessage(intl, "prl", "button.save")}
+        </Button>
+      </Box>
     </div>
   );
 }

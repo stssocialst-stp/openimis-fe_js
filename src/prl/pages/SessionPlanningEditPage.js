@@ -54,16 +54,6 @@ const DAYS_OF_WEEK = [
   { value: "DOM", label: "Domingo" },
 ];
 
-const FAMILY_GROUPS = [
-  { value: 1, label: "Grupo A" },
-  { value: 2, label: "Grupo B" },
-];
-
-const MODULES = [
-  { value: 1, label: "Módulo 1" },
-  { value: 2, label: "Módulo 2" },
-];
-
 const MONTHS = [
   { value: "Janeiro", label: "Janeiro" },
   { value: "Fevereiro", label: "Fevereiro" },
@@ -173,18 +163,18 @@ function SessionPlanningEditPage(props) {
     }
   }`;
 
-  const modulesQuery = `query GetModulosEducacionais($first: Int) {
-    modulosEducacionais(first: $first, orderBy: ["ordem"]) {
-      edges {
-        node {
-          id
-          codigo
-          nome
-          ordem
-        }
-      }
-    }
-  }`;
+  // const modulesQuery = `query GetModulosEducacionais($first: Int) {
+  //   modulosEducacionais(first: $first, orderBy: ["ordem"]) {
+  //     edges {
+  //       node {
+  //         id
+  //         codigo
+  //         nome
+  //         ordem
+  //       }
+  //     }
+  //   }
+  // }`;
 
   const familyGroupsQuery = `query GetGruposFamiliares($first: Int) {
     gruposFamiliares(first: $first) {
