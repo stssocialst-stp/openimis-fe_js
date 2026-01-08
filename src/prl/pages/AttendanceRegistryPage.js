@@ -181,7 +181,7 @@ function AttendanceRegistryPage(props) {
     "prl.attendance.sessionDate",
     "prl.attendance.familyName",
     "prl.attendance.estado",
-    "prl.attendance.referralCode",
+    "prl.attendance.code",
     "prl.attendance.institutionName",
     "prl.attendance.observations",
     "emptyLabel",
