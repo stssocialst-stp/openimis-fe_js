@@ -195,10 +195,8 @@ function SessionPlanningEditPage(props) {
     }
   }`;
 
-  // Note: updateMutation is kept for future edit functionality
-  // eslint-disable-next-line no-unused-vars
-  const updateMutation = `mutation UpdateSessaoPEP($input: UpdateSessaoPEPMutationInput!) {
-    updateSessaoPep(input: $input) {
+  const updateMultipleMutation = `mutation UpdateMultipleSessoesPEP($input: UpdateMultipleSessoesPEPMutationInput!) {
+    updateMultipleSessoesPep(input: $input) {
       clientMutationId
       internalId
     }
@@ -596,7 +594,7 @@ function SessionPlanningEditPage(props) {
             disabled={readOnly}
           />
         </Grid>
-        {!readOnly && (
+        {!readOnly && !initialData?.id && (
           <Grid item xs={12}>
             <Box display="flex" justifyContent="flex-end">
               <Tooltip title={formatMessage(intl, "prl", "sessionPlanning.removeSession")}>
@@ -667,30 +665,60 @@ function SessionPlanningEditPage(props) {
       let input;
       let mutation;
 
+      // Helper function to extract numeric ID from Relay Global ID
+      const extractNumericId = (relayId) => {
+        if (!relayId) return null;
+        // If it's already a small number (valid DB ID), return it
+        if (!isNaN(relayId) && parseInt(relayId) < 2147483647) return parseInt(relayId);
+        // Try to decode base64 Relay ID
+        try {
+          const decoded = atob(relayId);
+          const match = decoded.match(/:([0-9]+)$/);
+          return match ? parseInt(match[1]) : null;
+        } catch {
+          return null;
+        }
+      };
+
+      // Helper to check if a session ID is a valid database ID (not a Date.now() timestamp)
+      const isValidDbId = (id) => {
+        const numericId = extractNumericId(id);
+        // Date.now() generates timestamps > 1600000000000, DB IDs are much smaller
+        return numericId !== null && numericId < 2147483647;
+      };
+
       if (isEditMode) {
-        // Update mode - update single session
-        const session = sessions[0]; // Assuming single session edit
-        input = {
-          id: initialData.id,
+        // Update existing sessions only
+        const coordenadorId = formData.coordenadorDistrital.id;
+        const tecnicoId = formData.tecnicoSocial.id;
+        const distritoId = formData.distrito.id;
+
+        const sessionsToUpdate = sessions.map(session => ({
+          id: extractNumericId(session.id),
+          codigoSessao: formData.codigoSessao,
           dataPlanejamento: formData.dataPlanejamento,
           nomeModulo: formData.nomeModulo,
-          coordenadorDistritalId: formData.coordenadorDistrital.id,
-          tecnicoSocialId: formData.tecnicoSocial.id,
-          distritoId: formData.distrito.id,
+          coordenadorDistritalId: coordenadorId,
+          tecnicoSocialId: tecnicoId,
+          distritoId: distritoId,
           mesModuloAnterior: formData.mesModuloAnterior,
           diaSemana: session.diaSemana,
           dataSessao: session.dataSessao,
           horaSessao: session.horaSessao,
           zona: session.zona,
           numeroFamilias: parseInt(session.numeroFamilias),
-          grupoFamiliaId: session.grupoFamilia.id,
+          grupoFamiliaId: session.grupoFamilia?.id || null,
           tempoDeslocamento: parseInt(session.tempoDeslocamento),
           feedbackDocumentacao: session.feedbackDocumentacao,
           temSupervisao: session.temSupervisao,
           observacoes: formData.observacoes,
           status: formData.status,
-        };
-        mutation = updateMutation;
+        }));
+
+        console.log('Updating sessions:', sessionsToUpdate);
+
+        input = { sessions: sessionsToUpdate };
+        mutation = updateMultipleMutation;
       } else {
         // Create mode - create multiple sessions
         const coordenadorId = formData.coordenadorDistrital.id;
@@ -742,12 +770,26 @@ function SessionPlanningEditPage(props) {
       });
 
       const result = await response.json();
-      if (result.data) {
-        handleBack();
-      } else if (result.errors) {
-        console.error('Error saving sessions:', result.errors);
-        const errorMessages = result.errors.map(err => err.message).join('\n\n');
-        alert(`Erro ao salvar as sessões:\n\n${errorMessages}`);
+
+      // Handle response based on mutation type
+      if (isEditMode) {
+        // updateMultipleSessoesPep returns { clientMutationId, internalId }
+        if (result.data?.updateMultipleSessoesPep) {
+          handleBack();
+        } else if (result.errors) {
+          console.error('Error updating sessions:', result.errors);
+          const errorMessages = result.errors.map(err => err.message).join('\n\n');
+          alert(`Erro ao atualizar as sessões:\n\n${errorMessages}`);
+        }
+      } else {
+        // createMultipleSessoesPep returns { clientMutationId, internalId }
+        if (result.data?.createMultipleSessoesPep) {
+          handleBack();
+        } else if (result.errors) {
+          console.error('Error creating sessions:', result.errors);
+          const errorMessages = result.errors.map(err => err.message).join('\n\n');
+          alert(`Erro ao salvar as sessões:\n\n${errorMessages}`);
+        }
       }
     } catch (error) {
       console.error('Error in handleSave:', error);
@@ -906,7 +948,7 @@ function SessionPlanningEditPage(props) {
           <Typography variant="h6" className={classes.sectionTitle}>
             {formatMessage(intl, "prl", "sessionPlanning.planningSessions")}
           </Typography>
-          {!readOnly && (
+          {!readOnly && !initialData?.id && (
             <Button
               variant="contained"
               color="primary"
