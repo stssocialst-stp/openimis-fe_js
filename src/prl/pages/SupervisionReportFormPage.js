@@ -2,27 +2,43 @@ import { useState, useEffect } from "react";
 import { injectIntl } from "react-intl";
 import { withTheme, withStyles } from "@material-ui/core/styles";
 import {
-  Grid, TextField, Button, Card, CardContent, CardHeader, IconButton, Tooltip, Table, TableBody, TableCell, TableHead, TableRow, Paper, Divider, Typography, FormControl, InputLabel, Select, MenuItem,
+  Paper, Typography, Grid, TextField, Button, MenuItem, Divider, Box, FormControl, InputLabel, Select, Chip,
 } from "@material-ui/core";
-import AddIcon from "@material-ui/icons/Add";
-import DeleteIcon from "@material-ui/icons/Delete";
-import SaveIcon from "@material-ui/icons/Save";
 import ChevronLeftIcon from "@material-ui/icons/ChevronLeft";
+import SaveIcon from "@material-ui/icons/Save";
 import { formatMessage, withModulesManager, Helmet, baseApiUrl, apiHeaders } from "@openimis/fe-core";
-import { PRL_ROUTE_SUPERVISION_REPORT } from "../constants";
+import LimitedChecklistComponent from "../components/LimitedChecklistComponent";
 
 const styles = (theme) => ({
   page: theme.page,
   paper: { ...theme.paper.paper, margin: theme.spacing(2), padding: theme.spacing(2) },
-  card: { ...theme.paper.paper, margin: theme.spacing(2), marginTop: theme.spacing(1) },
+  headerPaper: {
+    ...theme.paper.paper,
+    margin: theme.spacing(2),
+    padding: theme.spacing(2),
+    marginBottom: 0,
+  },
+  headerTitle: {
+    marginBottom: theme.spacing(1),
+    fontWeight: 500,
+    fontSize: "1.3rem",
+  },
+  headerSubtitle: {
+    fontSize: "0.9rem",
+    opacity: 0.9,
+  },
   sectionTitle: {
     marginBottom: theme.spacing(2),
+    marginTop: theme.spacing(2),
     color: theme.palette.primary.main,
     fontWeight: "bold",
+    fontSize: "1.1rem",
   },
-  section: { marginBottom: theme.spacing(2), padding: 0 },
-  button: { margin: theme.spacing(1) },
-  table: { marginTop: theme.spacing(2) },
+  sectionSubtitle: {
+    marginBottom: theme.spacing(2),
+    color: theme.palette.textSecondary,
+    fontSize: "0.9rem",
+  },
   buttonContainer: {
     display: "flex",
     justifyContent: "flex-end",
@@ -30,154 +46,20 @@ const styles = (theme) => ({
     gap: theme.spacing(1),
     padding: theme.spacing(0, 1, 2, 1),
   },
-  headerTitle: {
-    marginLeft: theme.spacing(1),
-    fontWeight: 500,
+  divider: {
+    margin: theme.spacing(2, 0),
   },
-  headerPaper: {
-    ...theme.paper.paper,
-    margin: theme.spacing(2),
-    padding: theme.spacing(1, 2),
-    display: "flex",
-    alignItems: "center",
+  headerButton: {
+    color: "white",
+    marginRight: theme.spacing(1),
   },
 });
 
 function SupervisionReportFormPage(props) {
   const { classes, intl, history, location } = props;
-  const isView = location.state?.isView || false;
-  const initialData = location.state?.data || {};
-  const [districts, setDistricts] = useState([]);
-  const [modules, setModules] = useState([]);
-
-  const modulesQuery = `query GetModulosEducacionais($first: Int) {
-    modulosEducacionais(
-      first: $first
-      ativo: true
-      orderBy: ["ordem"]
-    ) {
-      edges {
-        node {
-          id
-          codigo
-          nome
-          descricao
-          ordem
-        }
-      }
-    }
-  }`;
-
-  const districtQuery = `query GetDistritos($first: Int) {
-    locations(first: $first, type: "D") {
-      edges {
-        node {
-          id
-          code
-          name
-        }
-      }
-    }
-  }`;
-
-  const [formData, setFormData] = useState({
-    nomeSupervisores: initialData.nomeSupervisores || "",
-    numSessoesSupervisionadas: initialData.numSessoesSupervisionadas || "",
-    numTecnicosSupervisionados: initialData.numTecnicosSupervisionados || "",
-    distritoId: initialData.distritoId || "",
-    periodo: initialData.periodo || "",
-    ano: initialData.ano || new Date().getFullYear(),
-    periodoInicio: initialData.periodoInicio || "",
-    periodoFim: initialData.periodoFim || "",
-    moduloMaiorDificuldadeId: initialData.moduloMaiorDificuldadeId || "",
-    observacoesAdicionais: initialData.observacoesAdicionais || "",
-    passo_a: "",
-    passo_b: "",
-    passo_c: "",
-    passo_d: "",
-    passo_e: "",
-    passo_f: "",
-    passo_g: "",
-    passo_h: "",
-    passo_i: "",
-    passo_j: "",
-  });
-
-  const [tecnicosList, setTecnicosList] = useState([]);
-  const [newTecnico, setNewTecnico] = useState({
-    nome_tecnico: "",
-    pontos_positivos: "",
-    pontos_aprimorar: "",
-  });
-
-  useEffect(() => {
-    // Fetch districts and modules
-    const fetchDistricts = async () => {
-      try {
-        const response = await fetch(`${baseApiUrl}/graphql`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-CSRFToken": getCookie("csrftoken"),
-            ...apiHeaders(),
-          },
-          body: JSON.stringify({ query: districtQuery, variables: { first: 100 } }),
-        });
-        const result = await response.json();
-        if (result.data?.locations?.edges) {
-          setDistricts(result.data.locations.edges.map((edge) => edge.node));
-        }
-      } catch (error) {
-        console.error("Error fetching districts:", error);
-      }
-    };
-
-    const fetchModules = async () => {
-      try {
-        const response = await fetch(`${baseApiUrl}/graphql`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-CSRFToken": getCookie("csrftoken"),
-            ...apiHeaders(),
-          },
-          body: JSON.stringify({ query: modulesQuery, variables: { first: 100 } }),
-        });
-        const result = await response.json();
-        if (result.data?.modulosEducacionais?.edges) {
-          setModules(result.data.modulosEducacionais.edges.map((edge) => edge.node));
-        }
-      } catch (error) {
-        console.error("Error fetching modules:", error);
-      }
-    };
-
-    fetchDistricts();
-    fetchModules();
-  }, []); // Empty dependency array to prevent infinite calls
-
-  useEffect(() => {
-    if (initialData.notasSessoesPep) {
-      try {
-        const notasObj = JSON.parse(initialData.notasSessoesPep);
-        setFormData((prev) => ({
-          ...prev,
-          ...notasObj,
-        }));
-      } catch (e) {
-        console.error("Error parsing notas:", e);
-      }
-    }
-
-    if (initialData.avaliacoesTecnicos) {
-      try {
-        const avaliacoes = JSON.parse(initialData.avaliacoesTecnicos);
-        setTecnicosList(avaliacoes);
-      } catch (e) {
-        console.error("Error parsing avaliacoes:", e);
-      }
-    }
-  }, [initialData]);
+  const isView = location?.state?.isView || false;
+  const initialData = location?.state?.data || null;
+  const reportId = location?.pathname?.split('/').pop() || null;
 
   const getCookie = (name) => {
     let cookieValue = null;
@@ -194,432 +76,653 @@ function SupervisionReportFormPage(props) {
     return cookieValue;
   };
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
+  // 1. Identificação
+  const [identificacao, setIdentificacao] = useState({
+    supervisores: [],
+    numeroSessoes: "",
+    numeroTecnicosFormadores: "",
+  });
 
-  const handleAddTecnico = () => {
-    if (newTecnico.nome_tecnico.trim()) {
-      setTecnicosList((prev) => [...prev, { ...newTecnico }]);
-      setNewTecnico({
-        nome_tecnico: "",
-        pontos_positivos: "",
-        pontos_aprimorar: "",
-      });
-    }
-  };
+  // 2. Marque seu Distrito
+  const [distrito, setDistrito] = useState("");
+  const [distritos, setDistritos] = useState([
+    { id: "aguas_grande", name: "Águas Grande" },
+    { id: "cairu", name: "Cairu" },
+    { id: "caul", name: "Caúl" },
+    { id: "lambai", name: "Lâmbai" },
+  ]);
 
-  const handleRemoveTecnico = (index) => {
-    setTecnicosList((prev) => prev.filter((_, i) => i !== index));
-  };
+  // 3. Marque o Período do Relatório
+  const [periodo, setPeriodo] = useState({
+    janfev: false,
+    marabb: false,
+    maijun: false,
+    julaug: false,
+    setout: false,
+    novdec: false,
+  });
 
-  const handleBack = () => {
-    history.push(`/${PRL_ROUTE_SUPERVISION_REPORT}`);
-  };
+  // 4. Avaliação dos Técnicos Formadores
+  const [avaliacoesTecnicos, setAvaliacoesTecnicos] = useState([
+    {
+      id: 1,
+      idDoTecnico: "",
+      pontosPositivos: "",
+      pontosAprimorar: "",
+    },
+  ]);
 
-  const handleSave = async () => {
-    const requiredFields = [
-      "nomeSupervisores",
-      "numSessoesSupervisionadas",
-      "numTecnicosSupervisionados",
-      "distritoId",
-      "periodo",
-      "ano",
-      "periodoInicio",
-      "periodoFim",
-    ];
+  // 5. Sessões do PEP+
+  const [sessoesPep, setSessoesPep] = useState([
+    { passo: "a. Acolhida a apresentação dos cuidadores.", nota: 0 },
+    { passo: "b. Acolheu a presença dos cuidadores.", nota: 0 },
+    { passo: "c. Reviu os compromissos do mês passado.", nota: 0 },
+    { passo: "d. Fez a discussão com a imagem preparada no guia.", nota: 0 },
+    { passo: "e. Compartilhou as mensagens chave.", nota: 0 },
+    { passo: "f. Facilitou a prática de acordo com o guia.", nota: 0 },
+    { passo: "g. Fez a reflexão de acordo com o guia.", nota: 0 },
+    { passo: "h. Pediu os compromissos aos cuidadores.", nota: 0 },
+    { passo: "i. Informou sobre a próxima sessão.", nota: 0 },
+  ]);
 
-    for (const field of requiredFields) {
-      if (!formData[field]) {
-        alert(`Por favor preencha o campo: ${field}`);
-        return;
+  // B. Qual módulo com dificuldade
+  const modulosOptions = [
+    { id: "modulo1", description: "Módulo 1: Eu Como Cuidador" },
+    { id: "modulo2", description: "Módulo 2: Rotinas Diárias" },
+    { id: "modulo3", description: "Módulo 3: Dimensão Afetiva - Apoiar a Aprendizagem das Crianças" },
+    { id: "modulo4", description: "Módulo 4: Desenvolvimento Integral - Como Manter a Família Saudável" },
+    { id: "modulo5", description: "Módulo 5: Conversar e Aprender com as Vossas Crianças" },
+    { id: "modulo6", description: "Módulo 6: Direitos da Criança" },
+    { id: "modulo7", description: "Módulo 7: Consentimento e Mudanças de Vida" },
+    { id: "modulo8", description: "Módulo 8: Adolescentes - Expectativas para o Futuro" },
+    { id: "modulo9", description: "Módulo 9: Promover um Ambiente Familiar Acolhedor" },
+    { id: "modulo10", description: "Módulo 10: Cuidar de Quem Cuida" },
+    { id: "modulo11", description: "Módulo 11: Planeamento Financeiro" },
+    { id: "modulo12", description: "Módulo 12: Graduação e Próximos Passos" },
+  ];
+
+  const [modulosDificuldade, setModulosDificuldade] = useState(
+    modulosOptions.reduce((acc, modulo) => {
+      acc[modulo.id] = { ...modulo, confirmacao: false };
+      return acc;
+    }, {})
+  );
+
+  // 6. Observações Adicionais
+  const [observacoes, setObservacoes] = useState("");
+
+  // Usuários (supervisores e técnicos)
+  const [usuarios, setUsuarios] = useState([]);
+  const [loadingUsuarios, setLoadingUsuarios] = useState(false);
+
+  const [loading, setLoading] = useState(false);
+
+  const usersQuery = `query GetSocialTechnicians {
+    users(first: 100) {
+      edges {
+        node {
+          id
+          username
+          lastName
+          otherNames
+        }
       }
     }
+  }`;
 
-    const notasSessoesPep = {
-      passo_a: parseFloat(formData.passo_a) || 0,
-      passo_b: parseFloat(formData.passo_b) || 0,
-      passo_c: parseFloat(formData.passo_c) || 0,
-      passo_d: parseFloat(formData.passo_d) || 0,
-      passo_e: parseFloat(formData.passo_e) || 0,
-      passo_f: parseFloat(formData.passo_f) || 0,
-      passo_g: parseFloat(formData.passo_g) || 0,
-      passo_h: parseFloat(formData.passo_h) || 0,
-      passo_i: parseFloat(formData.passo_i) || 0,
-      passo_j: parseFloat(formData.passo_j) || 0,
+  // Helper para converter período checkboxes para enum
+  const getPeriodoEnum = () => {
+    if (periodo.janfev) return 'JAN_FEV';
+    if (periodo.marabb) return 'MAR_ABR';
+    if (periodo.maijun) return 'MAI_JUN';
+    if (periodo.julaug) return 'JUL_AGO';
+    if (periodo.setout) return 'SET_OUT';
+    if (periodo.novdec) return 'NOV_DEZ';
+    return null;
+  };
+
+  // Buscar usuários ao montar o componente
+  useEffect(() => {
+    const fetchUsers = async () => {
+      setLoadingUsuarios(true);
+      try {
+        const response = await fetch(`${baseApiUrl}/graphql`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken'),
+            ...apiHeaders(),
+          },
+          body: JSON.stringify({ query: usersQuery }),
+        });
+
+        const result = await response.json();
+
+        if (result.data?.users?.edges) {
+          const userList = result.data.users.edges.map((edge) => ({
+            id: edge.node.id,
+            username: edge.node.username,
+            label: `${edge.node.lastName} ${edge.node.otherNames}`.trim(),
+          }));
+          setUsuarios(userList);
+        }
+      } catch (error) {
+        console.error('Error fetching users:', error);
+      } finally {
+        setLoadingUsuarios(false);
+      }
     };
 
-    // Build mutation with proper field inclusion
-    let mutationInput = `
-      nomeSupervisores: "${formData.nomeSupervisores}"
-      numSessoesSupervisionadas: ${parseInt(formData.numSessoesSupervisionadas, 10)}
-      numTecnicosSupervisionados: ${parseInt(formData.numTecnicosSupervisionados, 10)}
-      periodo: ${parseInt(formData.periodo, 10)}
-      ano: ${parseInt(formData.ano, 10)}
-      periodoInicio: "${formData.periodoInicio}"
-      periodoFim: "${formData.periodoFim}"
-      avaliacoesTecnicos: "${JSON.stringify(tecnicosList).replace(/"/g, '\\"')}"
-      notasSessoesPep: "${JSON.stringify(notasSessoesPep).replace(/"/g, '\\"')}"
-      observacoesAdicionais: "${formData.observacoesAdicionais}"
-    `;
+    fetchUsers();
+  }, []);
 
-    if (formData.moduloMaiorDificuldadeId) {
-      mutationInput += `\n      moduloMaiorDificuldadeId: "${formData.moduloMaiorDificuldadeId}"`;
+  const createMutation = `mutation CreateRelatorioSupervisao($input: CreateRelatorioSupervisaoMutationInput!) {
+    createRelatorioSupervisao(input: $input) {
+      clientMutationId
+      internalId
     }
+  }`;
 
-    if (formData.distritoId) {
-      mutationInput += `\n      distritoId: "${formData.distritoId}"`;
+  const updateMutation = `mutation UpdateRelatorioSupervisao($input: UpdateRelatorioSupervisaoMutationInput!) {
+    updateRelatorioSupervisao(input: $input) {
+      clientMutationId
+      internalId
     }
+  }`;
 
-    const mutation = initialData.id
-      ? `
-        mutation {
-          updateRelatorioSupervisao(
-            input: {
-              id: ${initialData.id}
-              ${mutationInput}
-            }
-          ) {
-            internalId
-            clientMutationId
-          }
-        }
-      `
-      : `
-        mutation {
-          createRelatorioSupervisao(
-            input: {
-              ${mutationInput}
-            }
-          ) {
-            internalId
-            clientMutationId
-          }
-        }
-      `;
+  useEffect(() => {
+    // Load data if editing
+    if (initialData) {
+      setIdentificacao({
+        supervisores: initialData.supervisores || [],
+        numeroSessoes: initialData.numeroSessoes || "",
+        numeroTecnicosFormadores: initialData.numeroTecnicosFormadores || "",
+      });
+    }
+  }, [initialData]);
 
+  const handleSave = async () => {
     try {
+      if (identificacao.supervisores.length === 0) {
+        alert("Por favor, adicione pelo menos um supervisor.");
+        return;
+      }
+      if (!distrito) {
+        alert("Por favor, selecione o distrito.");
+        return;
+      }
+      const periodoEnum = getPeriodoEnum();
+      if (!periodoEnum) {
+        alert("Por favor, selecione um período.");
+        return;
+      }
+
+      const currentYear = new Date().getFullYear();
+
+      // Filtrar avaliações com idDoTecnico preenchido
+      const avaliacoesValidas = avaliacoesTecnicos.filter(a => a.idDoTecnico.trim());
+
+      const input = {
+        supervisores: JSON.stringify(identificacao.supervisores),
+        numeroSessoes: parseInt(identificacao.numeroSessoes) || 0,
+        numeroTecnicosFormadores: parseInt(identificacao.numeroTecnicosFormadores) || 0,
+        ano: currentYear,
+        distritoId: distrito,
+        periodo: periodoEnum,
+        avaliacoesTecnicos: JSON.stringify(avaliacoesValidas.map(a => ({
+          idDoTecnico: a.idDoTecnico,
+          pontosPositivos: a.pontosPositivos,
+          pontosAprimorar: a.pontosAprimorar,
+        }))),
+        sessoesPep: JSON.stringify(sessoesPep.map(s => ({
+          passo: s.passo,
+          nota: parseInt(s.nota) || 0,
+        }))),
+        modulosDificuldade: JSON.stringify(modulosDificuldade),
+        observacoes: observacoes,
+      };
+
+      if (reportId && reportId !== 'new') {
+        input.id = reportId;
+      }
+
+      const mutation = reportId === 'new' ? createMutation : updateMutation;
+      const mutationName = reportId === 'new' ? 'createRelatorioSupervisao' : 'updateRelatorioSupervisao';
+
+      setLoading(true);
+
       const response = await fetch(`${baseApiUrl}/graphql`, {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
-          "X-CSRFToken": getCookie("csrftoken"),
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCookie('csrftoken'),
           ...apiHeaders(),
         },
-        body: JSON.stringify({ query: mutation }),
+        body: JSON.stringify({ query: mutation, variables: { input } }),
       });
 
       const result = await response.json();
+
       if (result.errors) {
-        console.error("Error saving report:", result.errors);
-        alert("Erro ao salvar relatório");
-      } else {
-        history.push("/prl/supervisionReport");
+        console.error('Errors:', result.errors);
+        alert(`Erro ao salvar: ${result.errors[0].message}`);
+      } else if (result.data?.[mutationName]) {
+        alert("Relatório salvo com sucesso!");
+        history.push('/prl/supervisionReport');
       }
     } catch (error) {
-      console.error("Error:", error);
-      alert("Erro ao salvar relatório");
+      console.error('Error saving:', error);
+      alert("Erro ao salvar o relatório");
+    } finally {
+      setLoading(false);
     }
+  };
+
+  const handleBack = () => {
+    history.push('/prl/supervisionReport');
+  };
+
+  const handleAddTecnico = () => {
+    if (isView) return;
+    const newId = Math.max(...avaliacoesTecnicos.map(t => t.id), 0) + 1;
+    setAvaliacoesTecnicos([...avaliacoesTecnicos, {
+      id: newId,
+      idDoTecnico: "",
+      pontosPositivos: "",
+      pontosAprimorar: "",
+    }]);
+  };
+
+  const handleRemoveTecnico = (id) => {
+    if (isView) return;
+    if (avaliacoesTecnicos.length > 1) {
+      setAvaliacoesTecnicos(avaliacoesTecnicos.filter(t => t.id !== id));
+    }
+  };
+
+  const handleTecnicoChange = (id, field, value) => {
+    if (isView) return;
+    setAvaliacoesTecnicos(avaliacoesTecnicos.map(t =>
+      t.id === id ? { ...t, [field]: value } : t
+    ));
   };
 
   return (
     <div className={classes.page}>
       <Helmet title={formatMessage(intl, "prl", "title.supervisionReport")} />
 
-      <Paper className={classes.headerPaper}>
-        <Button onClick={handleBack}>
-          <ChevronLeftIcon fontSize="small" />
-        </Button>
-        <Typography className={classes.headerTitle}>
-          {formatMessage(intl, "prl", "title.supervisionReport")}
+      {/* Header */}
+      <Box className={classes.headerPaper}>
+        <Box style={{ display: 'flex', alignItems: 'center', marginBottom: 8 }}>
+          {!isView && (
+            <Button
+              startIcon={<ChevronLeftIcon />}
+              onClick={handleBack}
+              className={classes.headerButton}
+            >
+              Voltar
+            </Button>
+          )}
+          <Typography variant="h6" className={classes.headerTitle}>
+            Relatório Bimestral de Supervisão - PEP+
+          </Typography>
+        </Box>
+      </Box>
+
+      {/* 1. Identificação */}
+      <Paper className={classes.paper}>
+        <Typography variant="h6" className={classes.sectionTitle}>
+          I. Identificação
         </Typography>
+        <Grid container spacing={3}>
+          <Grid item xs={12} sm={6}>
+            <FormControl fullWidth>
+              <InputLabel>Supervisores *</InputLabel>
+              <Select
+                multiple
+                value={identificacao.supervisores}
+                onChange={(e) => !isView && setIdentificacao({ ...identificacao, supervisores: e.target.value })}
+                label="Supervisores *"
+                disabled={isView || loadingUsuarios}
+                renderValue={(selected) => (
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                    {selected.map((value) => {
+                      const user = usuarios.find(u => u.id === value);
+                      return <Chip key={value} label={user?.label || value} size="small" />;
+                    })}
+                  </Box>
+                )}
+              >
+                {usuarios.map((user) => (
+                  <MenuItem key={user.id} value={user.id}>
+                    {user.label}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid item xs={12} sm={3}>
+            <TextField
+              fullWidth
+              label="Nº de Sessões Supervisionadas *"
+              type="number"
+              value={identificacao.numeroSessoes}
+              onChange={(e) => !isView && setIdentificacao({ ...identificacao, numeroSessoes: e.target.value })}
+              variant="outlined"
+              size="small"
+              disabled={isView}
+              InputProps={{ inputProps: { min: 0 } }}
+              required
+            />
+          </Grid>
+          <Grid item xs={12} sm={3}>
+            <TextField
+              fullWidth
+              label="Nº de Técnicos Supervisionados *"
+              type="number"
+              value={identificacao.numeroTecnicosFormadores}
+              onChange={(e) => !isView && setIdentificacao({ ...identificacao, numeroTecnicosFormadores: e.target.value })}
+              variant="outlined"
+              size="small"
+              disabled={isView}
+              InputProps={{ inputProps: { min: 0 } }}
+              required
+            />
+          </Grid>
+        </Grid>
       </Paper>
 
-      <Card style={{
-        padding: "0 16px",
-      }} className={classes.card}>
-        <CardHeader title={formatMessage(intl, "prl", "supervisionReport.basicInfo")} />
-        <CardContent className={classes.section}>
-          <Grid container spacing={2}>
-            <Grid item xs={12}>
-              <TextField
-                label={formatMessage(intl, "prl", "supervisionReport.supervisor")}
-                name="nomeSupervisores"
-                value={formData.nomeSupervisores}
-                onChange={handleChange}
-                fullWidth
-                required
-                disabled={isView}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                label={formatMessage(intl, "prl", "supervisionReport.period")}
-                name="periodo"
-                type="number"
-                inputProps={{ min: 1, max: 6 }}
-                value={formData.periodo}
-                onChange={handleChange}
-                fullWidth
-                required
-                disabled={isView}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                label={formatMessage(intl, "prl", "supervisionReport.year")}
-                name="ano"
-                type="number"
-                value={formData.ano}
-                onChange={handleChange}
-                fullWidth
-                required
-                disabled={isView}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                label={formatMessage(intl, "prl", "supervisionReport.startDate")}
-                name="periodoInicio"
-                type="date"
-                value={formData.periodoInicio}
-                onChange={handleChange}
-                fullWidth
-                required
-                InputLabelProps={{ shrink: true }}
-                disabled={isView}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                label={formatMessage(intl, "prl", "supervisionReport.endDate")}
-                name="periodoFim"
-                type="date"
-                value={formData.periodoFim}
-                onChange={handleChange}
-                fullWidth
-                required
-                InputLabelProps={{ shrink: true }}
-                disabled={isView}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                label={formatMessage(intl, "prl", "supervisionReport.sessions")}
-                name="numSessoesSupervisionadas"
-                type="number"
-                value={formData.numSessoesSupervisionadas}
-                onChange={handleChange}
-                fullWidth
-                required
-                disabled={isView}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                label={formatMessage(intl, "prl", "supervisionReport.technicians")}
-                name="numTecnicosSupervisionados"
-                type="number"
-                value={formData.numTecnicosSupervisionados}
-                onChange={handleChange}
-                fullWidth
-                required
-                disabled={isView}
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <FormControl fullWidth required disabled={isView}>
-                <InputLabel>{formatMessage(intl, "prl", "supervisionReport.district")}</InputLabel>
-                <Select
-                  name="distritoId"
-                  value={formData.distritoId}
-                  onChange={handleChange}
-                  label={formatMessage(intl, "prl", "supervisionReport.district")}
-                >
-                  <MenuItem value="">
-                    <em>{formatMessage(intl, "prl", "select.none")}</em>
-                  </MenuItem>
-                  {districts.map((district) => (
-                    <MenuItem key={district.id} value={district.id}>
-                      {district.name}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid item xs={12}>
-              <FormControl fullWidth disabled={isView}>
-                <InputLabel>{formatMessage(intl, "prl", "supervisionReport.module")}</InputLabel>
-                <Select
-                  name="moduloMaiorDificuldadeId"
-                  value={formData.moduloMaiorDificuldadeId}
-                  onChange={handleChange}
-                  label={formatMessage(intl, "prl", "supervisionReport.module")}
-                >
-                  <MenuItem value="">
-                    <em>{formatMessage(intl, "prl", "select.none")}</em>
-                  </MenuItem>
-                  {modules.map((module) => (
-                    <MenuItem key={module.id} value={module.id}>
-                      {module.nome}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
+      {/* 2. Marque seu Distrito */}
+      <Paper className={classes.paper}>
+        <Typography variant="h6" className={classes.sectionTitle}>
+          II. Marque seu Distrito
+        </Typography>
+        <Grid container spacing={3}>
+          <Grid item xs={12} sm={12}>
+            <TextField
+              fullWidth
+              select
+              label="Distrito"
+              value={distrito}
+              onChange={(e) => !isView && setDistrito(e.target.value)}
+              variant="outlined"
+              size="small"
+              required
+              disabled={isView}
+            >
+              <MenuItem value="">
+                <em>Selecione o distrito</em>
+              </MenuItem>
+              {distritos.map((d) => (
+                <MenuItem key={d.id} value={d.id}>
+                  {d.name}
+                </MenuItem>
+              ))}
+            </TextField>
           </Grid>
-        </CardContent>
-      </Card>
+        </Grid>
+      </Paper>
 
-      <Card style={{
-        padding: "0 16px",
-      }} className={classes.card}>
-        <CardHeader title={formatMessage(intl, "prl", "supervisionReport.pepGrades")} />
-        <CardContent className={classes.section}>
-          <Grid container spacing={2}>
-            {["passo_a", "passo_b", "passo_c", "passo_d", "passo_e", "passo_f", "passo_g", "passo_h", "passo_i", "passo_j"].map((passo) => (
-              <Grid item xs={12} sm={6} md={4} key={passo}>
+      {/* 3. Marque o Período do Relatório */}
+      <Paper className={classes.paper}>
+        <Typography variant="h6" className={classes.sectionTitle}>
+          III. Marque o Período do Relatório
+        </Typography>
+        <Grid container spacing={3}>
+          <Grid item xs={6} sm={4}>
+            <Box style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <input
+                type="checkbox"
+                disabled={isView}
+                checked={periodo.janfev}
+                onChange={(e) => !isView && setPeriodo({ ...periodo, janfev: e.target.checked })}
+              />
+              <Typography>Janeiro e Fevereiro</Typography>
+            </Box>
+          </Grid>
+          <Grid item xs={6} sm={4}>
+            <Box style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <input
+                type="checkbox"
+                disabled={isView}
+                checked={periodo.marabb}
+                onChange={(e) => !isView && setPeriodo({ ...periodo, marabb: e.target.checked })}
+              />
+              <Typography>Março e Abril</Typography>
+            </Box>
+          </Grid>
+          <Grid item xs={6} sm={4}>
+            <Box style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <input
+                type="checkbox"
+                disabled={isView}
+                checked={periodo.maijun}
+                onChange={(e) => !isView && setPeriodo({ ...periodo, maijun: e.target.checked })}
+              />
+              <Typography>Maio e Junho</Typography>
+            </Box>
+          </Grid>
+          <Grid item xs={6} sm={4}>
+            <Box style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <input
+                type="checkbox"
+                disabled={isView}
+                checked={periodo.julaug}
+                onChange={(e) => !isView && setPeriodo({ ...periodo, julaug: e.target.checked })}
+              />
+              <Typography>Julho e Agosto</Typography>
+            </Box>
+          </Grid>
+          <Grid item xs={6} sm={4}>
+            <Box style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <input
+                type="checkbox"
+                disabled={isView}
+                checked={periodo.setout}
+                onChange={(e) => !isView && setPeriodo({ ...periodo, setout: e.target.checked })}
+              />
+              <Typography>Setembro e Outubro</Typography>
+            </Box>
+          </Grid>
+          <Grid item xs={6} sm={4}>
+            <Box style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <input
+                type="checkbox"
+                disabled={isView}
+                checked={periodo.novdec}
+                onChange={(e) => !isView && setPeriodo({ ...periodo, novdec: e.target.checked })}
+              />
+              <Typography>Novembro e Dezembro</Typography>
+            </Box>
+          </Grid>
+        </Grid>
+      </Paper>
+
+      {/* 4. Avaliação dos Técnicos Formadores */}
+      <Paper className={classes.paper}>
+        <Typography variant="h6" className={classes.sectionTitle}>
+          IV. Avaliação dos Técnicos Formadores
+        </Typography>
+        <Typography variant="body2" className={classes.sectionSubtitle}>
+          Descreva os pontos fortes e as áreas de melhoria de cada técnico
+        </Typography>
+
+        {avaliacoesTecnicos.map((tecnico, index) => (
+          <Box key={tecnico.id} style={{ marginBottom: 24, padding: 16, backgroundColor: '#f5f5f5', borderRadius: 4 }}>
+            <Typography variant="subtitle2" style={{ marginBottom: 12, fontWeight: 500 }}>
+              Técnico Formador {index + 1}
+            </Typography>
+            <Grid container spacing={2}>
+              <Grid item xs={12}>
+                <FormControl fullWidth>
+                  <InputLabel>Técnico Formador</InputLabel>
+                  <Select
+                    value={tecnico.idDoTecnico}
+                    onChange={(e) => handleTecnicoChange(tecnico.id, 'idDoTecnico', e.target.value)}
+                    label="ID do Técnico Formador"
+                    disabled={isView || loadingUsuarios}
+                  >
+                    <MenuItem value="">
+                      <em>Selecione um técnico</em>
+                    </MenuItem>
+                    {usuarios.map((user) => (
+                      <MenuItem key={user.id} value={user.id}>
+                        {user.label}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+              <Grid item xs={12}>
                 <TextField
-                  label={`Passo ${passo.split("_")[1].toUpperCase()}`}
-                  name={passo}
-                  type="number"
-                  inputProps={{ min: 0, max: 10, step: 0.5 }}
-                  value={formData[passo]}
-                  onChange={handleChange}
                   fullWidth
+                  multiline
+                  rows={2}
+                  label="Pontos Positivos"
+                  value={tecnico.pontosPositivos}
+                  onChange={(e) => handleTecnicoChange(tecnico.id, 'pontosPositivos', e.target.value)}
+                  variant="outlined"
                   disabled={isView}
-                  className={classes.gradeField}
+                  placeholder="Descreva os pontos positivos do técnico"
                 />
               </Grid>
-            ))}
-          </Grid>
-        </CardContent>
-      </Card>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  multiline
+                  rows={2}
+                  label="Pontos a Aproveitar"
+                  value={tecnico.pontosAprimorar}
+                  onChange={(e) => handleTecnicoChange(tecnico.id, 'pontosAprimorar', e.target.value)}
+                  variant="outlined"
+                  disabled={isView}
+                  placeholder="Descreva os pontos a melhorar"
+                />
+              </Grid>
+              {!isView && avaliacoesTecnicos.length > 1 && (
+                <Grid item xs={12}>
+                  <Button
+                    color="secondary"
+                    size="small"
+                    onClick={() => handleRemoveTecnico(tecnico.id)}
+                  >
+                    Remover Técnico
+                  </Button>
+                </Grid>
+              )}
+            </Grid>
+          </Box>
+        ))}
 
-      <Card style={{
-        padding: "0 16px",
-      }} className={classes.card}>
-        <CardHeader title={formatMessage(intl, "prl", "supervisionReport.techniciansEvaluation")} />
-        <CardContent className={classes.section}>
-          {!isView && (
-            <div style={{ marginBottom: 20 }}>
-              <TextField
-                label={formatMessage(intl, "prl", "supervisionReport.technicianName")}
-                value={newTecnico.nome_tecnico}
-                onChange={(e) => setNewTecnico({ ...newTecnico, nome_tecnico: e.target.value })}
-                fullWidth
-                margin="normal"
-              />
-              <TextField
-                label={formatMessage(intl, "prl", "supervisionReport.positivePoints")}
-                value={newTecnico.pontos_positivos}
-                onChange={(e) => setNewTecnico({ ...newTecnico, pontos_positivos: e.target.value })}
-                fullWidth
-                multiline
-                rows={2}
-                margin="normal"
-              />
-              <TextField
-                label={formatMessage(intl, "prl", "supervisionReport.improvementPoints")}
-                value={newTecnico.pontos_aprimorar}
-                onChange={(e) => setNewTecnico({ ...newTecnico, pontos_aprimorar: e.target.value })}
-                fullWidth
-                multiline
-                rows={2}
-                margin="normal"
-              />
-              <Button
-                variant="contained"
-                color="primary"
-                startIcon={<AddIcon />}
-                onClick={handleAddTecnico}
-                style={{ marginTop: 10 }}
-              >
-                {formatMessage(intl, "prl", "button.add")}
-              </Button>
-            </div>
-          )}
+        {!isView && (
+          <Button
+            color="primary"
+            variant="contained"
+            size="small"
+            onClick={handleAddTecnico}
+            style={{ marginTop: 8 }}
+          >
+            + Adicionar Técnico
+          </Button>
+        )}
+      </Paper>
 
-          {tecnicosList.length > 0 && (
-            <Paper className={classes.table}>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>{formatMessage(intl, "prl", "supervisionReport.technicianName")}</TableCell>
-                    <TableCell>{formatMessage(intl, "prl", "supervisionReport.positivePoints")}</TableCell>
-                    <TableCell>{formatMessage(intl, "prl", "supervisionReport.improvementPoints")}</TableCell>
-                    {!isView && <TableCell align="center">{formatMessage(intl, "prl", "button.delete")}</TableCell>}
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {tecnicosList.map((tecnico, index) => (
-                    <TableRow key={index}>
-                      <TableCell>{tecnico.nome_tecnico}</TableCell>
-                      <TableCell>{tecnico.pontos_positivos}</TableCell>
-                      <TableCell>{tecnico.pontos_aprimorar}</TableCell>
-                      {!isView && (
-                        <TableCell align="center">
-                          <Tooltip title={formatMessage(intl, "prl", "button.delete")}>
-                            <IconButton
-                              size="small"
-                              onClick={() => handleRemoveTecnico(index)}
-                              className={classes.deleteIcon}
-                            >
-                              <DeleteIcon fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                        </TableCell>
-                      )}
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </Paper>
-          )}
-        </CardContent>
-      </Card>
+      {/* 5. Sessões do PEP+ */}
+      <Paper className={classes.paper}>
+        <Typography variant="h6" className={classes.sectionTitle}>
+          V. Sessões do PEP+
+        </Typography>
+        <Typography variant="body2" className={classes.sectionSubtitle}>
+          A. Marque a nota de observação de cada item (use escala de 0-10)
+        </Typography>
 
-      <Card style={{
-        padding: "0 16px",
-      }} className={classes.card}>
-        <CardHeader title={formatMessage(intl, "prl", "supervisionReport.observations")} />
-        <CardContent className={classes.section}>
-          <TextField
-            label={formatMessage(intl, "prl", "supervisionReport.additionalObservations")}
-            name="observacoesAdicionais"
-            value={formData.observacoesAdicionais}
-            onChange={handleChange}
-            fullWidth
-            multiline
-            rows={5}
-            disabled={isView}
-          />
-        </CardContent>
-      </Card>
+        {sessoesPep.map((sessao, index) => (
+          <Box key={index} style={{ marginBottom: 16, display: 'flex', gap: 12, alignItems: 'center' }}>
+            <Box
+              style={{
+                flex: 1,
+                padding: '8px 12px',
+                border: '1px solid #ccc',
+                borderRadius: 4,
+                backgroundColor: '#fafafa',
+              }}
+            >
+              <Typography variant="body2">{sessao.passo}</Typography>
+            </Box>
+            <TextField
+              type="number"
+              size="small"
+              inputProps={{ min: 1, max: 5, step: 1 }}
+              value={sessao.nota || 0}
+              onChange={(e) => !isView && setSessoesPep(
+                sessoesPep.map((s, i) => i === index ? { ...s, nota: parseInt(e.target.value) || 0 } : s)
+              )}
+              disabled={isView}
+              style={{ width: 80 }}
+              variant="outlined"
+            />
+          </Box>
+        ))}
 
-      {!isView && (
-        <div className={classes.buttonContainer}>
+        <Divider className={classes.divider} />
+
+        <Typography variant="subtitle2" style={{ marginTop: 24, marginBottom: 12, fontWeight: 500 }}>
+          B. Marque os módulos com maior dificuldade de compreensão
+        </Typography>
+        <Typography variant="body2" style={{ marginBottom: 16, color: "#3d3d3d" }}>
+          (obs, é o módulo com menor nota. Marcar apenas para o bimestre de execução corrente)
+        </Typography>
+        <LimitedChecklistComponent
+          items={modulosOptions}
+          maxSelections={1}
+          onSelectionChange={(updated) => !isView && setModulosDificuldade(updated)}
+          selections={modulosDificuldade}
+          footer={false}
+        />
+      </Paper>
+
+      {/* 6. Observações Adicionais */}
+      <Paper className={classes.paper}>
+        <Typography variant="h6" className={classes.sectionTitle}>
+          VI. Observações Adicionais
+        </Typography>
+        <Typography variant="body2" className={classes.sectionSubtitle}>
+          Campo aberto para adicionar observações para discussão
+        </Typography>
+        <TextField
+          fullWidth
+          multiline
+          rows={4}
+          label="Observações"
+          value={observacoes}
+          onChange={(e) => !isView && setObservacoes(e.target.value)}
+          variant="outlined"
+          placeholder="Adicione suas observações aqui..."
+          disabled={isView}
+        />
+      </Paper>
+
+      {/* Buttons */}
+      <Box className={classes.buttonContainer}>
+        <Button
+          variant="outlined"
+          onClick={handleBack}
+          startIcon={<ChevronLeftIcon />}
+        >
+          {isView ? "Voltar" : "Cancelar"}
+        </Button>
+        {!isView && (
           <Button
             variant="contained"
             color="primary"
             startIcon={<SaveIcon />}
             onClick={handleSave}
+            disabled={loading || identificacao.supervisores.length === 0 || !distrito}
           >
-            {formatMessage(intl, "prl", "button.save")}
+            Salvar Relatório de Supervisão
           </Button>
-          <Button
-            variant="outlined"
-            color="primary"
-            onClick={() => history.push("/prl/supervisionReport")}
-          >
-            {formatMessage(intl, "prl", "button.cancel")}
-          </Button>
-        </div>
-      )}
+        )}
+      </Box>
     </div>
   );
 }

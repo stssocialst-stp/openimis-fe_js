@@ -71,8 +71,8 @@ const DEFAULT_CONFIG = {
     { path: `${PRL_ROUTE_BIMONTHLY_SUPERVISION}/:id`, component: BimonthlySupervisionFormPage },
     { path: PRL_ROUTE_BIMONTHLY_SUPERVISION_FORM, component: BimonthlySupervisionFormPage },
     { path: PRL_ROUTE_SUPERVISION_REPORT, component: SupervisionReportPage },
-    { path: `${PRL_ROUTE_SUPERVISION_REPORT}/form/:action`, component: SupervisionReportFormPage },
-    { path: `${PRL_ROUTE_SUPERVISION_REPORT}/:id`, component: SupervisionReportFormPage },
+    { path: `${PRL_ROUTE_SUPERVISION_REPORT_FORM}/:action`, component: SupervisionReportFormPage },
+    { path: `${PRL_ROUTE_SUPERVISION_REPORT_FORM}/:id`, component: SupervisionReportFormPage },
   ],
   refs: [
     { key: "prl.route.sessionPlanning", ref: PRL_ROUTE_SESSION_PLANNING },

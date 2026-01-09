@@ -41,24 +41,21 @@ function SupervisionReportPage(props) {
       $first: Int
       $periodo: RelatorioSupervisaoBimestralPeriodo
       $ano: Int
-      $nomeSupervisores_Icontains: String
       $orderBy: [String]
     ) {
       relatoriosSupervisaoBimestral(
         first: $first
         periodo: $periodo
         ano: $ano
-        nomeSupervisores_Icontains: $nomeSupervisores_Icontains
         orderBy: $orderBy
       ) {
         totalCount
         edges {
           node {
             id
-            uuid
-            nomeSupervisores
-            numSessoesSupervisionadas
-            numTecnicosSupervisionados
+            supervisores
+            numeroSessoes
+            numeroTecnicosFormadores
             periodo
             ano
             distrito {
@@ -74,16 +71,11 @@ function SupervisionReportPage(props) {
   const fetchReports = async (params) => {
     const filters = params.filters || {};
     let periodoValue = filters.periodo?.value || null;
-    // Convert numeric period to enum format if present
-    if (periodoValue) {
-      periodoValue = `PERIOD_${periodoValue}`;
-    }
 
     const variables = {
       first: params.pageSize || 10,
       periodo: periodoValue,
       ano: filters.ano?.value || null,
-      nomeSupervisores_Icontains: filters.nomeSupervisores_Icontains?.value || null,
       orderBy: params.orderBy || ["-ano", "-periodo"],
     };
 
@@ -109,16 +101,27 @@ function SupervisionReportPage(props) {
 
     const reports = result.data.relatoriosSupervisaoBimestral.edges.map((edge) => edge.node);
 
-    const mappedData = reports.map((report) => ({
-      id: report.id,
-      uuid: report.uuid,
-      ano: report.ano,
-      periodo: report.periodo,
-      nomeSupervisores: report.nomeSupervisores,
-      numSessoesSupervisionadas: report.numSessoesSupervisionadas,
-      numTecnicosSupervisionados: report.numTecnicosSupervisionados,
-      distritoNome: report.distrito?.name || "-",
-    }));
+    const mappedData = reports.map((report) => {
+      // Parse supervisores JSON
+      let supervisoresArray = [];
+      try {
+        supervisoresArray = typeof report.supervisores === 'string'
+          ? JSON.parse(report.supervisores)
+          : report.supervisores || [];
+      } catch (e) {
+        supervisoresArray = [];
+      }
+
+      return {
+        id: report.id,
+        ano: report.ano,
+        periodo: report.periodo,
+        supervisores: supervisoresArray.join(", "),
+        numeroSessoes: report.numeroSessoes,
+        numeroTecnicosFormadores: report.numeroTecnicosFormadores,
+        distritoNome: report.distrito?.name || "-",
+      };
+    });
 
     return mappedData;
   };
@@ -126,21 +129,21 @@ function SupervisionReportPage(props) {
   const handleView = (rowData) => {
     history.push({
       pathname: `/prl/supervisionReport/${rowData.id}`,
-      state: { isView: true, data: rowData },
+      state: { isView: true, data: rowData, reportId: rowData.id },
     });
   };
 
   const handleEdit = (rowData) => {
     history.push({
       pathname: `/prl/supervisionReport/${rowData.id}`,
-      state: { isView: false, data: rowData },
+      state: { isView: false, data: rowData, reportId: rowData.id },
     });
   };
 
   const handleAddReport = () => {
     history.push({
       pathname: "/prl/supervisionReport/form/new",
-      state: { isView: false },
+      state: { isView: false, reportId: 'new' },
     });
   };
 
@@ -155,8 +158,8 @@ function SupervisionReportPage(props) {
   const itemFormatters = [
     (data) => data.ano,
     (data) => data.periodo,
-    (data) => data.nomeSupervisores,
-    (data) => data.numSessoesSupervisionadas,
+    (data) => data.supervisores,
+    (data) => data.numeroSessoes,
     (data) => (
       <div key={data.id}>
         <Tooltip title={formatMessage(intl, "prl", "button.view")}>
@@ -176,13 +179,11 @@ function SupervisionReportPage(props) {
   const sorts = [
     ["ano", true],
     ["periodo", true],
-    ["nomeSupervisores", true],
   ];
 
   const filterConfig = [
-    { field: "nomeSupervisores_Icontains", label: "prl.supervisionReport.supervisor", xs: 4 },
-    { field: "periodo", label: "prl.supervisionReport.period", xs: 4 },
-    { field: "ano", label: "prl.supervisionReport.year", xs: 4 },
+    { field: "periodo", label: "prl.supervisionReport.period", xs: 6 },
+    { field: "ano", label: "prl.supervisionReport.year", xs: 6 },
   ];
 
   const FilterPane = (filterProps) => (

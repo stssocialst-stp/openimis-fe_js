@@ -53,7 +53,7 @@ const styles = (theme) => ({
 });
 
 function LimitedChecklistComponent(props) {
-  const { classes, items = [], maxSelections = 2, onSelectionChange, selections = {} } = props;
+  const { classes, items = [], maxSelections = 2, onSelectionChange, selections = {}, footer = true } = props;
 
   const [localSelections, setLocalSelections] = useState(selections || {});
 
@@ -128,11 +128,13 @@ function LimitedChecklistComponent(props) {
         );
       })}
 
-      <Box className={classes.counterContainer}>
-        <Typography className={classes.counterText}>
-          Selecionados: {selectedCount}/{maxSelections}
-        </Typography>
-      </Box>
+      {footer &&
+        <Box className={classes.counterContainer}>
+          <Typography className={classes.counterText}>
+            Selecionados: {selectedCount}/{maxSelections}
+          </Typography>
+        </Box>
+      }
     </Box>
   );
 }
