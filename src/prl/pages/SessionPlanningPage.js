@@ -6,6 +6,7 @@ import {
 } from "@material-ui/core";
 import AddIcon from "@material-ui/icons/Add";
 import VisibilityIcon from "@material-ui/icons/Visibility";
+import EditIcon from "@material-ui/icons/Edit";
 import DeleteIcon from "@material-ui/icons/Delete";
 import { formatMessage, withModulesManager, Helmet, withTooltip, baseApiUrl, apiHeaders } from "@openimis/fe-core";
 import PrlSearcher from "../components/PrlSearcher";
@@ -145,7 +146,11 @@ function SessionPlanningPage(props) {
   };
 
   const handleView = (item) => {
-    history.push(`/${PRL_ROUTE_SESSION_PLANNING_FORM}?id=${item.id}`);
+    history.push(`/${PRL_ROUTE_SESSION_PLANNING_FORM}`, { data: item, readOnly: true });
+  };
+
+  const handleEdit = (item) => {
+    history.push(`/${PRL_ROUTE_SESSION_PLANNING_FORM}`, { data: item, readOnly: false });
   };
 
   const deleteMutation = `mutation DeleteSessaoPep($id: ID!) {
@@ -196,6 +201,15 @@ function SessionPlanningPage(props) {
             onClick={() => handleView(item)}
           >
             <VisibilityIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+        <Tooltip title="Editar">
+          <IconButton
+            size="small"
+            className={classes.actionIcon}
+            onClick={() => handleEdit(item)}
+          >
+            <EditIcon fontSize="small" />
           </IconButton>
         </Tooltip>
         <Tooltip title="Eliminar">

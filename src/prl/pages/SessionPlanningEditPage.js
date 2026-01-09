@@ -11,7 +11,7 @@ import AddIcon from "@material-ui/icons/Add";
 import DeleteIcon from "@material-ui/icons/Delete";
 import { IconButton, Tooltip } from "@material-ui/core";
 import { formatMessage, withModulesManager, Helmet, baseApiUrl, apiHeaders } from "@openimis/fe-core";
-import { PRL_ROUTE_SESSION_PLANNING } from "../constants";
+import { PRL_ROUTE_SESSION_PLANNING, PRL_ROUTE_SESSION_PLANNING_FORM } from "../constants";
 
 const styles = (theme) => ({
   page: theme.page,
@@ -197,7 +197,7 @@ function SessionPlanningEditPage(props) {
 
   // Note: updateMutation is kept for future edit functionality
   // eslint-disable-next-line no-unused-vars
-  const updateMutation = `mutation UpdateSessaoPep($input: UpdateSessaoPEPMutationInput!) {
+  const updateMutation = `mutation UpdateSessaoPEP($input: UpdateSessaoPEPMutationInput!) {
     updateSessaoPep(input: $input) {
       clientMutationId
       internalId
@@ -262,6 +262,19 @@ function SessionPlanningEditPage(props) {
     const result = await response.json();
     if (result.data?.sessaoPep) {
       setFormData(result.data.sessaoPep);
+      // Populate sessions array for display
+      setSessions([{
+        id: result.data.sessaoPep.id,
+        diaSemana: result.data.sessaoPep.diaSemana,
+        dataSessao: result.data.sessaoPep.dataSessao,
+        zona: result.data.sessaoPep.zona,
+        numeroFamilias: result.data.sessaoPep.numeroFamilias,
+        grupoFamilia: result.data.sessaoPep.grupoFamilia,
+        horaSessao: result.data.sessaoPep.horaSessao,
+        tempoDeslocamento: result.data.sessaoPep.tempoDeslocamento,
+        feedbackDocumentacao: result.data.sessaoPep.feedbackDocumentacao,
+        temSupervisao: result.data.sessaoPep.temSupervisao,
+      }]);
     } else if (result.errors) {
       console.error('Error fetching session:', result.errors);
     }
@@ -649,42 +662,74 @@ function SessionPlanningEditPage(props) {
         }
       }
 
-      // Build sessions array for mutation
-      const coordenadorId = formData.coordenadorDistrital.id;
-      const tecnicoId = formData.tecnicoSocial.id;
-      const distritoId = formData.distrito.id;
+      const isEditMode = !!initialData?.id;
 
-      // Validate that IDs are not empty
-      if (!coordenadorId || !tecnicoId || !distritoId) {
-        console.error('Invalid IDs:', { coordenadorId, tecnicoId, distritoId });
-        alert('Erro: IDs inválidos. Por favor, selecione novamente os coordenadores, técnicos e distritos.');
-        return;
+      let input;
+      let mutation;
+
+      if (isEditMode) {
+        // Update mode - update single session
+        const session = sessions[0]; // Assuming single session edit
+        input = {
+          id: initialData.id,
+          dataPlanejamento: formData.dataPlanejamento,
+          nomeModulo: formData.nomeModulo,
+          coordenadorDistritalId: formData.coordenadorDistrital.id,
+          tecnicoSocialId: formData.tecnicoSocial.id,
+          distritoId: formData.distrito.id,
+          mesModuloAnterior: formData.mesModuloAnterior,
+          diaSemana: session.diaSemana,
+          dataSessao: session.dataSessao,
+          horaSessao: session.horaSessao,
+          zona: session.zona,
+          numeroFamilias: parseInt(session.numeroFamilias),
+          grupoFamiliaId: session.grupoFamilia.id,
+          tempoDeslocamento: parseInt(session.tempoDeslocamento),
+          feedbackDocumentacao: session.feedbackDocumentacao,
+          temSupervisao: session.temSupervisao,
+          observacoes: formData.observacoes,
+          status: formData.status,
+        };
+        mutation = updateMutation;
+      } else {
+        // Create mode - create multiple sessions
+        const coordenadorId = formData.coordenadorDistrital.id;
+        const tecnicoId = formData.tecnicoSocial.id;
+        const distritoId = formData.distrito.id;
+
+        // Validate that IDs are not empty
+        if (!coordenadorId || !tecnicoId || !distritoId) {
+          console.error('Invalid IDs:', { coordenadorId, tecnicoId, distritoId });
+          alert('Erro: IDs inválidos. Por favor, selecione novamente os coordenadores, técnicos e distritos.');
+          return;
+        }
+
+        const sessionsInput = sessions.map(session => ({
+          codigoSessao: formData.codigoSessao,
+          dataPlanejamento: formData.dataPlanejamento,
+          coordenadorDistritalId: coordenadorId,
+          tecnicoSocialId: tecnicoId,
+          distritoId: distritoId,
+          nomeModulo: formData.nomeModulo,
+          mesModuloAnterior: formData.mesModuloAnterior,
+          diaSemana: session.diaSemana,
+          dataSessao: session.dataSessao,
+          horaSessao: session.horaSessao,
+          zona: session.zona,
+          numeroFamilias: parseInt(session.numeroFamilias),
+          grupoFamiliaId: session.grupoFamilia.id,
+          tempoDeslocamento: parseInt(session.tempoDeslocamento),
+          feedbackDocumentacao: session.feedbackDocumentacao,
+          temSupervisao: session.temSupervisao,
+          observacoes: formData.observacoes,
+          status: formData.status,
+        }));
+
+        input = { sessions: sessionsInput };
+        mutation = createMultipleMutation;
       }
 
-      const sessionsInput = sessions.map(session => ({
-        codigoSessao: formData.codigoSessao,
-        dataPlanejamento: formData.dataPlanejamento,
-        coordenadorDistritalId: coordenadorId,
-        tecnicoSocialId: tecnicoId,
-        distritoId: distritoId,
-        nomeModulo: formData.nomeModulo,
-        mesModuloAnterior: formData.mesModuloAnterior,
-        diaSemana: session.diaSemana,
-        dataSessao: session.dataSessao,
-        horaSessao: session.horaSessao,
-        zona: session.zona,
-        numeroFamilias: parseInt(session.numeroFamilias),
-        grupoFamiliaId: session.grupoFamilia.id,
-        tempoDeslocamento: parseInt(session.tempoDeslocamento),
-        feedbackDocumentacao: session.feedbackDocumentacao,
-        temSupervisao: session.temSupervisao,
-        observacoes: formData.observacoes,
-        status: formData.status,
-      }));
-
-      const input = { sessions: sessionsInput };
-
-      console.log('Sending payload:', JSON.stringify({ query: createMultipleMutation, variables: { input } }, null, 2));
+      console.log('Sending payload:', JSON.stringify({ query: mutation, variables: { input } }, null, 2));
 
       const response = await fetch(`${baseApiUrl}/graphql`, {
         method: 'POST',
@@ -693,7 +738,7 @@ function SessionPlanningEditPage(props) {
           'X-CSRFToken': getCookie('csrftoken'),
           ...apiHeaders(),
         },
-        body: JSON.stringify({ query: createMultipleMutation, variables: { input } }),
+        body: JSON.stringify({ query: mutation, variables: { input } }),
       });
 
       const result = await response.json();
@@ -1012,6 +1057,15 @@ function SessionPlanningEditPage(props) {
       </Paper>
 
       <Box className={classes.buttonContainer}>
+        {readOnly && (
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={() => history.push(`/${PRL_ROUTE_SESSION_PLANNING_FORM}`, { data: initialData, readOnly: false })}
+          >
+            {formatMessage(intl, "prl", "button.edit")}
+          </Button>
+        )}
         <Button
           variant="outlined"
           onClick={handleBack}
@@ -1025,7 +1079,7 @@ function SessionPlanningEditPage(props) {
             startIcon={<SaveIcon />}
             onClick={handleSave}
           >
-            {formatMessage(intl, "prl", "sessionPlanning.savePlanning")}
+            {initialData?.id ? formatMessage(intl, "prl", "button.update") : formatMessage(intl, "prl", "sessionPlanning.savePlanning")}
           </Button>
         )}
       </Box>
