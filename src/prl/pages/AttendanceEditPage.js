@@ -2,14 +2,13 @@ import { useState, useEffect, useCallback } from "react";
 import { injectIntl } from "react-intl";
 import { withTheme, withStyles } from "@material-ui/core/styles";
 import {
-  Paper, Typography, Grid, TextField, Button, MenuItem, Divider, Box,
-  Chip, IconButton, Tooltip,
+  Paper, Typography, Grid, TextField, Button, MenuItem, Divider, Box, IconButton, Tooltip,
 } from "@material-ui/core";
 import ChevronLeftIcon from "@material-ui/icons/ChevronLeft";
 import SaveIcon from "@material-ui/icons/Save";
 import DeleteIcon from "@material-ui/icons/Delete";
 import { formatMessage, withModulesManager, Helmet, baseApiUrl, apiHeaders } from "@openimis/fe-core";
-import { PRL_ROUTE_ATTENDANCE } from "../constants";
+import { PRL_ROUTE_ATTENDANCE, PRL_ROUTE_ATTENDANCE_FORM } from "../constants";
 import AddIcon from "@material-ui/icons/Add";
 
 const styles = (theme) => ({
@@ -203,13 +202,6 @@ function AttendanceEditPage(props) {
       internalId
     }
   }`;
-
-  // const createMutation = `mutation CreatePresencaSessao($input: CreatePresencaSessaoMutationInput!) {
-  //   createPresencaSessao(input: $input) {
-  //     clientMutationId
-  //     internalId
-  //   }
-  // }`;
 
   const updateMutation = `mutation UpdatePresencaSessao($input: UpdatePresencaSessaoMutationInput!) {
     updatePresencaSessao(input: $input) {
