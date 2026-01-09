@@ -41,6 +41,8 @@ const ESTADO_OPTIONS = [
 
 function AttendanceEditPage(props) {
   const { classes, intl, history, location } = props;
+  const readOnly = location?.state?.readOnly || false;
+  const initialData = location?.state?.data || null;
 
   const getCookie = (name) => {
     let cookieValue = null;
@@ -83,6 +85,29 @@ function AttendanceEditPage(props) {
       sessao {
         id
         codigoSessao
+        dataPlanejamento
+        nomeModulo
+        dataSessao
+        horaSessao
+        tecnicoSocial {
+          id
+          lastName
+          otherNames
+        }
+        coordenadorDistrital {
+          id
+          lastName
+          otherNames
+        }
+        distrito {
+          id
+          name
+        }
+        grupoFamilia {
+          id
+          codigo
+          nome
+        }
       }
       familiaId
       nomeFamilia
@@ -354,7 +379,9 @@ function AttendanceEditPage(props) {
   };
 
   useEffect(() => {
-    if (attendanceId) {
+    if (initialData?.id) {
+      fetchAttendanceById(initialData.id);
+    } else if (attendanceId) {
       fetchAttendance(attendanceId);
     }
     // Load sessions on mount
@@ -362,14 +389,89 @@ function AttendanceEditPage(props) {
     fetchDistricts();
     fetchFormadores();
     fetchFamilias();
-  }, [attendanceId, fetchAttendance]);
+  }, [attendanceId, initialData, fetchAttendance]);
+
+  // Fetch attendance by ID (for viewing/editing from list)
+  const fetchAttendanceById = async (id) => {
+    setLoading(true);
+    try {
+      const response = await fetch(`${baseApiUrl}/graphql`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCookie('csrftoken'),
+          ...apiHeaders(),
+        },
+        body: JSON.stringify({ query: fetchQuery, variables: { id } }),
+      });
+
+      const result = await response.json();
+      if (result.data?.presencaSessao) {
+        const attendance = result.data.presencaSessao;
+        const sessao = attendance.sessao;
+
+        setFormData({
+          sessaoId: sessao?.id || "",
+          familiaId: attendance.familiaId || "",
+          nomeFamilia: attendance.nomeFamilia || "",
+          grupoId: attendance.grupoId || "",
+          estado: attendance.estado || "PRES",
+          codigoEncaminhamento: attendance.codigoEncaminhamento || "",
+          observacoes: attendance.observacoes || "",
+          localidade: "",
+          formador: "",
+        });
+
+        // Set session details directly from the response
+        if (sessao) {
+          setSelectedSession({
+            id: sessao.id,
+            codigoSessao: sessao.codigoSessao,
+            dataPlanejamento: sessao.dataPlanejamento,
+            nomeModulo: sessao.nomeModulo,
+            dataSessao: sessao.dataSessao,
+            horaSessao: sessao.horaSessao,
+            tecnicoSocial: sessao.tecnicoSocial,
+            coordenadorDistrital: sessao.coordenadorDistrital,
+            distrito: sessao.distrito,
+            grupoFamilia: sessao.grupoFamilia,
+            label: `${sessao.codigoSessao} - ${sessao.dataSessao} - ${sessao.distrito?.name || '-'}`,
+          });
+        }
+
+        // Create presencas array from the loaded attendance
+        setPresencas([{
+          id: attendance.id,
+          familiaId: attendance.familiaId || "",
+          familiaCode: "",
+          familiaName: attendance.nomeFamilia || "",
+          grupoId: attendance.grupoId || "",
+          grupoCode: "",
+          grupoName: "",
+          sequencia: 1,
+          estado: attendance.estado || "PRES",
+          codigoEncaminhamento: attendance.codigoEncaminhamento || "",
+          nomeInstituicao: attendance.nomeInstituicao || "",
+          localidade: "",
+        }]);
+      } else if (result.errors) {
+        console.error('Error fetching attendance:', result.errors);
+      }
+    } catch (error) {
+      console.error('Error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleChange = (field) => (event) => {
+    if (readOnly) return;
     const { value } = event.target;
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleSessionChange = (event) => {
+    if (readOnly) return;
     const sessionId = event.target.value;
     const session = sessions.find(s => s.id === sessionId);
 
@@ -386,6 +488,7 @@ function AttendanceEditPage(props) {
   };
 
   const handleAddPresenca = () => {
+    if (readOnly) return;
     const newPresenca = {
       id: Date.now().toString(),
       familiaId: "",
@@ -404,6 +507,7 @@ function AttendanceEditPage(props) {
   };
 
   const handlePresencaFamiliaChange = (index, familiaId) => {
+    if (readOnly) return;
     const familia = familias.find(f => f.id === familiaId);
     if (familia) {
       setPresencas((prev) =>
@@ -425,12 +529,14 @@ function AttendanceEditPage(props) {
   };
 
   const handlePresencaChange = (index, field, value) => {
+    if (readOnly) return;
     setPresencas((prev) =>
       prev.map((p, i) => (i === index ? { ...p, [field]: value } : p))
     );
   };
 
   const handleRemovePresenca = (index) => {
+    if (readOnly) return;
     setPresencas((prev) => prev.filter((_, i) => i !== index));
   };
 
@@ -482,7 +588,6 @@ function AttendanceEditPage(props) {
         grupoFamiliaId: selectedSession?.grupoFamilia?.id || "",
         presencas: presencas.map(p => ({
           familiaId: p.familiaId,
-          nomeFamilia: p.familiaName || null,
           estado: p.estado,
           codigoEncaminhamento: p.codigoEncaminhamento || null,
           nomeInstituicao: p.nomeInstituicao || null,
@@ -524,9 +629,11 @@ function AttendanceEditPage(props) {
         <Button onClick={handleBack}>
           <ChevronLeftIcon fontSize="small" />
           <Typography className={classes.headerTitle}>
-            {attendanceId
-              ? formatMessage(intl, "prl", "title.editAttendance")
-              : formatMessage(intl, "prl", "title.createAttendance")}
+            {readOnly
+              ? formatMessage(intl, "prl", "title.viewAttendance")
+              : initialData?.id
+                ? formatMessage(intl, "prl", "title.editAttendance")
+                : formatMessage(intl, "prl", "title.createAttendance")}
           </Typography>
         </Button>
 
@@ -547,6 +654,7 @@ function AttendanceEditPage(props) {
               onChange={handleSessionChange}
               variant="outlined"
               size="small"
+              disabled={readOnly}
               required
             >
               {sessions.map((session) => (
@@ -665,6 +773,7 @@ function AttendanceEditPage(props) {
               onChange={handleChange("localidade")}
               variant="outlined"
               size="small"
+              disabled={readOnly}
             >
               {districts.map((district) => (
                 <MenuItem key={district.id} value={district.id}>
@@ -683,6 +792,7 @@ function AttendanceEditPage(props) {
               onChange={handleChange("formador")}
               variant="outlined"
               size="small"
+              disabled={readOnly}
             >
               {formadores.map((formador) => (
                 <MenuItem key={formador.id} value={formador.id}>
@@ -704,15 +814,17 @@ function AttendanceEditPage(props) {
               {formatMessage(intl, "prl", "attendance.familyAttendanceDesc")}
             </Typography>
           </div>
-          <Button
-            variant="contained"
-            color="primary"
-            startIcon={<AddIcon />}
-            onClick={handleAddPresenca}
-            size="small"
-          >
-            {formatMessage(intl, "prl", "button.addFamily")}
-          </Button>
+          {!readOnly && (
+            <Button
+              variant="contained"
+              color="primary"
+              startIcon={<AddIcon />}
+              onClick={handleAddPresenca}
+              size="small"
+            >
+              {formatMessage(intl, "prl", "button.addFamily")}
+            </Button>
+          )}
         </Box>
 
         {presencas.length > 0 && (
@@ -756,6 +868,7 @@ function AttendanceEditPage(props) {
                     value={presenca.familiaId}
                     onChange={(e) => handlePresencaFamiliaChange(index, e.target.value)}
                     displayEmpty
+                    disabled={readOnly}
                   >
                     <MenuItem value="">{formatMessage(intl, "prl", "attendance.selectFamily")}</MenuItem>
                     {familias.map((familia) => (
@@ -774,6 +887,7 @@ function AttendanceEditPage(props) {
                     variant="outlined"
                     value={presenca.estado}
                     onChange={(e) => handlePresencaChange(index, "estado", e.target.value)}
+                    disabled={readOnly}
                   >
                     {ESTADO_OPTIONS.map((option) => (
                       <MenuItem key={option.value} value={option.value}>
@@ -791,7 +905,7 @@ function AttendanceEditPage(props) {
                     placeholder={formatMessage(intl, "prl", "attendance.code")}
                     value={presenca.codigoEncaminhamento}
                     onChange={(e) => handlePresencaChange(index, "codigoEncaminhamento", e.target.value)}
-                    disabled={presenca.estado !== 'ENCA'}
+                    disabled={readOnly || presenca.estado !== 'ENCA'}
                   />
                 </Grid>
 
@@ -801,23 +915,25 @@ function AttendanceEditPage(props) {
                     size="small"
                     variant="outlined"
                     placeholder={formatMessage(intl, "prl", "attendance.institutionName")}
-                    value={presenca.nomeDaInstituicao}
-                    onChange={(e) => handlePresencaChange(index, "nomeDaInstituicao", e.target.value)}
-                    disabled={presenca.estado !== 'ENCA'}
+                    value={presenca.nomeInstituicao}
+                    onChange={(e) => handlePresencaChange(index, "nomeInstituicao", e.target.value)}
+                    disabled={readOnly || presenca.estado !== 'ENCA'}
                   />
                 </Grid>
 
-                <Grid item xs={12} sm="auto">
-                  <Tooltip title={formatMessage(intl, "prl", "button.remove")}>
-                    <IconButton
-                      size="small"
-                      onClick={() => handleRemovePresenca(index)}
-                      style={{ color: "#d32f2f" }}
-                    >
-                      <DeleteIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-                </Grid>
+                {!readOnly && (
+                  <Grid item xs={12} sm="auto">
+                    <Tooltip title={formatMessage(intl, "prl", "button.remove")}>
+                      <IconButton
+                        size="small"
+                        onClick={() => handleRemovePresenca(index)}
+                        style={{ color: "#d32f2f" }}
+                      >
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                  </Grid>
+                )}
               </Grid>
             </Box>
           ))
@@ -829,22 +945,33 @@ function AttendanceEditPage(props) {
 
       </Paper>
       <Box className={classes.buttonContainer}>
+        {readOnly && (
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={() => history.push(`/${PRL_ROUTE_ATTENDANCE_FORM}`, { data: initialData, readOnly: false })}
+          >
+            {formatMessage(intl, "prl", "button.edit")}
+          </Button>
+        )}
         <Button
           variant="outlined"
           color="primary"
           onClick={handleBack}
         >
-          {formatMessage(intl, "prl", "button.cancel")}
+          {readOnly ? formatMessage(intl, "prl", "button.back") : formatMessage(intl, "prl", "button.cancel")}
         </Button>
-        <Button
-          variant="contained"
-          color="primary"
-          startIcon={<SaveIcon />}
-          onClick={handleSave}
-          disabled={loading || !formData.sessaoId}
-        >
-          {formatMessage(intl, "prl", "button.save")}
-        </Button>
+        {!readOnly && (
+          <Button
+            variant="contained"
+            color="primary"
+            startIcon={<SaveIcon />}
+            onClick={handleSave}
+            disabled={loading || !formData.sessaoId}
+          >
+            {formatMessage(intl, "prl", "button.save")}
+          </Button>
+        )}
       </Box>
     </div>
   );

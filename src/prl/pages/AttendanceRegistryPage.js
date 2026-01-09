@@ -7,6 +7,7 @@ import {
 } from "@material-ui/core";
 import AddIcon from "@material-ui/icons/Add";
 import VisibilityIcon from "@material-ui/icons/Visibility";
+import EditIcon from "@material-ui/icons/Edit";
 import DeleteIcon from "@material-ui/icons/Delete";
 import { formatMessage, withModulesManager, Helmet, withTooltip, baseApiUrl, apiHeaders } from "@openimis/fe-core";
 import PrlSearcher from "../components/PrlSearcher";
@@ -138,7 +139,11 @@ function AttendanceRegistryPage(props) {
   };
 
   const handleView = (item) => {
-    history.push(`/${PRL_ROUTE_ATTENDANCE_FORM}?id=${item.id}`);
+    history.push(`/${PRL_ROUTE_ATTENDANCE_FORM}`, { data: item, readOnly: true });
+  };
+
+  const handleEdit = (item) => {
+    history.push(`/${PRL_ROUTE_ATTENDANCE_FORM}`, { data: item, readOnly: false });
   };
 
   const deleteMutation = `mutation DeletePresencaSessao($id: ID!) {
@@ -181,9 +186,6 @@ function AttendanceRegistryPage(props) {
     "prl.attendance.sessionDate",
     "prl.attendance.familyName",
     "prl.attendance.estado",
-    "prl.attendance.code",
-    "prl.attendance.institutionName",
-    "prl.attendance.observations",
     "emptyLabel",
   ];
 
@@ -196,9 +198,6 @@ function AttendanceRegistryPage(props) {
         {getStateLabel(item.state)}
       </Typography>
     ),
-    (item) => item.referralCode || '-',
-    (item) => item.institutionName || '-',
-    (item) => item.observations || '-',
     (item) => (
       <div style={{ display: 'flex', justifyContent: 'center' }}>
         <Tooltip title={formatMessage(intl, "prl", "button.view")}>
@@ -208,6 +207,15 @@ function AttendanceRegistryPage(props) {
             onClick={() => handleView(item)}
           >
             <VisibilityIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+        <Tooltip title={formatMessage(intl, "prl", "button.edit")}>
+          <IconButton
+            size="small"
+            className={classes.actionIcon}
+            onClick={() => handleEdit(item)}
+          >
+            <EditIcon fontSize="small" />
           </IconButton>
         </Tooltip>
         <Tooltip title={formatMessage(intl, "prl", "button.delete")}>
