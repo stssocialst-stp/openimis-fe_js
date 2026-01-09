@@ -52,6 +52,7 @@ function SessionSupervisionPage(props) {
           sessao {
             codigoSessao
             dataSessao
+            nomeModulo
           }
           supervisor {
             id
@@ -64,10 +65,12 @@ function SessionSupervisionPage(props) {
           dataSupervisao
           dataModuloAnterior
           identificadorGrupo
-          perguntasAvaliacao
-          pontosPositivos
-          pontosMelhorar
-          observacoes
+          numeroParticipantes
+          praticasPositivasEstrategias
+          desafiosTransmissao
+          necessitaEncaminhamento
+          autoAvaliacaoPontosFortes
+          autoAvaliacaoPontosAtencao
         }
       }
       totalCount
