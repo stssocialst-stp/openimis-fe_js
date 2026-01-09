@@ -206,14 +206,14 @@ function SessionSupervisionFormPage(props) {
     }
   }`;
 
-  const createMutation = `mutation CreateSupervisaoSessao($input: CreateSupervisaoSessaoInput!) {
+  const createMutation = `mutation CreateSupervisaoSessao($input: CreateSupervisaoSessaoMutationInput!) {
     createSupervisaoSessao(input: $input) {
       clientMutationId
       internalId
     }
   }`;
 
-  const updateMutation = `mutation UpdateSupervisaoSessao($input: UpdateSupervisaoSessaoInput!) {
+  const updateMutation = `mutation UpdateSupervisaoSessao($input: UpdateSupervisaoSessaoMutationInput!) {
     updateSupervisaoSessao(input: $input) {
       clientMutationId
       internalId
@@ -259,12 +259,11 @@ function SessionSupervisionFormPage(props) {
       feedbackPontosFortes
       feedbackDesafios
       compromissoFormador
-      perguntasAvaliacao
-      pontosPositivos
-      pontosMelhorar
+      metodologiaPassos
+      feedbackPontosFortes
+      feedbackDesafios
+      compromissoFormador
       observacoes
-      validityFrom
-      validityTo
     }
   }`;
 
@@ -353,13 +352,18 @@ function SessionSupervisionFormPage(props) {
       if (result.data?.supervisaoSessao) {
         const data = result.data.supervisaoSessao;
 
-        // Populate form data
+        // Populate form data with all fields
         setFormData({
           sessaoId: data.sessao?.id || "",
           dataSupervisao: data.dataSupervisao || "",
+          dataModuloAnterior: data.dataModuloAnterior || "",
           supervisorId: data.supervisor?.id || "",
           formadorId: data.formador?.id || "",
           identificadorGrupo: data.identificadorGrupo || "",
+          numeroCuidadores: data.numeroParticipantes || "",
+          feedbackPontosFortes: data.feedbackPontosFortes || "",
+          feedbackDesafios: data.feedbackDesafios || "",
+          compromissoFormador: data.compromissoFormador || "",
           observacoes: data.observacoes || "",
         });
 
@@ -374,6 +378,59 @@ function SessionSupervisionFormPage(props) {
             grupoFamilia: data.sessao.grupoFamilia?.nome,
             status: data.sessao.status,
           });
+        }
+
+        // Set necessitaEncaminhamento
+        setNecessitaEncaminhamento(data.necessitaEncaminhamento || false);
+
+        // Helper function to parse JSON selections and convert to component format
+        const parseSelections = (jsonString, rows) => {
+          if (!jsonString) return {};
+          try {
+            const parsed = JSON.parse(jsonString);
+            const selections = {};
+            parsed.forEach((item, index) => {
+              // Find matching row by description
+              const matchingRow = rows.find(r => r.description === item.descricao);
+              if (matchingRow) {
+                selections[matchingRow.id] = {
+                  descricao: item.descricao,
+                  confirmacao: item.confirmacao,
+                };
+              } else {
+                // Use index-based key if no match found
+                selections[`item_${index}`] = {
+                  descricao: item.descricao,
+                  confirmacao: item.confirmacao,
+                };
+              }
+            });
+            return selections;
+          } catch (e) {
+            console.error('Error parsing selections:', e);
+            return {};
+          }
+        };
+
+        // Populate table selections
+        if (data.praticasPositivasEstrategias) {
+          setPraticasPositivasSelections(parseSelections(data.praticasPositivasEstrategias, practicesRows));
+        }
+
+        if (data.desafiosTransmissao) {
+          setDesafiosTransmissaoSelections(parseSelections(data.desafiosTransmissao, challengesRows));
+        }
+
+        if (data.autoAvaliacaoPontosFortes) {
+          setAutoAvaliacaoPontosFortes(parseSelections(data.autoAvaliacaoPontosFortes, autoAvaliacaoPontosFortesRows));
+        }
+
+        if (data.autoAvaliacaoPontosAtencao) {
+          setAutoAvaliacaoPontosAtencao(parseSelections(data.autoAvaliacaoPontosAtencao, autoAvaliacaoPontosAtencaoRows));
+        }
+
+        if (data.metodologiaPassos) {
+          setMetodologiaPassosSelections(parseSelections(data.metodologiaPassos, metodologiaPassosRows));
         }
       }
     } catch (error) {
