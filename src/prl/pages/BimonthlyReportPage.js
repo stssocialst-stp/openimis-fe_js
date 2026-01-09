@@ -3,13 +3,17 @@ import { injectIntl } from "react-intl";
 import { connect } from "react-redux";
 import { withTheme, withStyles } from "@material-ui/core/styles";
 import {
-  IconButton, Tooltip, Typography,
+  IconButton, Tooltip, Typography, Fab,
 } from "@material-ui/core";
 import VisibilityIcon from "@material-ui/icons/Visibility";
 import DeleteIcon from "@material-ui/icons/Delete";
+import EditIcon from "@material-ui/icons/Edit";
+import AddIcon from "@material-ui/icons/Add";
 import { formatMessage, withModulesManager, Helmet, baseApiUrl, apiHeaders } from "@openimis/fe-core";
 import PrlSearcher from "../components/PrlSearcher";
 import PrlFilter from "../components/PrlFilter";
+import { PRL_ROUTE_BIMONTHLY_REPORT_FORM } from "../constants";
+import { withRouter } from "react-router-dom";
 
 const styles = (theme) => ({
   page: theme.page,
@@ -27,7 +31,19 @@ const PERIODO_OPTIONS = [
 ];
 
 function BimonthlyReportPage(props) {
-  const { classes, intl, rights } = props;
+  const { classes, intl, rights, history } = props;
+
+  const handleNew = () => {
+    history.push(`/${PRL_ROUTE_BIMONTHLY_REPORT_FORM}`);
+  };
+
+  const handleView = (item) => {
+    history.push(`/${PRL_ROUTE_BIMONTHLY_REPORT_FORM}`, { data: item, readOnly: true });
+  };
+
+  const handleEdit = (item) => {
+    history.push(`/${PRL_ROUTE_BIMONTHLY_REPORT_FORM}`, { data: item, readOnly: false });
+  };
 
   const getCookie = (name) => {
     let cookieValue = null;
@@ -141,7 +157,7 @@ function BimonthlyReportPage(props) {
 
   const headers = [
     "prl.bimonthlyReport.period",
-    "prl.bimonthlyReport.district",
+    "prl.sessionPlanning.district",
     "prl.bimonthlyReport.completionRate",
     "prl.bimonthlyReport.status",
     "emptyLabel",
@@ -159,7 +175,10 @@ function BimonthlyReportPage(props) {
     (item) => (
       <div style={{ display: 'flex', justifyContent: 'center' }}>
         <Tooltip title="Ver detalhes">
-          <IconButton size="small" className={classes.actionIcon}><VisibilityIcon fontSize="small" /></IconButton>
+          <IconButton size="small" className={classes.actionIcon} onClick={() => handleView(item)}><VisibilityIcon fontSize="small" /></IconButton>
+        </Tooltip>
+        <Tooltip title="Editar">
+          <IconButton size="small" className={classes.actionIcon} onClick={() => handleEdit(item)}><EditIcon fontSize="small" /></IconButton>
         </Tooltip>
         <Tooltip title="Eliminar">
           <IconButton size="small" className={classes.actionIcon}><DeleteIcon fontSize="small" /></IconButton>
@@ -175,7 +194,7 @@ function BimonthlyReportPage(props) {
   ];
 
   const filterConfig = [
-    { field: "distrito_id", label: "prl.bimonthlyReport.district", xs: 4 },
+    { field: "distrito_id", label: "prl.sessionPlanning.district", xs: 4 },
     { field: "periodo", label: "prl.bimonthlyReport.period", options: PERIODO_OPTIONS, xs: 4 },
     { field: "ano", label: "prl.bimonthlyReport.year", xs: 4 },
   ];
@@ -200,9 +219,19 @@ function BimonthlyReportPage(props) {
         fetch={fetchReports}
         rights={rights}
       />
+
+      <Tooltip title={formatMessage(intl, "prl", "bimonthlyReport.addNew")}>
+        <Fab
+          color="primary"
+          className={classes.fab}
+          onClick={handleNew}
+        >
+          <AddIcon />
+        </Fab>
+      </Tooltip>
     </div>
   );
 }
 
 const mapStateToProps = (state) => ({ rights: state.core?.user?.i_user?.rights ?? [] });
-export default withModulesManager(injectIntl(withTheme(withStyles(styles)(connect(mapStateToProps)(BimonthlyReportPage)))));
+export default withModulesManager(injectIntl(withTheme(withStyles(styles)(withRouter(connect(mapStateToProps)(BimonthlyReportPage))))));

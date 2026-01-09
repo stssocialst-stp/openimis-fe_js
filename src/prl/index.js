@@ -16,6 +16,7 @@ import FamilyGroupFormPage from "./pages/FamilyGroupFormPage";
 import EducationalModulePage from "./pages/EducationalModulePage";
 import EducationalModuleFormPage from "./pages/EducationalModuleFormPage";
 import BimonthlyReportPage from "./pages/BimonthlyReportPage";
+import BimonthlyReportFormPage from "./pages/BimonthlyReportFormPage";
 import BimonthlySupervisionPage from "./pages/BimonthlySupervisionPage";
 import BimonthlySupervisionFormPage from "./pages/BimonthlySupervisionFormPage";
 import SupervisionReportPage from "./pages/SupervisionReportPage";
@@ -37,6 +38,7 @@ import {
   PRL_ROUTE_EDUCATIONAL_MODULE,
   PRL_ROUTE_EDUCATIONAL_MODULE_FORM,
   PRL_ROUTE_BIMONTHLY_REPORT,
+  PRL_ROUTE_BIMONTHLY_REPORT_FORM,
   PRL_ROUTE_BIMONTHLY_SUPERVISION,
   PRL_ROUTE_BIMONTHLY_SUPERVISION_FORM,
   PRL_ROUTE_SUPERVISION_REPORT,
@@ -64,6 +66,7 @@ const DEFAULT_CONFIG = {
     { path: PRL_ROUTE_EDUCATIONAL_MODULE, component: EducationalModulePage },
     { path: PRL_ROUTE_EDUCATIONAL_MODULE_FORM, component: EducationalModuleFormPage },
     { path: PRL_ROUTE_BIMONTHLY_REPORT, component: BimonthlyReportPage },
+    { path: PRL_ROUTE_BIMONTHLY_REPORT_FORM, component: BimonthlyReportFormPage },
     { path: PRL_ROUTE_BIMONTHLY_SUPERVISION, component: BimonthlySupervisionPage },
     { path: `${PRL_ROUTE_BIMONTHLY_SUPERVISION}/:id`, component: BimonthlySupervisionFormPage },
     { path: PRL_ROUTE_BIMONTHLY_SUPERVISION_FORM, component: BimonthlySupervisionFormPage },
