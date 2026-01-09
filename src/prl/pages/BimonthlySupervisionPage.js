@@ -39,8 +39,8 @@ function BimonthlySupervisionPage(props) {
   const [data, setData] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  const supervisionQuery = `query GetRoteirosReuniao($first: Int, $dataReuniao_Gte: Date, $dataReuniao_Lte: Date, $coordenadorNacional_Icontains: String) {
-    roteirosReuniaoBimestral(first: $first, dataReuniao_Gte: $dataReuniao_Gte, dataReuniao_Lte: $dataReuniao_Lte, coordenadorNacional_Icontains: $coordenadorNacional_Icontains, orderBy: ["-dataReuniao"]) {
+  const supervisionQuery = `query GetRoteirosReuniao($first: Int, $dataReuniao_Gte: Date, $dataReuniao_Lte: Date, $coordenadorNacional_Username_Icontains: String) {
+    roteirosReuniaoBimestral(first: $first, dataReuniao_Gte: $dataReuniao_Gte, dataReuniao_Lte: $dataReuniao_Lte, coordenadorNacional_Username_Icontains: $coordenadorNacional_Username_Icontains, orderBy: ["-dataReuniao"]) {
       totalCount
       edges {
         node {
@@ -48,15 +48,14 @@ function BimonthlySupervisionPage(props) {
           uuid
           dataReuniao
           horario
-          coordenadorNacional
+          coordenadorNacional {
+            id
+            lastName
+            otherNames
+          }
           participantes
-          resumoAgenda
-          desafiosSolucoes
-          oportunidadesPraticas
-          analiseDadosTendencias
-          acoesDefinidas
+          proximaReuniao
           dataProximaReuniao
-          observacoesProximaReuniao
           validityFrom
           validityTo
         }
@@ -79,7 +78,7 @@ function BimonthlySupervisionPage(props) {
         variables.dataReuniao_Lte = filters.dataReuniao.to;
       }
       if (filters.coordenadorNacional?.value) {
-        variables.coordenadorNacional_Icontains = filters.coordenadorNacional.value;
+        variables.coordenadorNacional_Username_Icontains = filters.coordenadorNacional.value;
       }
 
       const response = await fetch(`${baseApiUrl}/graphql`, {
@@ -102,12 +101,7 @@ function BimonthlySupervisionPage(props) {
           coordenadorNacional: edge.node.coordenadorNacional,
           participantes: edge.node.participantes,
           resumoAgenda: edge.node.resumoAgenda,
-          desafiosSolucoes: edge.node.desafiosSolucoes,
-          oportunidadesPraticas: edge.node.oportunidadesPraticas,
-          analiseDadosTendencias: edge.node.analiseDadosTendencias,
-          acoesDefinidas: edge.node.acoesDefinidas,
           dataProximaReuniao: edge.node.dataProximaReuniao ? new Date(edge.node.dataProximaReuniao).toLocaleDateString('pt-PT') : '',
-          observacoesProximaReuniao: edge.node.observacoesProximaReuniao,
           validityFrom: edge.node.validityFrom,
           validityTo: edge.node.validityTo,
           fullNode: edge.node,

@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { injectIntl } from "react-intl";
 import { withTheme, withStyles } from "@material-ui/core/styles";
 import {
-  Paper, Typography, Grid, TextField, Button, Divider, Box, Card, CardContent, IconButton, Checkbox, FormControlLabel, Table, TableBody, TableCell, TableHead, TableRow,
+  Paper, Typography, Grid, TextField, Button, Box, IconButton, Checkbox,
+  Table, TableBody, TableCell, TableHead, TableRow, TableContainer,
 } from "@material-ui/core";
 import ChevronLeftIcon from "@material-ui/icons/ChevronLeft";
 import SaveIcon from "@material-ui/icons/Save";
@@ -18,6 +19,11 @@ const styles = (theme) => ({
     color: theme.palette.primary.main,
     fontWeight: "bold",
   },
+  sectionSubtitle: {
+    marginBottom: theme.spacing(2),
+    color: theme.palette.text.secondary,
+    fontWeight: 500,
+  },
   buttonContainer: {
     display: "flex",
     justifyContent: "flex-end",
@@ -29,10 +35,53 @@ const styles = (theme) => ({
     marginLeft: theme.spacing(1),
     fontWeight: 500,
   },
-  readOnlyField: {
-    backgroundColor: "#f5f5f5",
+  headerSubtitle: {
+    marginLeft: theme.spacing(1),
+    color: theme.palette.text.secondary,
+    fontSize: "0.875rem",
+  },
+  agendaHeader: {
+    backgroundColor: theme.palette.grey[100],
+    padding: theme.spacing(1.5),
+    borderRadius: theme.spacing(0.5),
+    marginBottom: theme.spacing(2),
+  },
+  tableHeader: {
+    backgroundColor: theme.palette.grey[100],
+    "& th": {
+      fontWeight: "bold",
+      padding: theme.spacing(1),
+    },
+  },
+  durationBadge: {
+    backgroundColor: theme.palette.primary.light,
+    color: theme.palette.primary.contrastText,
+    padding: theme.spacing(0.5, 1),
+    borderRadius: theme.spacing(0.5),
+    fontSize: "0.75rem",
+    fontWeight: "bold",
+  },
+  concludedBadge: {
+    backgroundColor: theme.palette.success.light,
+    color: theme.palette.success.dark,
+    padding: theme.spacing(0.5, 1),
+    borderRadius: theme.spacing(0.5),
+    fontSize: "0.75rem",
+    display: "flex",
+    alignItems: "center",
+    gap: theme.spacing(0.5),
   },
 });
+
+// Itens de agenda padrão baseados na imagem
+const DEFAULT_AGENDA_ITEMS = [
+  { topico: "Abertura e Boas-vindas", descricao: "Cumprimentar os cuidadores e retomar o objetivo da reunião", duracao: 5, concluido: false },
+  { topico: "Relato de Desafios e Soluções", descricao: "Cada Coordenador Distrital compartilha desafios e soluções aplicadas", duracao: 15, concluido: false },
+  { topico: "Compartilhamento de Oportunidades", descricao: "Oportunidades de melhoria e práticas bem-sucedidas", duracao: 10, concluido: false },
+  { topico: "Apreciação dos Relatórios Bimensais", descricao: "Revisão dos relatórios, análise de dados e definição de encaminhamentos", duracao: 20, concluido: false },
+  { topico: "Definição de Ações e Encaminhamentos", descricao: "Plano de ação conjunto e alinhamento das estratégias", duracao: 15, concluido: false },
+  { topico: "Encerramento e Próxima Reunião", descricao: "Recapitulação das decisões e agendamento da próxima reunião", duracao: 5, concluido: false },
+];
 
 function BimonthlySupervisionFormPage(props) {
   const { classes, intl, history, location } = props;
@@ -55,40 +104,79 @@ function BimonthlySupervisionFormPage(props) {
     return cookieValue;
   };
 
+  // 1. Informações da Reunião
   const [formData, setFormData] = useState({
     dataReuniao: "",
     horario: "",
-    coordenadorNacional: "",
-    participantes: "",
-    resumoAgenda: "",
-    desafiosSolucoes: "",
-    oportunidadesPraticas: "",
-    analiseDadosTendencias: "",
-    acoesDefinidas: "",
-    dataProximaReuniao: "",
-    observacoesProximaReuniao: "",
+    coordenadorNacionalId: "",
+    participantes: [],
   });
 
-  const [agendaItems, setAgendaItems] = useState([]);
-  const [newAgendaItem, setNewAgendaItem] = useState({
-    topico: "",
-    duracao: "",
-    concluido: false,
+  // Agenda da Reunião
+  const [agendaItems, setAgendaItems] = useState(
+    DEFAULT_AGENDA_ITEMS.map((item, index) => ({ ...item, id: index + 1 }))
+  );
+
+  // Resumo da Agenda - Status de conclusão
+  const [resumoDaAgenda, setResumoDaAgenda] = useState({
+    aberturaEBoasVindas: false,
+    relatoDesafiosSolucoes: false,
+    compartilhamentoOportunidades: false,
+    apreciacaoRelatorios: false,
+    definicaoAcoesEncaminhamentos: false,
+    encerramentoProximaReuniao: false,
   });
+
+  // 2. Desafios e Soluções
+  const [principaisDesafios, setPrincipaisDesafios] = useState("");
+
+  // 3. Oportunidades de Melhoria
+  const [oportunidadesMelhoria, setOportunidadesMelhoria] = useState("");
+
+  // 4. Apreciação dos Relatórios Bimensais
+  const [apreciacaoRelatorios, setApreciacaoRelatorios] = useState("");
+
+  // 5. Plano de Ação e Encaminhamentos
+  const [planoAcao, setPlanoAcao] = useState("");
+
+  // 6. Próxima Reunião
+  const [dataProximaReuniao, setDataProximaReuniao] = useState("");
+  const [proximaReuniao, setProximaReuniao] = useState("");
 
   const [loading, setLoading] = useState(false);
 
-  const createMutation = `mutation CreateRoteiroReuniao($input: CreateRoteiroReuniaoMutationInput!) {
+  const createMutation = `mutation CreateRoteiroReuniao($input: CreateRoteiroReuniaoInput!) {
     createRoteiroReuniao(input: $input) {
       clientMutationId
       internalId
     }
   }`;
 
-  const updateMutation = `mutation UpdateRoteiroReuniao($input: UpdateRoteiroReuniaoMutationInput!) {
+  const updateMutation = `mutation UpdateRoteiroReuniao($input: UpdateRoteiroReuniaoInput!) {
     updateRoteiroReuniao(input: $input) {
       clientMutationId
       internalId
+    }
+  }`;
+
+  const fetchReportQuery = `query RoteiroReuniao($id: ID!) {
+    roteiroReuniaoBimestral(id: $id) {
+      id
+      dataReuniao
+      horario
+      coordenadorNacional {
+        id
+        lastName
+        otherNames
+      }
+      participantes
+      principaisDesafios
+      oportunidadesMelhoria
+      apreciacaoRelatorios
+      planoAcao
+      proximaReuniao
+      dataProximaReuniao
+      resumoDaAgenda
     }
   }`;
 
@@ -97,74 +185,103 @@ function BimonthlySupervisionFormPage(props) {
       setFormData({
         dataReuniao: initialData.dataReuniao ? initialData.dataReuniao.split('T')[0] : "",
         horario: initialData.horario || "",
-        coordenadorNacional: initialData.coordenadorNacional || "",
-        participantes: initialData.participantes || "",
-        resumoAgenda: initialData.resumoAgenda || "",
-        desafiosSolucoes: initialData.desafiosSolucoes || "",
-        oportunidadesPraticas: initialData.oportunidadesPraticas || "",
-        analiseDadosTendencias: initialData.analiseDadosTendencias || "",
-        acoesDefinidas: initialData.acoesDefinidas || "",
-        dataProximaReuniao: initialData.dataProximaReuniao ? initialData.dataProximaReuniao.split('T')[0] : "",
-        observacoesProximaReuniao: initialData.observacoesProximaReuniao || "",
+        coordenadorNacionalId: initialData.coordenadorNacional?.id || "",
+        participantes: initialData.participantes ? (typeof initialData.participantes === 'string' ? JSON.parse(initialData.participantes) : initialData.participantes) : [],
       });
 
-      // Parse resumoAgenda se for válido
-      console.log('initialData:', initialData);
-      console.log('initialData.resumoAgenda:', initialData.resumoAgenda);
-      if (initialData.resumoAgenda) {
+      setPrincipaisDesafios(initialData.principaisDesafios || "");
+      setOportunidadesMelhoria(initialData.oportunidadesMelhoria || "");
+      setApreciacaoRelatorios(initialData.apreciacaoRelatorios || "");
+      setPlanoAcao(initialData.planoAcao || "");
+
+      setDataProximaReuniao(initialData.dataProximaReuniao ? initialData.dataProximaReuniao.split('T')[0] : "");
+      setProximaReuniao(initialData.proximaReuniao || "");
+
+      // Parse resumoDaAgenda
+      if (initialData.resumoDaAgenda) {
         try {
-          const parsed = JSON.parse(initialData.resumoAgenda);
-          console.log('Parsed agenda items:', parsed);
-          if (Array.isArray(parsed)) {
-            setAgendaItems(parsed);
-          } else if (parsed && typeof parsed === 'object') {
-            setAgendaItems([]);
+          const parsed = typeof initialData.resumoDaAgenda === 'string' ? JSON.parse(initialData.resumoDaAgenda) : initialData.resumoDaAgenda;
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setResumoDaAgenda(parsed[0]);
           }
         } catch (e) {
-          console.log('Could not parse resumoAgenda:', initialData.resumoAgenda, 'Error:', e);
-          setAgendaItems([]);
+          console.log('Could not parse resumoDaAgenda:', e);
         }
-      } else {
-        console.log('resumoAgenda is empty or undefined');
-        setAgendaItems([]);
       }
     }
   }, [initialData, supervisionId]);
 
   const handleChange = (field) => (event) => {
+    if (isView) return;
     const { value } = event.target;
     setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleProximaReuniaoDateChange = (event) => {
+    if (isView) return;
+    const { value } = event.target;
+    setDataProximaReuniao(value);
+  };
+
+  const handleProximaReuniaoChange = (event) => {
+    if (isView) return;
+    const { value } = event.target;
+    setProximaReuniao(value);
   };
 
   const handleBack = () => {
     history.push('/prl/bimonthlySupervision');
   };
 
-  const handleAddAgendaItem = () => {
-    if (!newAgendaItem.topico || !newAgendaItem.duracao) {
-      alert('Por favor, preencha tópico e duração.');
-      return;
-    }
+  const handleToggleAgendaItem = (id) => {
+    if (isView) return;
+    setAgendaItems(prev => prev.map(item =>
+      item.id === id ? { ...item, concluido: !item.concluido } : item
+    ));
+    // Atualizar resumoDaAgenda após toggle
+    setTimeout(() => {
+      updateResumoDaAgenda();
+    }, 0);
+  };
 
-    const newItem = {
-      topico: newAgendaItem.topico,
-      duracao: parseInt(newAgendaItem.duracao, 10),
-      concluido: newAgendaItem.concluido,
+  const updateResumoDaAgenda = () => {
+    const novo = {
+      aberturaEBoasVindas: agendaItems[0]?.concluido || false,
+      relatoDesafiosSolucoes: agendaItems[1]?.concluido || false,
+      compartilhamentoOportunidades: agendaItems[2]?.concluido || false,
+      apreciacaoRelatorios: agendaItems[3]?.concluido || false,
+      definicaoAcoesEncaminhamentos: agendaItems[4]?.concluido || false,
+      encerramentoProximaReuniao: agendaItems[5]?.concluido || false,
     };
-
-    setAgendaItems([...agendaItems, newItem]);
-    setNewAgendaItem({ topico: "", duracao: "", concluido: false });
+    setResumoDaAgenda(novo);
   };
 
-  const handleRemoveAgendaItem = (index) => {
-    setAgendaItems(agendaItems.filter((_, i) => i !== index));
+  const handleAgendaItemChange = (id, field, value) => {
+    if (isView) return;
+    setAgendaItems(prev => prev.map(item =>
+      item.id === id ? { ...item, [field]: value } : item
+    ));
   };
 
-  const handleToggleAgendaItem = (index) => {
-    const updated = [...agendaItems];
-    updated[index].concluido = !updated[index].concluido;
-    setAgendaItems(updated);
+  const handleAddAgendaItem = () => {
+    if (isView) return;
+    const newItem = {
+      id: Date.now(),
+      topico: "",
+      descricao: "",
+      duracao: 10,
+      concluido: false,
+    };
+    setAgendaItems(prev => [...prev, newItem]);
   };
+
+  const handleRemoveAgendaItem = (id) => {
+    if (isView) return;
+    setAgendaItems(prev => prev.filter(item => item.id !== id));
+  };
+
+  // Calculate total duration
+  const totalDuration = agendaItems.reduce((sum, item) => sum + (parseInt(item.duracao) || 0), 0);
 
   const handleSave = async () => {
     try {
@@ -172,7 +289,7 @@ function BimonthlySupervisionFormPage(props) {
         alert('Por favor, preencha a data da reunião.');
         return;
       }
-      if (!formData.coordenadorNacional) {
+      if (!formData.coordenadorNacionalId) {
         alert('Por favor, preencha o coordenador nacional.');
         return;
       }
@@ -180,39 +297,22 @@ function BimonthlySupervisionFormPage(props) {
         alert('Por favor, preencha o horário da reunião.');
         return;
       }
-      if (!formData.participantes) {
-        alert('Por favor, preencha o campo de participantes.');
-        return;
-      }
-      if (!formData.desafiosSolucoes) {
-        alert('Por favor, preencha desafios e soluções.');
-        return;
-      }
-      if (!formData.oportunidadesPraticas) {
-        alert('Por favor, preencha oportunidades e práticas.');
-        return;
-      }
-      if (!formData.analiseDadosTendencias) {
-        alert('Por favor, preencha análise de dados e tendências.');
-        return;
-      }
-      if (!formData.acoesDefinidas) {
-        alert('Por favor, preencha ações definidas.');
-        return;
-      }
+
+      // Atualizar resumoDaAgenda antes de salvar
+      updateResumoDaAgenda();
 
       const input = {
         dataReuniao: formData.dataReuniao,
         horario: formData.horario,
-        coordenadorNacional: formData.coordenadorNacional,
-        participantes: formData.participantes,
-        resumoAgenda: agendaItems.length > 0 ? JSON.stringify(agendaItems) : "{}",
-        desafiosSolucoes: formData.desafiosSolucoes,
-        oportunidadesPraticas: formData.oportunidadesPraticas,
-        analiseDadosTendencias: formData.analiseDadosTendencias,
-        acoesDefinidas: formData.acoesDefinidas,
-        dataProximaReuniao: formData.dataProximaReuniao || null,
-        observacoesProximaReuniao: formData.observacoesProximaReuniao || "",
+        coordenadorNacionalId: formData.coordenadorNacionalId,
+        participantes: JSON.stringify(formData.participantes),
+        resumoDaAgenda: JSON.stringify([resumoDaAgenda]),
+        principaisDesafios: principaisDesafios,
+        oportunidadesMelhoria: oportunidadesMelhoria,
+        apreciacaoRelatorios: apreciacaoRelatorios,
+        planoAcao: planoAcao,
+        proximaReuniao: proximaReuniao,
+        dataProximaReuniao: dataProximaReuniao || null,
       };
 
       if (supervisionId !== 'new') {
@@ -224,8 +324,6 @@ function BimonthlySupervisionFormPage(props) {
 
       setLoading(true);
 
-      console.log('Sending payload:', JSON.stringify({ query: mutation, variables: { input } }));
-
       const response = await fetch(`${baseApiUrl}/graphql`, {
         method: 'POST',
         headers: {
@@ -236,22 +334,12 @@ function BimonthlySupervisionFormPage(props) {
         body: JSON.stringify({ query: mutation, variables: { input } }),
       });
 
-      console.log('Response status:', response.status);
-      console.log('Response headers:', response.headers);
-
       if (!response.ok) {
         const errorText = await response.text();
         throw new Error(`HTTP error! status: ${response.status}, body: ${errorText}`);
       }
 
-      const text = await response.text();
-      if (!text) {
-        throw new Error('Empty response from server');
-      }
-
-      console.log('Response text:', text);
-
-      const result = JSON.parse(text);
+      const result = await response.json();
       if (result.data?.[mutationName]) {
         handleBack();
       } else if (result.errors) {
@@ -266,41 +354,37 @@ function BimonthlySupervisionFormPage(props) {
     }
   };
 
-  const fieldProps = isView ? { disabled: true, className: classes.readOnlyField } : {};
-
   return (
     <div className={classes.page}>
       <Helmet title={formatMessage(intl, "prl", isView ? "title.viewSupervision" : "title.createSupervision")} />
 
+      {/* Header */}
       <Paper className={classes.paper}>
         <Button onClick={handleBack}>
           <ChevronLeftIcon fontSize="small" />
-          <Typography className={classes.headerTitle}>
-            {formatMessage(intl, "prl", isView ? "title.viewSupervision" : "title.createSupervision")}
-          </Typography>
-        </Button>
-
-        <Divider style={{ margin: "16px 0" }} />
-
-        <Grid container spacing={2}>
-          <Grid item xs={12}>
-            <Typography variant="h6" className={classes.sectionTitle}>
-              Informações da Reunião
+          <Box>
+            <Typography className={classes.headerTitle}>
+              06 - Roteiro das Reuniões Bimensais
             </Typography>
-          </Grid>
+          </Box>
+        </Button>
+      </Paper>
 
+      {/* 1. Informações da Reunião */}
+      <Paper className={classes.paper}>
+        <Grid container spacing={3}>
           <Grid item xs={12} sm={6}>
             <TextField
               fullWidth
               type="date"
-              label={formatMessage(intl, "prl", "bimonthlySupervision.date")}
+              label="Data da Reunião *"
               value={formData.dataReuniao}
               onChange={handleChange("dataReuniao")}
               variant="outlined"
               size="small"
               required
               InputLabelProps={{ shrink: true }}
-              {...fieldProps}
+              disabled={isView}
             />
           </Grid>
 
@@ -308,287 +392,301 @@ function BimonthlySupervisionFormPage(props) {
             <TextField
               fullWidth
               type="time"
-              label={formatMessage(intl, "prl", "bimonthlySupervision.time")}
+              label="Horário *"
               value={formData.horario}
               onChange={handleChange("horario")}
               variant="outlined"
               size="small"
               required
               InputLabelProps={{ shrink: true }}
-              {...fieldProps}
+              disabled={isView}
             />
           </Grid>
 
           <Grid item xs={12} sm={6}>
             <TextField
               fullWidth
-              label={formatMessage(intl, "prl", "bimonthlySupervision.coordinator")}
-              value={formData.coordenadorNacional}
-              onChange={handleChange("coordenadorNacional")}
+              label="Coordenador Nacional *"
+              value={formData.coordenadorNacionalId}
+              onChange={handleChange("coordenadorNacionalId")}
               variant="outlined"
               size="small"
               required
-              {...fieldProps}
+              placeholder="ID do coordenador nacional"
+              disabled={isView}
             />
           </Grid>
 
+          <Grid item xs={12} sm={6}>
+            <TextField
+              fullWidth
+              label="Participantes"
+              value={formData.participantes.join(', ')}
+              onChange={(e) => !isView && setFormData(prev => ({ ...prev, participantes: e.target.value.split(',').map(p => p.trim()).filter(p => p) }))}
+              variant="outlined"
+              size="small"
+              placeholder="IDs dos participantes (separados por vírgula)"
+              disabled={isView}
+            />
+          </Grid>
+        </Grid>
+      </Paper>
+
+      {/* Resumo da Agenda */}
+      <Paper className={classes.paper}>
+        <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+          <Box className={classes.agendaHeader} flex={1}>
+            <Typography variant="h6" style={{ fontWeight: "bold" }}>
+              ⏱ Resumo da Agenda - Duração Total: {totalDuration} minutos
+            </Typography>
+          </Box>
+          {/* {!isView && (
+            <Button
+              variant="outlined"
+              color="primary"
+              startIcon={<AddIcon />}
+              onClick={handleAddAgendaItem}
+              size="small"
+              style={{ marginLeft: 16 }}
+            >
+              Adicionar Item
+            </Button>
+          )} */}
+        </Box>
+
+        <TableContainer>
+          <Table size="small">
+            <TableHead className={classes.tableHeader}>
+              <TableRow>
+                <TableCell style={{ width: 40 }}>#</TableCell>
+                <TableCell>Tópico</TableCell>
+                <TableCell>Descrição</TableCell>
+                <TableCell align="center" style={{ width: 100 }}>Duração</TableCell>
+                <TableCell align="center" style={{ width: 100 }}>Concluído</TableCell>
+                {/* {!isView && <TableCell align="center" style={{ width: 60 }}>Ações</TableCell>} */}
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {agendaItems.map((item, index) => (
+                <TableRow key={item.id}>
+                  <TableCell>{index + 1}.</TableCell>
+                  <TableCell>
+                    {isView ? (
+                      <Typography variant="body2" style={{ fontWeight: 500 }}>{item.topico}</Typography>
+                    ) : (
+                      <TextField
+                        fullWidth
+                        value={item.topico}
+                        onChange={(e) => handleAgendaItemChange(item.id, 'topico', e.target.value)}
+                        variant="outlined"
+                        size="small"
+                        placeholder="Nome do tópico"
+                        disabled
+                      />
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {isView ? (
+                      <Typography variant="body2" color="textSecondary">{item.descricao}</Typography>
+                    ) : (
+                      <TextField
+                        fullWidth
+                        value={item.descricao}
+                        onChange={(e) => handleAgendaItemChange(item.id, 'descricao', e.target.value)}
+                        variant="outlined"
+                        size="small"
+                        placeholder="Descrição do tópico"
+                        disabled
+                      />
+                    )}
+                  </TableCell>
+                  <TableCell align="center">
+                    {isView ? (
+                      <span className={classes.durationBadge}>{item.duracao} minutos</span>
+                    ) : (
+                      <TextField
+                        type="number"
+                        value={item.duracao}
+                        onChange={(e) => handleAgendaItemChange(item.id, 'duracao', parseInt(e.target.value) || 0)}
+                        variant="outlined"
+                        size="small"
+                        style={{ width: 80 }}
+                        inputProps={{ min: 1 }}
+                        disabled
+                      />
+                    )}
+                  </TableCell>
+                  <TableCell align="center">
+                    {isView ? (
+                      item.concluido ? (
+                        <span className={classes.concludedBadge}>✓ Concluído</span>
+                      ) : (
+                        <Typography variant="body2" color="textSecondary">Pendente</Typography>
+                      )
+                    ) : (
+                      <Checkbox
+                        checked={item.concluido}
+                        onChange={() => handleToggleAgendaItem(item.id)}
+                        color="primary"
+                      />
+                    )}
+                  </TableCell>
+                  {/* {!isView && (
+                    <TableCell align="center">
+                      <IconButton
+                        size="small"
+                        onClick={() => handleRemoveAgendaItem(item.id)}
+                        style={{ color: "#d32f2f" }}
+                      >
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    </TableCell>
+                  )} */}
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Paper>
+
+      {/* 2. Desafios e Soluções por Distrito */}
+      <Paper className={classes.paper}>
+        <Typography variant="h6" className={classes.sectionTitle}>
+          2. Desafios e Soluções por Distrito
+        </Typography>
+        <Typography variant="body2" className={classes.sectionSubtitle}>
+          Principais desafios enfrentados e soluções aplicadas
+        </Typography>
+        <TextField
+          fullWidth
+          multiline
+          rows={4}
+          value={principaisDesafios}
+          onChange={(e) => !isView && setPrincipaisDesafios(e.target.value)}
+          variant="outlined"
+          placeholder="Registre os desafios compartilhados por cada coordenador distrital e as soluções discutidas..."
+          disabled={isView}
+        />
+      </Paper>
+
+      {/* 3. Oportunidades de Melhoria */}
+      <Paper className={classes.paper}>
+        <Typography variant="h6" className={classes.sectionTitle}>
+          3. Oportunidades de Melhoria
+        </Typography>
+        <Typography variant="body2" className={classes.sectionSubtitle}>
+          Oportunidades identificadas e práticas bem-sucedidas
+        </Typography>
+        <TextField
+          fullWidth
+          multiline
+          rows={4}
+          value={oportunidadesMelhoria}
+          onChange={(e) => !isView && setOportunidadesMelhoria(e.target.value)}
+          variant="outlined"
+          placeholder="Documente as oportunidades de melhoria e práticas que podem ser replicadas..."
+          disabled={isView}
+        />
+      </Paper>
+
+      {/* 4. Apreciação dos Relatórios Bimensais */}
+      <Paper className={classes.paper}>
+        <Typography variant="h6" className={classes.sectionTitle}>
+          4. Apreciação dos Relatórios Bimensais
+        </Typography>
+        <Typography variant="body2" className={classes.sectionSubtitle}>
+          Análise dos dados e tendências identificadas
+        </Typography>
+        <TextField
+          fullWidth
+          multiline
+          rows={4}
+          value={apreciacaoRelatorios}
+          onChange={(e) => !isView && setApreciacaoRelatorios(e.target.value)}
+          variant="outlined"
+          placeholder="Resuma a análise dos relatórios bimensais, tendências observadas e encaminhamentos definidos..."
+          disabled={isView}
+        />
+      </Paper>
+
+      {/* 5. Plano de Ação e Encaminhamentos */}
+      <Paper className={classes.paper}>
+        <Typography variant="h6" className={classes.sectionTitle}>
+          5. Plano de Ação e Encaminhamentos
+        </Typography>
+        <Typography variant="body2" className={classes.sectionSubtitle}>
+          Ações definidas, responsáveis e prazos
+        </Typography>
+        <TextField
+          fullWidth
+          multiline
+          rows={4}
+          value={planoAcao}
+          onChange={(e) => !isView && setPlanoAcao(e.target.value)}
+          variant="outlined"
+          placeholder="Liste as ações acordadas, responsáveis por cada uma e prazos estabelecidos..."
+          disabled={isView}
+        />
+      </Paper>
+
+      {/* 6. Próxima Reunião */}
+      <Paper className={classes.paper}>
+        <Typography variant="h6" className={classes.sectionTitle}>
+          6. Próxima Reunião
+        </Typography>
+        <Typography variant="body2" className={classes.sectionSubtitle}>
+          Data e informações para a próxima reunião
+        </Typography>
+        <Grid container spacing={3}>
           <Grid item xs={12} sm={6}>
             <TextField
               fullWidth
               type="date"
-              label={formatMessage(intl, "prl", "bimonthlySupervision.nextDate")}
-              value={formData.dataProximaReuniao}
-              onChange={handleChange("dataProximaReuniao")}
+              label="Data da Próxima Reunião"
+              value={dataProximaReuniao}
+              onChange={handleProximaReuniaoDateChange}
               variant="outlined"
               size="small"
               InputLabelProps={{ shrink: true }}
-              {...fieldProps}
+              disabled={isView}
             />
           </Grid>
-
           <Grid item xs={12}>
             <TextField
               fullWidth
-              label={formatMessage(intl, "prl", "bimonthlySupervision.participants")}
-              value={formData.participantes}
-              onChange={handleChange("participantes")}
-              variant="outlined"
-              size="small"
               multiline
-              rows={2}
-              required
-              {...fieldProps}
+              rows={3}
+              label="Informações da Próxima Reunião"
+              value={proximaReuniao}
+              onChange={handleProximaReuniaoChange}
+              variant="outlined"
+              placeholder="Data: DD/MM/YYYY, Horário: HH:mm, Local: Descrição, Plataforma: Presencial/Zoom, Agenda: Tópicos"
+              disabled={isView}
             />
           </Grid>
         </Grid>
-
-        <Divider style={{ margin: "24px 0" }} />
-
-        <Grid container spacing={2}>
-          <Grid item xs={12}>
-            <Typography variant="h6" className={classes.sectionTitle}>
-              Detalhes da Reunião
-            </Typography>
-          </Grid>
-
-          <Grid item xs={12}>
-            <Typography variant="h6" className={classes.sectionTitle}>
-              Agenda da Reunião
-            </Typography>
-          </Grid>
-
-          {!isView && (
-            <Grid item xs={12}>
-              <Card style={{ marginBottom: 16 }}>
-                <CardContent>
-                  <Grid container spacing={2}>
-                    <Grid item xs={12} sm={6}>
-                      <TextField
-                        fullWidth
-                        label="Tópico"
-                        value={newAgendaItem.topico}
-                        onChange={(e) => setNewAgendaItem({ ...newAgendaItem, topico: e.target.value })}
-                        variant="outlined"
-                        size="small"
-                        placeholder="Ex: Abertura e Boas-vindas"
-                      />
-                    </Grid>
-
-                    <Grid item xs={12} sm={3}>
-                      <TextField
-                        fullWidth
-                        label="Duração (min)"
-                        type="number"
-                        value={newAgendaItem.duracao}
-                        onChange={(e) => setNewAgendaItem({ ...newAgendaItem, duracao: e.target.value })}
-                        variant="outlined"
-                        size="small"
-                        inputProps={{ min: "1" }}
-                      />
-                    </Grid>
-
-                    <Grid item xs={12} sm={3} style={{ display: "flex", alignItems: "center" }}>
-                      <FormControlLabel
-                        control={
-                          <Checkbox
-                            checked={newAgendaItem.concluido}
-                            color="primary"
-                            onChange={(e) => setNewAgendaItem({ ...newAgendaItem, concluido: e.target.checked })}
-                          />
-                        }
-                        label="Concluído"
-                      />
-                    </Grid>
-
-                    <Grid item xs={12}>
-                      <Button
-                        variant="contained"
-                        color="primary"
-                        startIcon={<AddIcon />}
-                        onClick={handleAddAgendaItem}
-                      >
-                        Adicionar Item
-                      </Button>
-                    </Grid>
-                  </Grid>
-                </CardContent>
-              </Card>
-            </Grid>
-          )}
-
-          {agendaItems.length > 0 && (
-            <Grid item xs={12}>
-              <Card>
-                <CardContent>
-                  <Table size="small">
-                    <TableHead>
-                      <TableRow style={{ backgroundColor: "#f5f5f5" }}>
-                        <TableCell style={{ fontWeight: "bold" }}>Tópico</TableCell>
-                        <TableCell align="center" style={{ fontWeight: "bold" }}>Duração (min)</TableCell>
-                        <TableCell align="center" style={{ fontWeight: "bold" }}>Concluído</TableCell>
-                        {!isView && <TableCell align="center" style={{ fontWeight: "bold" }}>Ações</TableCell>}
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {agendaItems.map((item, index) => (
-                        <TableRow key={index}>
-                          <TableCell>{item.topico}</TableCell>
-                          <TableCell align="center">{item.duracao}</TableCell>
-                          <TableCell align="center">
-                            {!isView ? (
-                              <Checkbox
-                                checked={item.concluido}
-                                onChange={() => handleToggleAgendaItem(index)}
-                                color="primary"
-                              />
-                            ) : (
-                              item.concluido ? "✓" : "✗"
-                            )}
-                          </TableCell>
-                          {!isView && (
-                            <TableCell align="center">
-                              <IconButton
-                                size="small"
-                                onClick={() => handleRemoveAgendaItem(index)}
-                                style={{ color: "#f44336" }}
-                              >
-                                <DeleteIcon fontSize="small" />
-                              </IconButton>
-                            </TableCell>
-                          )}
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </Card>
-            </Grid>
-          )}
-
-          {agendaItems.length === 0 && !isView && (
-            <Grid item xs={12}>
-              <Typography variant="body2" color="textSecondary" style={{ fontStyle: "italic" }}>
-                Nenhum item de agenda adicionado ainda.
-              </Typography>
-            </Grid>
-          )}
-
-          <Grid item xs={12}>
-            <TextField
-              fullWidth
-              label={formatMessage(intl, "prl", "bimonthlySupervision.challengesAndSolutions")}
-              value={formData.desafiosSolucoes}
-              onChange={handleChange("desafiosSolucoes")}
-              variant="outlined"
-              size="small"
-              multiline
-              rows={3}
-              required
-              {...fieldProps}
-            />
-          </Grid>
-
-          <Grid item xs={12}>
-            <TextField
-              fullWidth
-              label={formatMessage(intl, "prl", "bimonthlySupervision.opportunitiesAndPractices")}
-              value={formData.oportunidadesPraticas}
-              onChange={handleChange("oportunidadesPraticas")}
-              variant="outlined"
-              size="small"
-              multiline
-              rows={3}
-              required
-              {...fieldProps}
-            />
-          </Grid>
-
-          <Grid item xs={12}>
-            <TextField
-              fullWidth
-              label={formatMessage(intl, "prl", "bimonthlySupervision.dataAnalysis")}
-              value={formData.analiseDadosTendencias}
-              onChange={handleChange("analiseDadosTendencias")}
-              variant="outlined"
-              size="small"
-              multiline
-              rows={3}
-              required
-              {...fieldProps}
-            />
-          </Grid>
-
-          <Grid item xs={12}>
-            <TextField
-              fullWidth
-              label={formatMessage(intl, "prl", "bimonthlySupervision.definedActions")}
-              value={formData.acoesDefinidas}
-              onChange={handleChange("acoesDefinidas")}
-              variant="outlined"
-              size="small"
-              multiline
-              rows={3}
-              required
-              {...fieldProps}
-            />
-          </Grid>
-
-          <Grid item xs={12}>
-            <TextField
-              fullWidth
-              label={formatMessage(intl, "prl", "bimonthlySupervision.nextMeetingObservations")}
-              value={formData.observacoesProximaReuniao}
-              onChange={handleChange("observacoesProximaReuniao")}
-              variant="outlined"
-              size="small"
-              multiline
-              rows={3}
-              {...fieldProps}
-            />
-          </Grid>
-        </Grid>
-
-        <Box className={classes.buttonContainer}>
-          <Button
-            variant="outlined"
-            color="primary"
-            onClick={handleBack}
-          >
-            {formatMessage(intl, "prl", "button.cancel")}
-          </Button>
-          {!isView && (
-            <Button
-              variant="contained"
-              color="primary"
-              startIcon={<SaveIcon />}
-              onClick={handleSave}
-              disabled={loading || !formData.dataReuniao || !formData.coordenadorNacional || !formData.horario || !formData.participantes || !formData.desafiosSolucoes || !formData.oportunidadesPraticas || !formData.analiseDadosTendencias || !formData.acoesDefinidas}
-            >
-              {formatMessage(intl, "prl", "button.save")}
-            </Button>
-          )}
-        </Box>
       </Paper>
+
+      {/* Buttons */}
+      <Box className={classes.buttonContainer}>
+        <Button
+          variant="outlined"
+          onClick={handleBack}
+        >
+          {isView ? "Voltar" : "Limpar Formulário"}
+        </Button>
+        {!isView && (
+          <Button
+            variant="contained"
+            color="primary"
+            startIcon={<SaveIcon />}
+            onClick={handleSave}
+            disabled={loading || !formData.dataReuniao || !formData.coordenadorNacionalId || !formData.horario}
+          >
+            Salvar Roteiro da Reunião
+          </Button>
+        )}
+      </Box>
     </div>
   );
 }
