@@ -85,12 +85,8 @@ function SupervisionReportFormPage(props) {
 
   // 2. Marque seu Distrito
   const [distrito, setDistrito] = useState("");
-  const [distritos, setDistritos] = useState([
-    { id: "aguas_grande", name: "Águas Grande" },
-    { id: "cairu", name: "Cairu" },
-    { id: "caul", name: "Caúl" },
-    { id: "lambai", name: "Lâmbai" },
-  ]);
+  const [distritos, setDistritos] = useState([]);
+  const [loadingDistritos, setLoadingDistritos] = useState(false);
 
   // 3. Marque o Período do Relatório
   const [periodo, setPeriodo] = useState({
@@ -157,6 +153,18 @@ function SupervisionReportFormPage(props) {
 
   const [loading, setLoading] = useState(false);
 
+  const districtQuery = `query GetDistritos($first: Int) {
+    locations(first: $first, type: "D") {
+      edges {
+        node {
+          id
+          code
+          name
+        }
+      }
+    }
+  }`;
+
   const usersQuery = `query GetSocialTechnicians {
     users(first: 100) {
       edges {
@@ -167,6 +175,25 @@ function SupervisionReportFormPage(props) {
           otherNames
         }
       }
+    }
+  }`;
+
+  const getRelatorioQuery = `query GetRelatorioSupervisao($id: ID!) {
+    relatorioSupervisaoBimestral(id: $id) {
+      id
+      supervisores
+      numeroSessoes
+      numeroTecnicosFormadores
+      distrito {
+        id
+        name
+      }
+      periodo
+      ano
+      avaliacoesTecnicos
+      sessoesPep
+      modulosDificuldade
+      observacoes
     }
   }`;
 
@@ -181,8 +208,52 @@ function SupervisionReportFormPage(props) {
     return null;
   };
 
+  // Buscar distritos ao montar o componente
+  useEffect(() => {
+    const abortController = new AbortController();
+
+    const fetchDistritos = async () => {
+      setLoadingDistritos(true);
+      try {
+        const response = await fetch(`${baseApiUrl}/graphql`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken'),
+            ...apiHeaders(),
+          },
+          body: JSON.stringify({ query: districtQuery, variables: { first: 100 } }),
+          signal: abortController.signal,
+        });
+
+        const result = await response.json();
+
+        if (result.data?.locations?.edges) {
+          const districtList = result.data.locations.edges.map((edge) => ({
+            id: edge.node.id,
+            code: edge.node.code,
+            name: edge.node.name,
+          }));
+          setDistritos(districtList);
+        }
+      } catch (error) {
+        if (error.name !== 'AbortError') {
+          console.error('Error fetching distritos:', error);
+        }
+      } finally {
+        setLoadingDistritos(false);
+      }
+    };
+
+    fetchDistritos();
+
+    return () => abortController.abort();
+  }, []);
+
   // Buscar usuários ao montar o componente
   useEffect(() => {
+    const abortController = new AbortController();
+
     const fetchUsers = async () => {
       setLoadingUsuarios(true);
       try {
@@ -194,6 +265,7 @@ function SupervisionReportFormPage(props) {
             ...apiHeaders(),
           },
           body: JSON.stringify({ query: usersQuery }),
+          signal: abortController.signal,
         });
 
         const result = await response.json();
@@ -207,13 +279,17 @@ function SupervisionReportFormPage(props) {
           setUsuarios(userList);
         }
       } catch (error) {
-        console.error('Error fetching users:', error);
+        if (error.name !== 'AbortError') {
+          console.error('Error fetching users:', error);
+        }
       } finally {
         setLoadingUsuarios(false);
       }
     };
 
     fetchUsers();
+
+    return () => abortController.abort();
   }, []);
 
   const createMutation = `mutation CreateRelatorioSupervisao($input: CreateRelatorioSupervisaoMutationInput!) {
@@ -233,13 +309,160 @@ function SupervisionReportFormPage(props) {
   useEffect(() => {
     // Load data if editing
     if (initialData) {
+      let supervisoresArray = [];
+
+      // Ensure supervisores is always an array
+      if (initialData.supervisores) {
+        if (typeof initialData.supervisores === 'string') {
+          try {
+            supervisoresArray = JSON.parse(initialData.supervisores);
+            if (!Array.isArray(supervisoresArray)) {
+              supervisoresArray = [supervisoresArray];
+            }
+          } catch (e) {
+            supervisoresArray = [initialData.supervisores];
+          }
+        } else if (Array.isArray(initialData.supervisores)) {
+          supervisoresArray = initialData.supervisores;
+        } else {
+          supervisoresArray = [initialData.supervisores];
+        }
+      }
+
       setIdentificacao({
-        supervisores: initialData.supervisores || [],
+        supervisores: supervisoresArray,
         numeroSessoes: initialData.numeroSessoes || "",
         numeroTecnicosFormadores: initialData.numeroTecnicosFormadores || "",
       });
     }
   }, [initialData]);
+
+  // Fetch report by ID if editing
+  useEffect(() => {
+    const abortController = new AbortController();
+
+    const fetchRelatorio = async () => {
+      if (reportId && reportId !== 'new') {
+        try {
+          const response = await fetch(`${baseApiUrl}/graphql`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-CSRFToken': getCookie('csrftoken'),
+              ...apiHeaders(),
+            },
+            body: JSON.stringify({ query: getRelatorioQuery, variables: { id: reportId } }),
+            signal: abortController.signal,
+          });
+
+          const result = await response.json();
+
+          if (result.data?.relatorioSupervisaoBimestral) {
+            const report = result.data.relatorioSupervisaoBimestral;
+
+            // Parse supervisores
+            let supervisoresArray = [];
+            if (report.supervisores) {
+              try {
+                supervisoresArray = JSON.parse(report.supervisores);
+                if (!Array.isArray(supervisoresArray)) {
+                  supervisoresArray = [supervisoresArray];
+                }
+              } catch (e) {
+                supervisoresArray = [];
+              }
+            }
+
+            setIdentificacao({
+              supervisores: supervisoresArray,
+              numeroSessoes: report.numeroSessoes || "",
+              numeroTecnicosFormadores: report.numeroTecnicosFormadores || "",
+            });
+
+            // Set distrito
+            if (report.distrito) {
+              setDistrito(report.distrito.id);
+            }
+
+            // Parse and set periodo
+            if (report.periodo) {
+              const periodoMap = {
+                'JAN_FEV': 'janfev',
+                'MAR_ABR': 'marabb',
+                'MAI_JUN': 'maijun',
+                'JUL_AGO': 'julaug',
+                'SET_OUT': 'setout',
+                'NOV_DEZ': 'novdec',
+              };
+              const periodoKey = periodoMap[report.periodo];
+              setPeriodo({
+                janfev: periodoKey === 'janfev',
+                marabb: periodoKey === 'marabb',
+                maijun: periodoKey === 'maijun',
+                julaug: periodoKey === 'julaug',
+                setout: periodoKey === 'setout',
+                novdec: periodoKey === 'novdec',
+              });
+            }
+
+            // Parse avaliações técnicos
+            if (report.avaliacoesTecnicos) {
+              try {
+                const avaliacoes = JSON.parse(report.avaliacoesTecnicos);
+                if (Array.isArray(avaliacoes) && avaliacoes.length > 0) {
+                  setAvaliacoesTecnicos(
+                    avaliacoes.map((a, idx) => ({
+                      id: idx + 1,
+                      idDoTecnico: a.idDoTecnico || "",
+                      pontosPositivos: a.pontosPositivos || "",
+                      pontosAprimorar: a.pontosAprimorar || "",
+                    }))
+                  );
+                }
+              } catch (e) {
+                console.error('Error parsing avaliacoes:', e);
+              }
+            }
+
+            // Parse sessões PEP+
+            if (report.sessoesPep) {
+              try {
+                const sessoes = JSON.parse(report.sessoesPep);
+                if (Array.isArray(sessoes) && sessoes.length > 0) {
+                  setSessoesPep(sessoes);
+                }
+              } catch (e) {
+                console.error('Error parsing sessoesPep:', e);
+              }
+            }
+
+            // Parse módulos dificuldade
+            if (report.modulosDificuldade) {
+              try {
+                const modulos = JSON.parse(report.modulosDificuldade);
+                setModulosDificuldade(modulos);
+              } catch (e) {
+                console.error('Error parsing modulosDificuldade:', e);
+              }
+            }
+
+            // Set observações
+            if (report.observacoes) {
+              setObservacoes(report.observacoes);
+            }
+          }
+        } catch (error) {
+          if (error.name !== 'AbortError') {
+            console.error('Error fetching relatório:', error);
+          }
+        }
+      }
+    };
+
+    fetchRelatorio();
+
+    return () => abortController.abort();
+  }, [reportId]);
 
   const handleSave = async () => {
     try {
@@ -385,7 +608,7 @@ function SupervisionReportFormPage(props) {
                 disabled={isView || loadingUsuarios}
                 renderValue={(selected) => (
                   <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                    {selected.map((value) => {
+                    {Array.isArray(selected) && selected.map((value) => {
                       const user = usuarios.find(u => u.id === value);
                       return <Chip key={value} label={user?.label || value} size="small" />;
                     })}
@@ -447,7 +670,7 @@ function SupervisionReportFormPage(props) {
               variant="outlined"
               size="small"
               required
-              disabled={isView}
+              disabled={isView || loadingDistritos}
             >
               <MenuItem value="">
                 <em>Selecione o distrito</em>
@@ -576,7 +799,7 @@ function SupervisionReportFormPage(props) {
                 <TextField
                   fullWidth
                   multiline
-                  rows={2}
+                  minRows={2}
                   label="Pontos Positivos"
                   value={tecnico.pontosPositivos}
                   onChange={(e) => handleTecnicoChange(tecnico.id, 'pontosPositivos', e.target.value)}
@@ -589,7 +812,7 @@ function SupervisionReportFormPage(props) {
                 <TextField
                   fullWidth
                   multiline
-                  rows={2}
+                  minRows={2}
                   label="Pontos a Aproveitar"
                   value={tecnico.pontosAprimorar}
                   onChange={(e) => handleTecnicoChange(tecnico.id, 'pontosAprimorar', e.target.value)}
@@ -691,7 +914,7 @@ function SupervisionReportFormPage(props) {
         <TextField
           fullWidth
           multiline
-          rows={4}
+          minRows={4}
           label="Observações"
           value={observacoes}
           onChange={(e) => !isView && setObservacoes(e.target.value)}

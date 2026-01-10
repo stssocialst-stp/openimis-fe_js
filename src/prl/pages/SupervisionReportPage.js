@@ -7,7 +7,6 @@ import {
 } from "@material-ui/core";
 import AddIcon from "@material-ui/icons/Add";
 import VisibilityIcon from "@material-ui/icons/Visibility";
-import EditIcon from "@material-ui/icons/Edit";
 import { formatMessage, withModulesManager, Helmet, withTooltip, baseApiUrl, apiHeaders } from "@openimis/fe-core";
 import PrlSearcher from "../components/PrlSearcher";
 import PrlFilter from "../components/PrlFilter";
@@ -34,6 +33,18 @@ function SupervisionReportPage(props) {
       }
     }
     return cookieValue;
+  };
+
+  const getPeriodoLabel = (periodo) => {
+    const periodoMap = {
+      'JAN_FEV': 'Janeiro - Fevereiro',
+      'MAR_ABR': 'Março - Abril',
+      'MAI_JUN': 'Maio - Junho',
+      'JUL_AGO': 'Julho - Agosto',
+      'SET_OUT': 'Setembro - Outubro',
+      'NOV_DEZ': 'Novembro - Dezembro',
+    };
+    return periodoMap[periodo] || periodo;
   };
 
   const reportsQuery = `
@@ -128,15 +139,8 @@ function SupervisionReportPage(props) {
 
   const handleView = (rowData) => {
     history.push({
-      pathname: `/prl/supervisionReport/${rowData.id}`,
+      pathname: `/prl/supervisionReport/form/${rowData.id}`,
       state: { isView: true, data: rowData, reportId: rowData.id },
-    });
-  };
-
-  const handleEdit = (rowData) => {
-    history.push({
-      pathname: `/prl/supervisionReport/${rowData.id}`,
-      state: { isView: false, data: rowData, reportId: rowData.id },
     });
   };
 
@@ -157,19 +161,14 @@ function SupervisionReportPage(props) {
 
   const itemFormatters = [
     (data) => data.ano,
-    (data) => data.periodo,
-    (data) => data.supervisores,
+    (data) => getPeriodoLabel(data.periodo),
+    (data) => data.supervisores.split(',').length || 0,
     (data) => data.numeroSessoes,
     (data) => (
       <div key={data.id}>
         <Tooltip title={formatMessage(intl, "prl", "button.view")}>
           <IconButton size="small" onClick={() => handleView(data)}>
             <VisibilityIcon fontSize="small" />
-          </IconButton>
-        </Tooltip>
-        <Tooltip title={formatMessage(intl, "prl", "button.edit")}>
-          <IconButton size="small" onClick={() => handleEdit(data)}>
-            <EditIcon fontSize="small" />
           </IconButton>
         </Tooltip>
       </div>
