@@ -141,7 +141,7 @@ function BimonthlySupervisionPage(props) {
 
   const itemFormatters = [
     (item) => item.dataReuniao,
-    (item) => item.coordenadorNacional,
+    (item) => item.coordenadorNacional.lastName + " " + item.coordenadorNacional?.otherNames,
     (item) => item.dataProximaReuniao,
     (item) => (
       <div style={{ display: 'flex', justifyContent: 'center', gap: 8 }}>

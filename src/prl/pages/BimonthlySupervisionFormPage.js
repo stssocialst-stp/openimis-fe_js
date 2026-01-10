@@ -4,6 +4,7 @@ import { withTheme, withStyles } from "@material-ui/core/styles";
 import {
   Paper, Typography, Grid, TextField, Button, Box, IconButton, Checkbox,
   Table, TableBody, TableCell, TableHead, TableRow, TableContainer,
+  FormControl, InputLabel, Select, MenuItem, Chip,
 } from "@material-ui/core";
 import ChevronLeftIcon from "@material-ui/icons/ChevronLeft";
 import SaveIcon from "@material-ui/icons/Save";
@@ -143,16 +144,33 @@ function BimonthlySupervisionFormPage(props) {
   const [dataProximaReuniao, setDataProximaReuniao] = useState("");
   const [proximaReuniao, setProximaReuniao] = useState("");
 
+  // Usuários (coordenador e participantes)
+  const [usuarios, setUsuarios] = useState([]);
+  const [loadingUsuarios, setLoadingUsuarios] = useState(false);
+
   const [loading, setLoading] = useState(false);
 
-  const createMutation = `mutation CreateRoteiroReuniao($input: CreateRoteiroReuniaoInput!) {
+  const usersQuery = `query GetSocialTechnicians {
+    users(first: 100) {
+      edges {
+        node {
+          id
+          username
+          lastName
+          otherNames
+        }
+      }
+    }
+  }`;
+
+  const createMutation = `mutation CreateRoteiroReuniao($input: CreateRoteiroReuniaoMutationInput!) {
     createRoteiroReuniao(input: $input) {
       clientMutationId
       internalId
     }
   }`;
 
-  const updateMutation = `mutation UpdateRoteiroReuniao($input: UpdateRoteiroReuniaoInput!) {
+  const updateMutation = `mutation UpdateRoteiroReuniao($input: UpdateRoteiroReuniaoMutationInput!) {
     updateRoteiroReuniao(input: $input) {
       clientMutationId
       internalId
@@ -179,6 +197,41 @@ function BimonthlySupervisionFormPage(props) {
       resumoDaAgenda
     }
   }`;
+
+  // Buscar usuários ao montar o componente
+  useEffect(() => {
+    const fetchUsers = async () => {
+      setLoadingUsuarios(true);
+      try {
+        const response = await fetch(`${baseApiUrl}/graphql`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken'),
+            ...apiHeaders(),
+          },
+          body: JSON.stringify({ query: usersQuery }),
+        });
+
+        const result = await response.json();
+
+        if (result.data?.users?.edges) {
+          const userList = result.data.users.edges.map((edge) => ({
+            id: edge.node.id,
+            username: edge.node.username,
+            label: `${edge.node.lastName} ${edge.node.otherNames}`.trim(),
+          }));
+          setUsuarios(userList);
+        }
+      } catch (error) {
+        console.error('Error fetching users:', error);
+      } finally {
+        setLoadingUsuarios(false);
+      }
+    };
+
+    fetchUsers();
+  }, []);
 
   useEffect(() => {
     if (initialData && supervisionId !== 'new') {
@@ -404,30 +457,51 @@ function BimonthlySupervisionFormPage(props) {
           </Grid>
 
           <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              label="Coordenador Nacional *"
-              value={formData.coordenadorNacionalId}
-              onChange={handleChange("coordenadorNacionalId")}
-              variant="outlined"
-              size="small"
-              required
-              placeholder="ID do coordenador nacional"
-              disabled={isView}
-            />
+            <FormControl fullWidth>
+              <InputLabel>Coordenador Nacional *</InputLabel>
+              <Select
+                value={formData.coordenadorNacionalId}
+                onChange={handleChange("coordenadorNacionalId")}
+                label="Coordenador Nacional *"
+                disabled={isView || loadingUsuarios}
+              >
+                <MenuItem value="">
+                  <em>Selecione um coordenador</em>
+                </MenuItem>
+                {usuarios.map((user) => (
+                  <MenuItem key={user.id} value={user.id}>
+                    {user.label}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
           </Grid>
 
           <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              label="Participantes"
-              value={formData.participantes.join(', ')}
-              onChange={(e) => !isView && setFormData(prev => ({ ...prev, participantes: e.target.value.split(',').map(p => p.trim()).filter(p => p) }))}
-              variant="outlined"
-              size="small"
-              placeholder="IDs dos participantes (separados por vírgula)"
-              disabled={isView}
-            />
+            <FormControl fullWidth>
+              <InputLabel>Participantes</InputLabel>
+              <Select
+                multiple
+                value={formData.participantes}
+                onChange={(e) => !isView && setFormData(prev => ({ ...prev, participantes: e.target.value }))}
+                label="Participantes"
+                disabled={isView || loadingUsuarios}
+                renderValue={(selected) => (
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                    {selected.map((value) => {
+                      const user = usuarios.find(u => u.id === value);
+                      return <Chip key={value} label={user?.label || value} size="small" />;
+                    })}
+                  </Box>
+                )}
+              >
+                {usuarios.map((user) => (
+                  <MenuItem key={user.id} value={user.id}>
+                    {user.label}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
           </Grid>
         </Grid>
       </Paper>

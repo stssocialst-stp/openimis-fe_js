@@ -307,7 +307,6 @@ function SupervisionReportFormPage(props) {
         console.error('Errors:', result.errors);
         alert(`Erro ao salvar: ${result.errors[0].message}`);
       } else if (result.data?.[mutationName]) {
-        alert("Relatório salvo com sucesso!");
         history.push('/prl/supervisionReport');
       }
     } catch (error) {
