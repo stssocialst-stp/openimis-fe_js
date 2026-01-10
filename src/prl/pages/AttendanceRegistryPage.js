@@ -184,7 +184,6 @@ function AttendanceRegistryPage(props) {
   const headers = [
     "prl.attendance.sessionCode",
     "prl.attendance.sessionDate",
-    "prl.attendance.familyName",
     "prl.attendance.estado",
     "emptyLabel",
   ];
@@ -192,7 +191,6 @@ function AttendanceRegistryPage(props) {
   const itemFormatters = [
     (item) => item.sessionCode,
     (item) => item.sessionDate,
-    (item) => item.familyName,
     (item) => (
       <Typography variant="body2">
         {getStateLabel(item.state)}
