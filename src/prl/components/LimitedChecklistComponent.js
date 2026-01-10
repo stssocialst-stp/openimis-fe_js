@@ -71,7 +71,7 @@ function LimitedChecklistComponent(props) {
     if (currentSelection?.confirmacao) {
       const updated = {
         ...localSelections,
-        [itemId]: { ...item, confirmacao: false },
+        [itemId]: { descricao: item.description, confirmacao: false },
       };
       setLocalSelections(updated);
       if (onSelectionChange) {
@@ -82,7 +82,7 @@ function LimitedChecklistComponent(props) {
     else if (!isAtLimit) {
       const updated = {
         ...localSelections,
-        [itemId]: { ...item, confirmacao: true },
+        [itemId]: { descricao: item.description, confirmacao: true },
       };
       setLocalSelections(updated);
       if (onSelectionChange) {
