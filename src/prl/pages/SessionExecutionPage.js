@@ -166,6 +166,16 @@ function SessionExecutionPage(props) {
     });
   };
 
+  const formatParticipants = (value) => {
+    switch (value) {
+      case 'A_0': return '0';
+      case 'A_15_': return '15+';
+      case 'A_1_5': return '1-5';
+      case 'A_6_10': return '6-10';
+      default: return value;
+    }
+  };
+
   const headers = [
     "prl.execution.sessionCode",
     "prl.execution.executionDate",
@@ -179,7 +189,7 @@ function SessionExecutionPage(props) {
     (item) => item.sessionCode,
     (item) => formatDate(item.dataExecucao),
     (item) => item.formador,
-    (item) => item.participants,
+    (item) => formatParticipants(item.participants),
     (item) => (
       <Typography variant="body2">
         {item.necessitaEncaminhamento ? 'Sim' : 'Não'}

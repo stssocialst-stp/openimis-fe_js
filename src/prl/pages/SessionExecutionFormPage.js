@@ -389,7 +389,7 @@ function SessionExecutionFormPage(props) {
       .filter(item => item !== null)
       .map(item => ({
         descricao: item.descricao,
-        avaliacao: item.confirmacao,
+        confirmacao: item.confirmacao,
       }));
   };
 
@@ -398,7 +398,7 @@ function SessionExecutionFormPage(props) {
       .filter(item => item !== null)
       .map(item => ({
         descricao: item.descricao,
-        avaliacao: item.confirmacao,
+        confirmacao: item.confirmacao,
       }));
   };
   const convertMetodologyToArray = () => {
