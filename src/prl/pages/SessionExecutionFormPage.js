@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { injectIntl } from "react-intl";
+import { useLocation } from "react-router-dom";
 import { withTheme, withStyles } from "@material-ui/core/styles";
 import {
   Paper, Typography, Grid, TextField, Button, MenuItem, Divider, Box,
@@ -32,6 +33,9 @@ const styles = (theme) => ({
 
 function SessionExecutionFormPage(props) {
   const { classes, intl, history } = props;
+  const location = useLocation();
+  const viewData = location.state?.data;
+  const isViewMode = !!viewData;
 
   const getCookie = (name) => {
     let cookieValue = null;
@@ -297,6 +301,77 @@ function SessionExecutionFormPage(props) {
     fetchDistricts();
   }, []);
 
+  useEffect(() => {
+    if (isViewMode && viewData) {
+      // Load data for view mode
+      setFormData({
+        sessaoId: viewData.sessao?.id || "",
+        formadorId: viewData.formador?.id || "",
+        supervisorId: viewData.supervisor?.id || "",
+        localidadeId: viewData.localidade?.id || "",
+        numeroCuidadores: viewData.numeroCuidadores || "",
+        observacoes: viewData.observacoes || "",
+      });
+
+      // Parse selections from JSON strings
+      if (viewData.praticasPositivas) {
+        const positivas = JSON.parse(viewData.praticasPositivas);
+        const selections = {};
+        positivas.forEach(item => {
+          selections[item.descricao] = { descricao: item.descricao, confirmacao: item.confirmacao };
+        });
+        setPracticesSelections(selections);
+        setOtherPractices(viewData.outrasPraticasPositivas || "");
+      }
+
+      if (viewData.desafiosTransmissao) {
+        const desafios = JSON.parse(viewData.desafiosTransmissao);
+        const selections = {};
+        desafios.forEach(item => {
+          selections[item.descricao] = { descricao: item.descricao, confirmacao: item.confirmacao };
+        });
+        setChallengesSelections(selections);
+        setOtherChallenges(viewData.outrosDesafios || "");
+      }
+
+      setNecessitaEncaminhamento(viewData.necessitaEncaminhamento || false);
+
+      if (viewData.autoAvaliacaoPontosFortes) {
+        const pontosFortes = JSON.parse(viewData.autoAvaliacaoPontosFortes);
+        const selections = {};
+        pontosFortes.forEach(item => {
+          selections[item.descricao] = { descricao: item.descricao, confirmacao: item.confirmacao };
+        });
+        setStrengthsSelections(selections);
+        setOtherStrengths(viewData.outrosPontosFortes || "");
+      }
+
+      if (viewData.autoAvaliacaoPontosAtencao) {
+        const pontosAtencao = JSON.parse(viewData.autoAvaliacaoPontosAtencao);
+        const selections = {};
+        pontosAtencao.forEach(item => {
+          selections[item.descricao] = { descricao: item.descricao, confirmacao: item.confirmacao };
+        });
+        setAttentionSelections(selections);
+        setOtherAttention(viewData.outrosPontosAtencao || "");
+      }
+
+      if (viewData.avaliacaoMetodologia) {
+        const metodologia = JSON.parse(viewData.avaliacaoMetodologia);
+        const selections = {};
+        metodologia.forEach(item => {
+          selections[item.descricao] = { descricao: item.descricao, avaliacao: item.avaliacao };
+        });
+        setMetodologySelections(selections);
+      }
+
+      // Set selected session
+      if (viewData.sessao) {
+        setSelectedSession(viewData.sessao);
+      }
+    }
+  }, [isViewMode, viewData]);
+
   const handleChange = (field) => (event) => {
     const { value } = event.target;
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -471,13 +546,13 @@ function SessionExecutionFormPage(props) {
 
   return (
     <div className={classes.page}>
-      <Helmet title={formatMessage(intl, "prl", "title.createExecution")} />
+      <Helmet title={formatMessage(intl, "prl", isViewMode ? "title.viewExecution" : "title.createExecution")} />
 
       <Paper className={classes.paper}>
         <Button onClick={handleBack}>
           <ChevronLeftIcon fontSize="small" />
           <Typography className={classes.headerTitle}>
-            {formatMessage(intl, "prl", "title.createExecution")}
+            {formatMessage(intl, "prl", isViewMode ? "title.viewExecution" : "title.createExecution")}
           </Typography>
         </Button>
 
@@ -500,6 +575,7 @@ function SessionExecutionFormPage(props) {
               variant="outlined"
               size="small"
               required
+              disabled={isViewMode}
             >
               {sessions.map((session) => (
                 <MenuItem key={session.id} value={session.id}>
@@ -617,6 +693,7 @@ function SessionExecutionFormPage(props) {
               onChange={handleChange("supervisorId")}
               variant="outlined"
               size="small"
+              disabled={isViewMode}
             >
               {trainers.map((trainer) => (
                 <MenuItem key={trainer.id} value={trainer.id}>
@@ -636,6 +713,7 @@ function SessionExecutionFormPage(props) {
               variant="outlined"
               size="small"
               required
+              disabled={isViewMode}
             >
               {trainers.map((trainer) => (
                 <MenuItem key={trainer.id} value={trainer.id}>
@@ -654,6 +732,7 @@ function SessionExecutionFormPage(props) {
               onChange={handleChange("localidadeId")}
               variant="outlined"
               size="small"
+              disabled={isViewMode}
             >
               {districts.map((district) => (
                 <MenuItem key={district.id} value={district.id}>
@@ -683,6 +762,7 @@ function SessionExecutionFormPage(props) {
               variant="outlined"
               size="small"
               required
+              disabled={isViewMode}
             >
               <MenuItem value="0">0 cuidadores</MenuItem>
               <MenuItem value="1-5">1-5 cuidadores</MenuItem>
@@ -704,6 +784,7 @@ function SessionExecutionFormPage(props) {
               otherPracticesPlaceholder={formatMessage(intl, "prl", "execution.otherPositivePracticesPlaceholder")}
               otherPracticesValue={otherPractices}
               onOtherPracticesChange={handleOtherPracticesChange}
+              disabled={isViewMode}
             />
           </Grid>
         </Grid>
@@ -746,6 +827,7 @@ function SessionExecutionFormPage(props) {
                   value="sim"
                   checked={necessitaEncaminhamento === true}
                   onChange={handleNecessitaEncaminhamentoChange}
+                  disabled={isViewMode}
                 />
                 Sim
               </label>
@@ -756,6 +838,7 @@ function SessionExecutionFormPage(props) {
                   value="nao"
                   checked={necessitaEncaminhamento === false}
                   onChange={handleNecessitaEncaminhamentoChange}
+                  disabled={isViewMode}
                 />
                 Não
               </label>
@@ -799,6 +882,7 @@ function SessionExecutionFormPage(props) {
               otherPracticesPlaceholder={formatMessage(intl, "prl", "execution.otherAttentionPlaceholder")}
               otherPracticesValue={otherAttention}
               onOtherPracticesChange={handleOtherAttentionChange}
+              disabled={isViewMode}
             />
           </Grid>
         </Grid>
@@ -815,6 +899,7 @@ function SessionExecutionFormPage(props) {
               onSelectionChange={handleMetodologySelectionChange}
               selections={metodologySelections}
               showOtherPractices={false}
+              disabled={isViewMode}
             />
           </Grid>
         </Grid>
@@ -839,6 +924,7 @@ function SessionExecutionFormPage(props) {
             size="small"
             multiline
             rows={4}
+            disabled={isViewMode}
           />
         </Grid>
       </Paper>
@@ -851,15 +937,17 @@ function SessionExecutionFormPage(props) {
         >
           {formatMessage(intl, "prl", "button.cancel")}
         </Button>
-        <Button
-          variant="contained"
-          color="primary"
-          startIcon={<SaveIcon />}
-          onClick={handleSave}
-          disabled={loading || !formData.sessaoId || !formData.formadorId}
-        >
-          {formatMessage(intl, "prl", "button.save")}
-        </Button>
+        {!isViewMode && (
+          <Button
+            variant="contained"
+            color="primary"
+            startIcon={<SaveIcon />}
+            onClick={handleSave}
+            disabled={loading || !formData.sessaoId || !formData.formadorId}
+          >
+            {formatMessage(intl, "prl", "button.save")}
+          </Button>
+        )}
       </Box>
     </div>
   );
