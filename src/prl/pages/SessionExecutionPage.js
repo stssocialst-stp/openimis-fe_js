@@ -152,8 +152,8 @@ function SessionExecutionPage(props) {
   }, [fetchExecutions]);
 
   const handleView = (item) => {
-    // Navigate to details page with item data
-    history.push(`/prl/session-execution/details/${item.id}`, { data: item.fullNode });
+    // Navigate to form page with item data in view mode
+    history.push(`/${PRL_ROUTE_EXECUTION_FORM}`, { data: item.fullNode });
   };
 
   const formatDate = (dateString) => {

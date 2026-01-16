@@ -1059,15 +1059,18 @@ function SessionSupervisionFormPage(props) {
           >
             {formatMessage(intl, "prl", "button.cancel")}
           </Button>
-          <Button
-            variant="contained"
-            color="primary"
-            startIcon={<SaveIcon />}
-            onClick={handleSave}
-            disabled={loading || !formData.sessaoId || !formData.supervisorId || !formData.formadorId || !formData.identificadorGrupo || !formData.dataSupervisao}
-          >
-            {isEditMode ? "Atualizar" : "Salvar"}
-          </Button>
+          {!isEditMode &&
+            <Button
+              variant="contained"
+              color="primary"
+              startIcon={<SaveIcon />}
+              onClick={handleSave}
+              disabled={loading || !formData.sessaoId || !formData.supervisorId || !formData.formadorId || !formData.identificadorGrupo || !formData.dataSupervisao}
+            >
+              {/* {isEditMode ? "Atualizar" : "Salvar"} */}
+              Salvar
+            </Button>
+          }
         </Box>
       </Paper>
     </div>

@@ -303,71 +303,86 @@ function SessionExecutionFormPage(props) {
 
   useEffect(() => {
     if (isViewMode && viewData) {
-      // Load data for view mode
-      setFormData({
-        sessaoId: viewData.sessao?.id || "",
-        formadorId: viewData.formador?.id || "",
-        supervisorId: viewData.supervisor?.id || "",
-        localidadeId: viewData.localidade?.id || "",
-        numeroCuidadores: viewData.numeroCuidadores || "",
-        observacoes: viewData.observacoes || "",
-      });
-
-      // Parse selections from JSON strings
-      if (viewData.praticasPositivas) {
-        const positivas = JSON.parse(viewData.praticasPositivas);
-        const selections = {};
-        positivas.forEach(item => {
-          selections[item.descricao] = { descricao: item.descricao, confirmacao: item.confirmacao };
+      try {
+        // Load data for view mode
+        setFormData({
+          sessaoId: viewData.sessao?.id || "",
+          formadorId: viewData.formador?.id || "",
+          supervisorId: viewData.supervisor?.id || "",
+          localidadeId: viewData.localidade?.id || "",
+          numeroCuidadores: viewData.numeroCuidadores || "",
+          observacoes: viewData.observacoes || "",
         });
-        setPracticesSelections(selections);
-        setOtherPractices(viewData.outrasPraticasPositivas || "");
-      }
 
-      if (viewData.desafiosTransmissao) {
-        const desafios = JSON.parse(viewData.desafiosTransmissao);
-        const selections = {};
-        desafios.forEach(item => {
-          selections[item.descricao] = { descricao: item.descricao, confirmacao: item.confirmacao };
-        });
-        setChallengesSelections(selections);
-        setOtherChallenges(viewData.outrosDesafios || "");
-      }
+        // Helper function to safely parse JSON
+        const safeJsonParse = (jsonString) => {
+          if (!jsonString) return [];
+          try {
+            return typeof jsonString === 'string' ? JSON.parse(jsonString) : jsonString;
+          } catch (e) {
+            console.error('Error parsing JSON:', e, jsonString);
+            return [];
+          }
+        };
 
-      setNecessitaEncaminhamento(viewData.necessitaEncaminhamento || false);
+        // Parse selections from JSON strings
+        if (viewData.praticasPositivas) {
+          const positivas = safeJsonParse(viewData.praticasPositivas);
+          const selections = {};
+          positivas.forEach(item => {
+            selections[item.descricao] = { descricao: item.descricao, confirmacao: item.confirmacao };
+          });
+          setPracticesSelections(selections);
+          setOtherPractices(viewData.outrasPraticasPositivas || "");
+        }
 
-      if (viewData.autoAvaliacaoPontosFortes) {
-        const pontosFortes = JSON.parse(viewData.autoAvaliacaoPontosFortes);
-        const selections = {};
-        pontosFortes.forEach(item => {
-          selections[item.descricao] = { descricao: item.descricao, confirmacao: item.confirmacao };
-        });
-        setStrengthsSelections(selections);
-        setOtherStrengths(viewData.outrosPontosFortes || "");
-      }
+        if (viewData.desafiosTransmissao) {
+          const desafios = safeJsonParse(viewData.desafiosTransmissao);
+          const selections = {};
+          desafios.forEach(item => {
+            selections[item.descricao] = { descricao: item.descricao, confirmacao: item.confirmacao };
+          });
+          setChallengesSelections(selections);
+          setOtherChallenges(viewData.outrosDesafios || "");
+        }
 
-      if (viewData.autoAvaliacaoPontosAtencao) {
-        const pontosAtencao = JSON.parse(viewData.autoAvaliacaoPontosAtencao);
-        const selections = {};
-        pontosAtencao.forEach(item => {
-          selections[item.descricao] = { descricao: item.descricao, confirmacao: item.confirmacao };
-        });
-        setAttentionSelections(selections);
-        setOtherAttention(viewData.outrosPontosAtencao || "");
-      }
+        setNecessitaEncaminhamento(viewData.necessitaEncaminhamento || false);
 
-      if (viewData.avaliacaoMetodologia) {
-        const metodologia = JSON.parse(viewData.avaliacaoMetodologia);
-        const selections = {};
-        metodologia.forEach(item => {
-          selections[item.descricao] = { descricao: item.descricao, avaliacao: item.avaliacao };
-        });
-        setMetodologySelections(selections);
-      }
+        if (viewData.autoAvaliacaoPontosFortes) {
+          const pontosFortes = safeJsonParse(viewData.autoAvaliacaoPontosFortes);
+          const selections = {};
+          pontosFortes.forEach(item => {
+            selections[item.descricao] = { descricao: item.descricao, confirmacao: item.confirmacao };
+          });
+          setStrengthsSelections(selections);
+          setOtherStrengths(viewData.outrosPontosFortes || "");
+        }
 
-      // Set selected session
-      if (viewData.sessao) {
-        setSelectedSession(viewData.sessao);
+        if (viewData.autoAvaliacaoPontosAtencao) {
+          const pontosAtencao = safeJsonParse(viewData.autoAvaliacaoPontosAtencao);
+          const selections = {};
+          pontosAtencao.forEach(item => {
+            selections[item.descricao] = { descricao: item.descricao, confirmacao: item.confirmacao };
+          });
+          setAttentionSelections(selections);
+          setOtherAttention(viewData.outrosPontosAtencao || "");
+        }
+
+        if (viewData.avaliacaoMetodologia) {
+          const metodologia = safeJsonParse(viewData.avaliacaoMetodologia);
+          const selections = {};
+          metodologia.forEach(item => {
+            selections[item.descricao] = { descricao: item.descricao, avaliacao: item.avaliacao };
+          });
+          setMetodologySelections(selections);
+        }
+
+        // Set selected session
+        if (viewData.sessao) {
+          setSelectedSession(viewData.sessao);
+        }
+      } catch (error) {
+        console.error('Error loading view data:', error);
       }
     }
   }, [isViewMode, viewData]);
