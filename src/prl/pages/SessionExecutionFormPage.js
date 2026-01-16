@@ -304,13 +304,21 @@ function SessionExecutionFormPage(props) {
   useEffect(() => {
     if (isViewMode && viewData) {
       try {
+        const mapCuidadores = (val) => {
+          if (val === 'A_0') return '0';
+          if (val === 'A_1_5') return '1-5';
+          if (val === 'A_6_10') return '6-10';
+          if (val === 'A_15') return '15+';
+          return val;
+        };
+
         // Load data for view mode
         setFormData({
           sessaoId: viewData.sessao?.id || "",
           formadorId: viewData.formador?.id || "",
           supervisorId: viewData.supervisor?.id || "",
           localidadeId: viewData.localidade?.id || "",
-          numeroCuidadores: viewData.numeroCuidadores || "",
+          numeroCuidadores: mapCuidadores(viewData.numeroCuidadores) || "",
           observacoes: viewData.observacoes || "",
         });
 
@@ -330,7 +338,10 @@ function SessionExecutionFormPage(props) {
           const positivas = safeJsonParse(viewData.praticasPositivas);
           const selections = {};
           positivas.forEach(item => {
-            selections[item.descricao] = { descricao: item.descricao, confirmacao: item.confirmacao };
+            const row = practicesRows.find(r => r.description === item.descricao);
+            if (row) {
+              selections[row.id] = { descricao: item.descricao, confirmacao: item.confirmacao };
+            }
           });
           setPracticesSelections(selections);
           setOtherPractices(viewData.outrasPraticasPositivas || "");
@@ -340,7 +351,10 @@ function SessionExecutionFormPage(props) {
           const desafios = safeJsonParse(viewData.desafiosTransmissao);
           const selections = {};
           desafios.forEach(item => {
-            selections[item.descricao] = { descricao: item.descricao, confirmacao: item.confirmacao };
+            const row = challengesRows.find(r => r.description === item.descricao);
+            if (row) {
+              selections[row.id] = { descricao: item.descricao, confirmacao: item.confirmacao };
+            }
           });
           setChallengesSelections(selections);
           setOtherChallenges(viewData.outrosDesafios || "");
@@ -352,7 +366,10 @@ function SessionExecutionFormPage(props) {
           const pontosFortes = safeJsonParse(viewData.autoAvaliacaoPontosFortes);
           const selections = {};
           pontosFortes.forEach(item => {
-            selections[item.descricao] = { descricao: item.descricao, confirmacao: item.confirmacao };
+            const row = strengthsRows.find(r => r.description === item.descricao);
+            if (row) {
+              selections[row.id] = { descricao: item.descricao, confirmacao: item.confirmacao };
+            }
           });
           setStrengthsSelections(selections);
           setOtherStrengths(viewData.outrosPontosFortes || "");
@@ -362,7 +379,10 @@ function SessionExecutionFormPage(props) {
           const pontosAtencao = safeJsonParse(viewData.autoAvaliacaoPontosAtencao);
           const selections = {};
           pontosAtencao.forEach(item => {
-            selections[item.descricao] = { descricao: item.descricao, confirmacao: item.confirmacao };
+            const row = attentionRows.find(r => r.description === item.descricao);
+            if (row) {
+              selections[row.id] = { descricao: item.descricao, confirmacao: item.confirmacao };
+            }
           });
           setAttentionSelections(selections);
           setOtherAttention(viewData.outrosPontosAtencao || "");
@@ -372,7 +392,13 @@ function SessionExecutionFormPage(props) {
           const metodologia = safeJsonParse(viewData.avaliacaoMetodologia);
           const selections = {};
           metodologia.forEach(item => {
-            selections[item.descricao] = { descricao: item.descricao, avaliacao: item.avaliacao };
+            const row = metodologyRows.find(r => r.description === item.descricao);
+            if (row) {
+              selections[row.id] = {
+                descricao: item.descricao,
+                confirmacao: item.confirmacao || item.avaliacao
+              };
+            }
           });
           setMetodologySelections(selections);
         }
@@ -496,7 +522,7 @@ function SessionExecutionFormPage(props) {
       .filter(item => item !== null)
       .map(item => ({
         descricao: item.descricao,
-        avaliacao: item.avaliacao,
+        confirmacao: item.confirmacao,
       }));
   };
   const handleBack = () => {
