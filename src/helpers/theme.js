@@ -81,7 +81,7 @@ const createAppTheme = (colorOverrides = {}) => {
       iconSize: 24,
     },
     menu: {
-      variant: "AppBar",
+      variant: "Drawer",
       drawer: {
         width: 300,
         fontSize: 16,
