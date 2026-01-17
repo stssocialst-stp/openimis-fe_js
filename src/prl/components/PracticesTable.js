@@ -29,20 +29,24 @@ const styles = (theme) => ({
   table: {
     marginBottom: theme.spacing(2),
     backgroundColor: '#f0feefff',
+    border: `1px solid ${theme.palette.divider}`,
   },
   headerCell: {
     fontWeight: "bold",
     textAlign: "center",
     backgroundColor: theme.palette.grey[100],
+    border: `1px solid ${theme.palette.divider}`,
   },
   descriptionCell: {
     width: "50%",
+    border: `1px solid ${theme.palette.divider}`,
   },
   optionCell: {
     textAlign: "center",
     cursor: "pointer",
     userSelect: "none",
     padding: theme.spacing(1),
+    border: `1px solid ${theme.palette.divider}`,
     "&:hover": {
       backgroundColor: theme.palette.action.hover,
     },
