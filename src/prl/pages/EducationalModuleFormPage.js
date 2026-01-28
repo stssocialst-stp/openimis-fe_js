@@ -2,12 +2,13 @@ import { useState, useEffect } from "react";
 import { injectIntl } from "react-intl";
 import { withTheme, withStyles } from "@material-ui/core/styles";
 import {
-  Paper, Typography, Grid, TextField, Button, MenuItem, Divider,
+  Paper, Typography, Grid, TextField, Button, MenuItem, Divider, Checkbox, FormControlLabel, FormGroup, Select, InputLabel, FormControl
 } from "@material-ui/core";
 import ChevronLeftIcon from "@material-ui/icons/ChevronLeft";
 import SaveIcon from "@material-ui/icons/Save";
 import { formatMessage, withModulesManager, Helmet, baseApiUrl, apiHeaders } from "@openimis/fe-core";
 import { PRL_ROUTE_EDUCATIONAL_MODULE } from "../constants";
+import { CLASSES_LIST, ESCOLAS_LIST } from "../constants/schoolClassLists";
 
 const styles = (theme) => ({
   page: theme.page,
@@ -28,11 +29,107 @@ const styles = (theme) => ({
     marginLeft: theme.spacing(1),
     fontWeight: 500,
   },
+  formSection: {
+    marginTop: theme.spacing(2),
+    marginBottom: theme.spacing(2),
+    padding: theme.spacing(2),
+    background: '#f8f8f8',
+    borderRadius: 8,
+  },
+  greenTitle: {
+    color: '#219653',
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: theme.spacing(2),
+    fontSize: 22,
+    textTransform: 'uppercase',
+  },
+  subtitle: {
+    color: '#219653',
+    fontWeight: 500,
+    textAlign: 'center',
+    marginBottom: theme.spacing(2),
+    fontSize: 16,
+  },
+  divider: {
+    margin: theme.spacing(2, 0),
+  },
 });
 
 function EducationalModuleFormPage(props) {
   const { classes, intl, history, location } = props;
+  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    idMembro: "",
+    nome: "",
+    nomeEncarregado: "",
+    escola: "",
+    escolaridade_actual: "",
+    dataNascimento: "",
+    ID_da_crianca: "",
+    sexo: "",
+    dadosEscolaresCorrectos: null,
+    escolaActual: "",
+    classe: "",
+    idade: "",
+    informacoesLocalizacao: {
+      nomeDaRegiao: "",
+      distritoId: "",
+      Localidade: "",
+      nomeEscola: "",
+      pontoReferencia: "",
+      meioResidencia: "",
+    },
+    classeQueFrequenta: "",
+    aproveitamentoPrimeiroTrimestre: "",
+    faixaDeFaltas: "",
+    disciplinasBasicas: [],
+    disciplinasAvancadas: [],
+    observacoes: "",
+  });
+  const [districts, setDistricts] = useState([]);
+  const queryParams = new URLSearchParams(location.search);
+  const groupId = queryParams.get('id');
+  const isEdit = !!groupId;
 
+  const handleChange = (field) => (event) => {
+    setFormData((prev) => ({ ...prev, [field]: event.target.value }));
+  };
+  const handleLocalizacaoChange = (field) => (event) => {
+    setFormData((prev) => ({
+      ...prev,
+      informacoesLocalizacao: {
+        ...prev.informacoesLocalizacao,
+        [field]: event.target.value,
+      },
+    }));
+  };
+  const handleCheckboxChange = (field, value) => (event) => {
+    setFormData((prev) => {
+      const arr = prev[field] || [];
+      if (event.target.checked) {
+        return { ...prev, [field]: [...arr, value] };
+      } else {
+        return { ...prev, [field]: arr.filter((v) => v !== value) };
+      }
+    });
+  };
+
+
+  // GraphQL queries/mutations
+  const districtQuery = `query GetDistritos($first: Int) {
+    locations(first: $first, type: "D") {
+      edges {
+        node {
+          id
+          code
+          name
+        }
+      }
+    }
+  }`;
+
+  // Função para obter o CSRF token do cookie
   const getCookie = (name) => {
     let cookieValue = null;
     if (document.cookie && document.cookie !== '') {
@@ -48,55 +145,7 @@ function EducationalModuleFormPage(props) {
     return cookieValue;
   };
 
-  const queryParams = new URLSearchParams(location.search);
-  const moduleId = queryParams.get('id');
-  const isEdit = !!moduleId;
-
-  const [formData, setFormData] = useState({
-    codigo: "",
-    nome: "",
-    descricao: "",
-    ordem: "",
-    duracaoSemanas: "",
-    ativo: true,
-  });
-
-  const [loading, setLoading] = useState(false);
-
-  const fetchModuleQuery = `query GetModuloEducacional($id: ID!) {
-    moduloEducacional(id: $id) {
-      id
-      codigo
-      nome
-      descricao
-      ordem
-      duracaoSemanas
-      ativo
-      validityFrom
-    }
-  }`;
-
-  const createMutation = `mutation CreateModuloEducacional($input: CreateModuloEducacionalMutationInput!) {
-    createModuloEducacional(input: $input) {
-      clientMutationId
-      internalId
-    }
-  }`;
-
-  const updateMutation = `mutation UpdateModuloEducacional($input: UpdateModuloEducacionalMutationInput!) {
-    updateModuloEducacional(input: $input) {
-      clientMutationId
-      internalId
-    }
-  }`;
-
-  useEffect(() => {
-    if (isEdit) {
-      fetchModule(moduleId);
-    }
-  }, []);
-
-  const fetchModule = async (id) => {
+  const fetchDistricts = async () => {
     try {
       const response = await fetch(`${baseApiUrl}/graphql`, {
         method: 'POST',
@@ -105,83 +154,65 @@ function EducationalModuleFormPage(props) {
           'X-CSRFToken': getCookie('csrftoken'),
           ...apiHeaders(),
         },
-        body: JSON.stringify({ query: fetchModuleQuery, variables: { id } }),
+        body: JSON.stringify({ query: districtQuery, variables: { first: 100 } }),
       });
-
       const result = await response.json();
-      if (result.data?.moduloEducacional) {
-        const module = result.data.moduloEducacional;
-        setFormData({
-          codigo: module.codigo || "",
-          nome: module.nome || "",
-          descricao: module.descricao || "",
-          ordem: module.ordem || "",
-          duracaoSemanas: module.duracaoSemanas || "",
-          ativo: module.ativo || false,
-        });
-      } else if (result.errors) {
-        console.error('Error fetching module:', result.errors);
-        alert('Erro ao buscar módulo: ' + result.errors[0].message);
+      if (result.data?.locations?.edges) {
+        setDistricts(result.data.locations.edges.map(edge => ({ value: edge.node.id, label: edge.node.name })));
       }
     } catch (error) {
-      console.error('Error in fetchModule:', error);
-      alert('Erro ao buscar: ' + error.message);
+      setDistricts([]);
     }
   };
 
-  const handleChange = (field) => (event) => {
-    const { value } = event.target;
-    setFormData((prev) => ({ ...prev, [field]: value }));
-  };
+  useEffect(() => {
+    fetchDistricts();
+    // eslint-disable-next-line
+  }, []);
 
-  const handleNumberChange = (field) => (event) => {
-    const { value } = event.target;
-    setFormData((prev) => ({ ...prev, [field]: parseInt(value) || "" }));
-  };
+  // GraphQL mutation for create/update
+  const createMutation = `mutation createModuloEducacional($input: CreateModuloEducacionalMutationInput!) {
+    createModuloEducacional(input: $input) {
+      internalId
+      clientMutationId
+    }
+  }`;
+  const updateMutation = `mutation updateModuloEducacional($input: UpdateModuloEducacionalMutationInput!) {
+    updateModuloEducacional(input: $input) {
+      internalId
+      clientMutationId
+    }
+  }`;
 
-  const handleBooleanChange = (field) => (event) => {
-    const { value } = event.target;
-    setFormData((prev) => ({ ...prev, [field]: value === 'true' }));
-  };
-
-  const handleBack = () => {
-    history.push(`/${PRL_ROUTE_EDUCATIONAL_MODULE}`);
-  };
-
-  const handleSave = async () => {
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    // Prepare input for mutation
+    const input = {
+      idMembroCrianca: formData.idMembro,
+      nome: formData.nome,
+      nomeEncarregado: formData.nomeEncarregado,
+      escola: formData.escola,
+      escolaridadeActual: formData.escolaridade_actual,
+      dataNascimento: formData.dataNascimento || null,
+      idDaCrianca: formData.ID_da_crianca,
+      sexo: formData.sexo === 'Masculino' ? 'M' : formData.sexo === 'Feminino' ? 'F' : null,
+      dadosEscolarCorrectos: formData.dadosEscolaresCorrectos,
+      escolaActual: formData.escolaActual,
+      classe: formData.classe,
+      idade: formData.idade ? parseInt(formData.idade) : null,
+      dadosEscolaresCorrectos: formData.dadosEscolaresCorrectos,
+      informacoesLocalizacao: JSON.stringify(formData.informacoesLocalizacao),
+      classeQueFrequenta: formData.classeQueFrequenta,
+      aproveitamentoPrimeiroTrimestre: formData.aproveitamentoPrimeiroTrimestre,
+      faixaDeFaltas: formData.faixaDeFaltas,
+      disciplinasBasicas: formData.disciplinasBasicas.join(", ") || null,
+      disciplinasAvancadas: formData.disciplinasAvancadas.join(", ") || null,
+      observacoes: formData.observacoes,
+    };
+    const mutation = isEdit ? updateMutation : createMutation;
+    const variables = isEdit ? { input: { ...input, id: groupId } } : { input };
     try {
-      // Validate required fields
-      if (!formData.codigo) {
-        alert('Por favor, defina o código do módulo.');
-        return;
-      }
-      if (!formData.nome) {
-        alert('Por favor, defina o nome do módulo.');
-        return;
-      }
-      if (!formData.ordem) {
-        alert('Por favor, defina a ordem do módulo.');
-        return;
-      }
-      if (!formData.duracaoSemanas) {
-        alert('Por favor, defina a duração em semanas.');
-        return;
-      }
-
-      const input = {
-        codigo: formData.codigo,
-        nome: formData.nome,
-        descricao: formData.descricao || "",
-        ordem: parseInt(formData.ordem),
-        duracaoSemanas: parseInt(formData.duracaoSemanas),
-        ativo: formData.ativo,
-      };
-
-      const mutation = isEdit ? updateMutation : createMutation;
-      const variables = isEdit ? { input: { ...input, id: moduleId } } : { input };
-
-      setLoading(true);
-
       const response = await fetch(`${baseApiUrl}/graphql`, {
         method: 'POST',
         headers: {
@@ -191,28 +222,42 @@ function EducationalModuleFormPage(props) {
         },
         body: JSON.stringify({ query: mutation, variables }),
       });
-
       const result = await response.json();
-      if (result.data?.createModuloEducacional || result.data?.updateModuloEducacional) {
-        handleBack();
-      } else if (result.errors) {
-        console.error('Error saving module:', result.errors);
-        alert('Erro ao salvar módulo: ' + result.errors[0].message);
+      const mutationResult = result.data?.createModuloEducacional || result.data?.updateModuloEducacional;
+      // Se não houver internalId, pode ser erro
+      if (!mutationResult?.internalId) {
+        alert('Erro ao salvar. Verifique os dados e tente novamente.');
+      } else {
+        history.push(`/${PRL_ROUTE_EDUCATIONAL_MODULE}`);
       }
     } catch (error) {
-      console.error('Error in handleSave:', error);
       alert('Erro ao salvar: ' + error.message);
     } finally {
       setLoading(false);
     }
   };
 
-  const pageTitle = isEdit ? "title.editEducationalModule" : "title.createEducationalModule";
+  // Listas
+  const classesList = CLASSES_LIST;
+  const escolasList = ESCOLAS_LIST;
+  const faltasList = ["1-3", "4-6", "7-10", "+10"];
+  const aproveitamentoList = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "+10"];
+  const disciplinasBasicas = [
+    "Ciências Naturais", "Geografia", "História", "Língua Francesa", "Língua Inglesa", "Língua Portuguesa", "Matemática", "Física", "Educação Visual e Oficial", "Educação Ambiental", "Educação Física", "Química", "Educação p/ Saúde", "Expressões Motoras", "Expressões Musical", "Expressões Plástica"
+  ];
+  const disciplinasAvancadas = [
+    "Ciências Naturais e Sociais", "Formação Cívica", "Filosofia", "Finanças/Migais", "Informática/TIC", "Biologia", "Geologia", "Empreendedorismo", "Alemão", "Espanhol", "Economia", "Geografia", "Direito", "Sociologia", "Psicologia", "Oficina de Artes", "Geometria Descritiva"
+  ];
+
+  const handleBack = () => {
+    history.push(`/${PRL_ROUTE_EDUCATIONAL_MODULE}`);
+  };
+
+  const pageTitle = isEdit ? "title.editSchoolAttendance" : "title.createSchoolAttendance";
 
   return (
     <div className={classes.page}>
       <Helmet title={formatMessage(intl, "prl", pageTitle)} />
-
       <Paper className={classes.paper}>
         <Button onClick={handleBack}>
           <ChevronLeftIcon fontSize="small" />
@@ -223,120 +268,197 @@ function EducationalModuleFormPage(props) {
 
         <Divider style={{ margin: "16px 0" }} />
 
-        <Grid container spacing={2}>
-          <Grid item xs={12}>
-            <Typography variant="h6" className={classes.sectionTitle}>
-              {formatMessage(intl, "prl", "educationalModule.basicInfo")}
-            </Typography>
-          </Grid>
-
-          <Grid item xs={12} sm={6}>
+        <form onSubmit={handleSubmit}>
+          <div className={classes.formSection}>
+            <Typography variant="h6" className={classes.sectionTitle}>A1: Identificação do Aluno</Typography>
+            <Grid container spacing={2}>
+              <Grid item xs={12} sm={6}>
+                <TextField label="ID do Membro/Criança" fullWidth value={formData.idMembro} onChange={handleChange("idMembro")} />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField label="Nome" fullWidth value={formData.nome} onChange={handleChange("nome")} />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField label="Encarregado de Educação" fullWidth value={formData.nomeEncarregado} onChange={handleChange("nomeEncarregado")} />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <FormControl fullWidth>
+                  <InputLabel>Escola</InputLabel>
+                  <Select value={formData.escola} onChange={handleChange("escola")} label="Escola">
+                    {escolasList.map((e) => (
+                      <MenuItem key={e} value={e}>{e}</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <FormControl fullWidth>
+                  <InputLabel>Escolaridade Atual</InputLabel>
+                  <Select value={formData.escolaridade_actual} onChange={handleChange("escolaridade_actual")} label="Escolaridade Atual">
+                    {classesList.map((c) => (
+                      <MenuItem key={c} value={c}>{c}</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField label="Data de Nascimento" type="date" fullWidth InputLabelProps={{ shrink: true }} value={formData.dataNascimento} onChange={handleChange("dataNascimento")} />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField label="ID da Criança" fullWidth value={formData.ID_da_crianca} onChange={handleChange("ID_da_crianca")} />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <FormControl fullWidth>
+                  <InputLabel>Sexo</InputLabel>
+                  <Select value={formData.sexo} onChange={handleChange("sexo")}
+                    label="Sexo">
+                    <MenuItem value="Masculino">Masculino</MenuItem>
+                    <MenuItem value="Feminino">Feminino</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+            </Grid>
+          </div>
+          <div className={classes.formSection}>
+            <Typography variant="h6" className={classes.sectionTitle}>A2: Verificação de Dados Escolares</Typography>
+            <Grid container spacing={2}>
+              <Grid item xs={12} sm={6}>
+                <FormControl fullWidth>
+                  <InputLabel>Os dados escolares estão corretos?</InputLabel>
+                  <Select value={formData.dadosEscolaresCorrectos} onChange={handleChange("dadosEscolaresCorrectos")}
+                    label="Os dados escolares estão corretos?">
+                    <MenuItem value={true}>Sim</MenuItem>
+                    <MenuItem value={false}>Não</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField label="Escola Atual" fullWidth value={formData.escolaActual} onChange={handleChange("escolaActual")} />
+              </Grid>
+            </Grid>
+          </div>
+          <div className={classes.formSection}>
+            <Typography variant="h6" className={classes.sectionTitle}>A5-A9: Informações de Localização</Typography>
+            <Grid container spacing={2}>
+              <Grid item xs={12} sm={6}>
+                <TextField label="Nome da Região" fullWidth value={formData.informacoesLocalizacao.nomeDaRegiao} onChange={handleLocalizacaoChange("nomeDaRegiao")} />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <FormControl fullWidth>
+                  <InputLabel>Distrito</InputLabel>
+                  <Select
+                    value={formData.informacoesLocalizacao.distritoId}
+                    onChange={handleLocalizacaoChange("distritoId")}
+                    label="Distrito"
+                  >
+                    {districts.map((d) => (
+                      <MenuItem key={d.value} value={d.value}>{d.label}</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField label="Localidade" fullWidth value={formData.informacoesLocalizacao.Localidade} onChange={handleLocalizacaoChange("Localidade")} />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField label="Nome da Escola" fullWidth value={formData.informacoesLocalizacao.nomeEscola} onChange={handleLocalizacaoChange("nomeEscola")} />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField label="Ponto de Referência" fullWidth value={formData.informacoesLocalizacao.pontoReferencia} onChange={handleLocalizacaoChange("pontoReferencia")} />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField label="Meio Residência" fullWidth value={formData.informacoesLocalizacao.meioResidencia} onChange={handleLocalizacaoChange("meioResidencia")} />
+              </Grid>
+            </Grid>
+          </div>
+          <div className={classes.formSection}>
+            <Typography variant="h6" className={classes.sectionTitle}>Que classe frequenta?</Typography>
+            <Grid container spacing={2}>
+              <Grid item xs={12} sm={6}>
+                <FormControl fullWidth>
+                  <InputLabel>Classe</InputLabel>
+                  <Select value={formData.classeQueFrequenta} onChange={handleChange("classeQueFrequenta")} label="Classe">
+                    {classesList.map((c) => (
+                      <MenuItem key={c} value={c}>{c}</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+            </Grid>
+          </div>
+          <div className={classes.formSection}>
+            <Typography variant="h6" className={classes.sectionTitle}>A4: Faltas no Primeiro Trimestre</Typography>
+            <Grid container spacing={2}>
+              <Grid item xs={12} sm={6}>
+                <FormControl fullWidth>
+                  <InputLabel>Quantas faltas teve no 1º trimestre?</InputLabel>
+                  <Select value={formData.aproveitamentoPrimeiroTrimestre} onChange={handleChange("aproveitamentoPrimeiroTrimestre")} label="Quantas faltas teve no 1º trimestre?">
+                    {aproveitamentoList.map((f) => (
+                      <MenuItem key={f} value={f}>{f}</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <FormControl fullWidth>
+                  <InputLabel>Faixa de Faltas</InputLabel>
+                  <Select value={formData.faixaDeFaltas} onChange={handleChange("faixaDeFaltas")} label="Faixa de Faltas">
+                    {faltasList.map((f) => (
+                      <MenuItem key={f} value={f}>{f}</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+            </Grid>
+          </div>
+          <div className={classes.formSection}>
+            <Typography variant="h6" className={classes.sectionTitle}>Disciplinas</Typography>
+            <Grid container spacing={2}>
+              <Grid item xs={12} sm={6}>
+                <Typography variant="subtitle1">Disciplinas Básicas</Typography>
+                <FormGroup>
+                  {disciplinasBasicas.map((d) => (
+                    <FormControlLabel
+                      key={d}
+                      control={<Checkbox color="primary" checked={formData.disciplinasBasicas.includes(d)} onChange={handleCheckboxChange("disciplinasBasicas", d)} />}
+                      label={d}
+                    />
+                  ))}
+                </FormGroup>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <Typography variant="subtitle1">Disciplinas Avançadas</Typography>
+                <FormGroup>
+                  {disciplinasAvancadas.map((d) => (
+                    <FormControlLabel
+                      key={d}
+                      control={<Checkbox color="primary" checked={formData.disciplinasAvancadas.includes(d)} onChange={handleCheckboxChange("disciplinasAvancadas", d)} />}
+                      label={d}
+                    />
+                  ))}
+                </FormGroup>
+              </Grid>
+            </Grid>
+          </div>
+          <div className={classes.formSection}>
+            <Typography variant="h6" className={classes.sectionTitle}>Observações</Typography>
             <TextField
               fullWidth
-              label={formatMessage(intl, "prl", "educationalModule.code")}
-              value={formData.codigo}
-              onChange={handleChange("codigo")}
-              variant="outlined"
-              size="small"
-              required
-              disabled={isEdit}
-              helperText={isEdit ? "Código não pode ser alterado" : "Código único do módulo"}
-            />
-          </Grid>
-
-          <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              label={formatMessage(intl, "prl", "educationalModule.name")}
-              value={formData.nome}
-              onChange={handleChange("nome")}
-              variant="outlined"
-              size="small"
-              required
-              helperText="Nome do módulo"
-            />
-          </Grid>
-
-          <Grid item xs={12}>
-            <TextField
-              fullWidth
-              label={formatMessage(intl, "prl", "educationalModule.description")}
-              value={formData.descricao}
-              onChange={handleChange("descricao")}
-              variant="outlined"
-              size="small"
               multiline
               rows={3}
-              helperText="Descrição do módulo educacional"
+              label="Anote quaisquer observações"
+              value={formData.observacoes}
+              onChange={handleChange("observacoes")}
+              placeholder="Observações adicionais sobre a assiduidade escolar..."
             />
-          </Grid>
-
-          <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              label={formatMessage(intl, "prl", "educationalModule.order")}
-              value={formData.ordem}
-              onChange={handleNumberChange("ordem")}
-              type="number"
-              variant="outlined"
-              size="small"
-              required
-              helperText="Ordem de apresentação"
-            />
-          </Grid>
-
-          <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              label={formatMessage(intl, "prl", "educationalModule.duration")}
-              value={formData.duracaoSemanas}
-              onChange={handleNumberChange("duracaoSemanas")}
-              type="number"
-              variant="outlined"
-              size="small"
-              required
-              helperText="Duração em semanas"
-            />
-          </Grid>
-
-          <Grid item xs={12} sm={6}>
-            <TextField
-              select
-              fullWidth
-              label={formatMessage(intl, "prl", "educationalModule.active")}
-              value={formData.ativo}
-              onChange={handleBooleanChange("ativo")}
-              variant="outlined"
-              size="small"
-            >
-              <MenuItem value={true}>Ativo</MenuItem>
-              <MenuItem value={false}>Inativo</MenuItem>
-            </TextField>
-          </Grid>
-        </Grid>
-
-        <div className={classes.buttonContainer}>
-          <Button
-            variant="outlined"
-            onClick={handleBack}
-            startIcon={<ChevronLeftIcon />}
-          >
-            {formatMessage(intl, "prl", "button.cancel")}
-          </Button>
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={handleSave}
-            disabled={loading}
-            startIcon={<SaveIcon />}
-          >
-            {formatMessage(intl, "prl", "button.save")}
-          </Button>
-        </div>
+          </div>
+          <div className={classes.buttonContainer}>
+            <Button variant="contained" color="primary" type="submit" startIcon={<SaveIcon />}>Submeter Formulário</Button>
+          </div>
+        </form>
       </Paper>
     </div>
   );
 }
 
-const mapStateToProps = (state) => ({});
 export default withModulesManager(injectIntl(withTheme(withStyles(styles)(EducationalModuleFormPage))));

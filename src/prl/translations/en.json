@@ -22,6 +22,8 @@
   "prl.title.bimonthlyReport": "District Bimonthly Execution Report",
   "prl.title.bimonthlySupervision": "Bimonthly Meetings Roadmap",
   "prl.title.supervisionReport": "Bimonthly Supervision Report",
+  "prl.title.createSchoolAttendance": "Create School Attendance",
+  "prl.title.editSchoolAttendance": "Edit School Attendance",
   "prl.sessionPlanning.sessionCode": "Session",
   "prl.sessionPlanning.module": "PEP+ Module",
   "prl.sessionPlanning.district": "District",

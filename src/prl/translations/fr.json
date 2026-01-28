@@ -22,6 +22,8 @@
   "prl.title.bimonthlyReport": "Rapport bimensuel d'exécution du district",
   "prl.title.bimonthlySupervision": "Feuille de route des réunions bimensuelles",
   "prl.title.supervisionReport": "Rapport bimensuel de supervision",
+  "prl.title.createSchoolAttendance": "Créer l'assiduité scolaire",
+  "prl.title.editSchoolAttendance": "Modifier l'assiduité scolaire",
   "prl.sessionPlanning.sessionCode": "Session",
   "prl.sessionPlanning.module": "Module PEP+",
   "prl.sessionPlanning.district": "District",

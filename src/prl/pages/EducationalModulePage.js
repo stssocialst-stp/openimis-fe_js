@@ -41,25 +41,24 @@ function EducationalModulePage(props) {
     return cookieValue;
   };
 
-  const query = `query GetModulosEducacionais($first: Int, $offset: Int, $codigo_Icontains: String, $nome_Icontains: String, $ativo: Boolean, $orderBy: [String]) {
+  const query = `query GetModulosEducacionais($first: Int, $offset: Int, $nome_Icontains: String, $classe_Icontains: String, $escola_Icontains: String, $idDaCrianca_Icontains: String, $escolaActual_Icontains: String) {
     modulosEducacionais(
       first: $first
       offset: $offset
-      codigo_Icontains: $codigo_Icontains
       nome_Icontains: $nome_Icontains
-      ativo: $ativo
-      orderBy: $orderBy
+      classe_Icontains: $classe_Icontains
+      escola_Icontains: $escola_Icontains
+      idDaCrianca_Icontains: $idDaCrianca_Icontains
+      escolaActual_Icontains: $escolaActual_Icontains
     ) {
       edges {
         node {
           id
-          codigo
           nome
-          descricao
-          ordem
-          duracaoSemanas
-          ativo
-          validityFrom
+          classeQueFrequenta
+          escola
+          idDaCrianca
+          escolaActual
         }
       }
       totalCount
@@ -74,10 +73,11 @@ function EducationalModulePage(props) {
     const variables = {
       first: pageSize,
       offset,
-      codigo_Icontains: filters.codigo?.value || null,
       nome_Icontains: filters.nome?.value || null,
-      ativo: filters.ativo?.value !== undefined ? filters.ativo.value === 'true' : null,
-      orderBy: ["ordem"],
+      classe_Icontains: filters.classe?.value || null,
+      escola_Icontains: filters.escola?.value || null,
+      idDaCrianca_Icontains: filters.idDaCrianca?.value || null,
+      escolaActual_Icontains: filters.escolaActual?.value || null,
     };
 
     const response = await fetch(`${baseApiUrl}/graphql`, {
@@ -101,27 +101,24 @@ function EducationalModulePage(props) {
     }
 
     const modules = result.data.modulosEducacionais.edges.map(edge => edge.node);
-
+    // Map only the available fields
     const mappedData = modules.map(module => ({
       id: module.id,
-      code: module.codigo,
       name: module.nome,
-      description: module.descricao || '-',
-      order: module.ordem,
-      duration: module.duracaoSemanas,
-      active: module.ativo ? 'Ativo' : 'Inativo',
-      validFrom: module.validityFrom || '-',
+      class: module.classeQueFrequenta,
+      school: module.escola,
+      idDaCrianca: module.idDaCrianca,
+      escolaActual: module.escolaActual,
     }));
-
     return mappedData;
   };
 
   const headers = [
-    "prl.educationalModule.code",
     "prl.educationalModule.name",
-    "prl.educationalModule.order",
-    "prl.educationalModule.duration",
-    "prl.educationalModule.active",
+    "prl.educationalModule.class",
+    "prl.educationalModule.school",
+    "prl.educationalModule.idDaCrianca",
+    "prl.educationalModule.escolaActual",
     "emptyLabel",
   ];
 
@@ -134,15 +131,11 @@ function EducationalModulePage(props) {
   };
 
   const itemFormatters = [
-    (item) => item.code,
     (item) => item.name,
-    (item) => item.order,
-    (item) => item.duration,
-    (item) => (
-      <Typography variant="body2">
-        {item.active}
-      </Typography>
-    ),
+    (item) => item.class,
+    (item) => item.school,
+    (item) => item.idDaCrianca,
+    (item) => item.escolaActual,
     (item) => (
       <div style={{ display: 'flex', justifyContent: 'center' }}>
         <Tooltip title={formatMessage(intl, "prl", "educationalModuleDetail")}>
@@ -162,17 +155,19 @@ function EducationalModulePage(props) {
   ];
 
   const sorts = [
-    ["code", true],
     ["name", true],
-    ["order", true],
-    ["duration", true],
-    ["active", true],
+    ["class", true],
+    ["school", true],
+    ["idDaCrianca", true],
+    ["escolaActual", true],
   ];
 
   const filterConfig = [
-    { field: "codigo", label: "prl.educationalModule.code", xs: 4 },
     { field: "nome", label: "prl.educationalModule.name", xs: 4 },
-    { field: "ativo", label: "prl.educationalModule.active", options: ACTIVE_OPTIONS, xs: 4 },
+    { field: "classe", label: "prl.educationalModule.class", xs: 4 },
+    { field: "escola", label: "prl.educationalModule.school", xs: 4 },
+    { field: "idDaCrianca", label: "prl.educationalModule.idDaCrianca", xs: 4 },
+    { field: "escolaActual", label: "prl.educationalModule.escolaActual", xs: 4 },
   ];
 
   const FilterPane = (filterProps) => (
