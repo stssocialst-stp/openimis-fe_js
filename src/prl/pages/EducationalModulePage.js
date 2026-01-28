@@ -2,7 +2,7 @@ import { injectIntl } from "react-intl";
 import { connect } from "react-redux";
 import { withTheme, withStyles } from "@material-ui/core/styles";
 import {
-  IconButton, Tooltip, Fab, Typography,
+  IconButton, Tooltip, Fab,
 } from "@material-ui/core";
 import AddIcon from "@material-ui/icons/Add";
 import VisibilityIcon from "@material-ui/icons/Visibility";
@@ -18,10 +18,7 @@ const styles = (theme) => ({
   actionIcon: { padding: 4 },
 });
 
-const ACTIVE_OPTIONS = [
-  { value: true, label: "Ativo" },
-  { value: false, label: "Inativo" },
-];
+
 
 function EducationalModulePage(props) {
   const { classes, intl, rights, history } = props;
@@ -130,6 +127,26 @@ function EducationalModulePage(props) {
     history.push(`/${PRL_ROUTE_EDUCATIONAL_MODULE_FORM}?id=${item.id}`);
   };
 
+  // Deletar módulo educacional
+  const handleDelete = async (item) => {
+    const mutation = `mutation deleteModuloEducacional($input: DeleteModuloEducacionalMutationInput!) {\n  deleteModuloEducacional(input: $input) {\n    internalId\n    clientMutationId\n  }\n}`;
+    try {
+      const response = await fetch(`${baseApiUrl}/graphql`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCookie('csrftoken'),
+          ...apiHeaders(),
+        },
+        body: JSON.stringify({ query: mutation, variables: { input: { id: item.id } } }),
+      });
+      const result = await response.json();
+      fetchModules();
+    } catch (e) {
+      console.error('Erro ao deletar.', e);
+    }
+  };
+
   const itemFormatters = [
     (item) => item.name,
     (item) => item.class,
@@ -138,18 +155,24 @@ function EducationalModulePage(props) {
     (item) => item.escolaActual,
     (item) => (
       <div style={{ display: 'flex', justifyContent: 'center' }}>
-        <Tooltip title={formatMessage(intl, "prl", "educationalModuleDetail")}>
-          <IconButton
-            size="small"
-            className={classes.actionIcon}
-            onClick={() => handleView(item)}
-          >
-            <VisibilityIcon fontSize="small" />
-          </IconButton>
-        </Tooltip>
-        <Tooltip title={formatMessage(intl, "prl", "button.delete")}>
-          <IconButton size="small" className={classes.actionIcon}><DeleteIcon fontSize="small" /></IconButton>
-        </Tooltip>
+        <span>
+          <Tooltip title={formatMessage(intl, "prl", "educationalModuleDetail")}>
+            <IconButton
+              size="small"
+              className={classes.actionIcon}
+              onClick={() => handleView(item)}
+            >
+              <VisibilityIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        </span>
+        <span>
+          <Tooltip title={formatMessage(intl, "prl", "button.delete")}>
+            <IconButton size="small" className={classes.actionIcon} onClick={() => handleDelete(item)}>
+              <DeleteIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        </span>
       </div>
     ),
   ];

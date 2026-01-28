@@ -90,7 +90,36 @@ function EducationalModuleFormPage(props) {
   const [districts, setDistricts] = useState([]);
   const queryParams = new URLSearchParams(location.search);
   const groupId = queryParams.get('id');
-  const isEdit = !!groupId;
+  // Visualização se houver id e não for criação (sem id)
+  const isView = !!groupId && !queryParams.get('edit');
+  const isEdit = !!groupId && !!queryParams.get('edit');
+  // Query para visualizar um módulo educacional
+  const viewQuery = `query moduloEducacional($id: ID!) {
+    moduloEducacional(id: $id) {
+      id
+      uuid
+      idMembroCrianca
+      nome
+      nomeEncarregado
+      escola
+      escolaridadeActual
+      dataNascimento
+      idDaCrianca
+      sexo
+      dadosEscolarCorrectos
+      escolaActual
+      classe
+      idade
+      dadosEscolaresCorrectos
+      informacoesLocalizacao
+      classeQueFrequenta
+      aproveitamentoPrimeiroTrimestre
+      faixaDeFaltas
+      disciplinasBasicas
+      disciplinasAvancadas
+      observacoes
+    }
+  }`;
 
   const handleChange = (field) => (event) => {
     setFormData((prev) => ({ ...prev, [field]: event.target.value }));
@@ -167,6 +196,69 @@ function EducationalModuleFormPage(props) {
 
   useEffect(() => {
     fetchDistricts();
+    // Se houver id (edição ou visualização), buscar dados do módulo
+    if (groupId) {
+      (async () => {
+        try {
+          const response = await fetch(`${baseApiUrl}/graphql`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-CSRFToken': getCookie('csrftoken'),
+              ...apiHeaders(),
+            },
+            body: JSON.stringify({ query: viewQuery, variables: { id: groupId } }),
+          });
+          const result = await response.json();
+          const data = result.data?.moduloEducacional;
+          if (data) {
+            setFormData({
+              idMembro: data.idMembroCrianca || "",
+              nome: data.nome || "",
+              nomeEncarregado: data.nomeEncarregado || "",
+              escola: data.escola || "",
+              escolaridade_actual: data.escolaridadeActual || "",
+              dataNascimento: data.dataNascimento || "",
+              ID_da_crianca: data.idDaCrianca || "",
+              sexo: data.sexo === 'M' ? 'Masculino' : data.sexo === 'F' ? 'Feminino' : "",
+              dadosEscolaresCorrectos: data.dadosEscolaresCorrectos ?? data.dadosEscolarCorrectos ?? null,
+              escolaActual: data.escolaActual || "",
+              classe: data.classe || "",
+              idade: data.idade || "",
+              informacoesLocalizacao: (() => {
+                try {
+                  return data.informacoesLocalizacao ? JSON.parse(data.informacoesLocalizacao) : {
+                    nomeDaRegiao: "",
+                    distritoId: "",
+                    Localidade: "",
+                    nomeEscola: "",
+                    pontoReferencia: "",
+                    meioResidencia: "",
+                  };
+                } catch {
+                  return {
+                    nomeDaRegiao: "",
+                    distritoId: "",
+                    Localidade: "",
+                    nomeEscola: "",
+                    pontoReferencia: "",
+                    meioResidencia: "",
+                  };
+                }
+              })(),
+              classeQueFrequenta: data.classeQueFrequenta || "",
+              aproveitamentoPrimeiroTrimestre: data.aproveitamentoPrimeiroTrimestre || "",
+              faixaDeFaltas: data.faixaDeFaltas || "",
+              disciplinasBasicas: data.disciplinasBasicas ? data.disciplinasBasicas.split(',').map(s => s.trim()).filter(Boolean) : [],
+              disciplinasAvancadas: data.disciplinasAvancadas ? data.disciplinasAvancadas.split(',').map(s => s.trim()).filter(Boolean) : [],
+              observacoes: data.observacoes || "",
+            });
+          }
+        } catch (e) {
+          // erro ao buscar dados
+        }
+      })();
+    }
     // eslint-disable-next-line
   }, []);
 
@@ -273,18 +365,18 @@ function EducationalModuleFormPage(props) {
             <Typography variant="h6" className={classes.sectionTitle}>A1: Identificação do Aluno</Typography>
             <Grid container spacing={2}>
               <Grid item xs={12} sm={6}>
-                <TextField label="ID do Membro/Criança" fullWidth value={formData.idMembro} onChange={handleChange("idMembro")} />
+                <TextField label="ID do Membro/Criança" fullWidth value={formData.idMembro} onChange={handleChange("idMembro")} disabled={isView} />
               </Grid>
               <Grid item xs={12} sm={6}>
-                <TextField label="Nome" fullWidth value={formData.nome} onChange={handleChange("nome")} />
+                <TextField label="Nome" fullWidth value={formData.nome} onChange={handleChange("nome")} disabled={isView} />
               </Grid>
               <Grid item xs={12} sm={6}>
-                <TextField label="Encarregado de Educação" fullWidth value={formData.nomeEncarregado} onChange={handleChange("nomeEncarregado")} />
+                <TextField label="Encarregado de Educação" fullWidth value={formData.nomeEncarregado} onChange={handleChange("nomeEncarregado")} disabled={isView} />
               </Grid>
               <Grid item xs={12} sm={6}>
                 <FormControl fullWidth>
                   <InputLabel>Escola</InputLabel>
-                  <Select value={formData.escola} onChange={handleChange("escola")} label="Escola">
+                  <Select value={formData.escola} onChange={handleChange("escola")} label="Escola" disabled={isView}>
                     {escolasList.map((e) => (
                       <MenuItem key={e} value={e}>{e}</MenuItem>
                     ))}
@@ -294,7 +386,7 @@ function EducationalModuleFormPage(props) {
               <Grid item xs={12} sm={6}>
                 <FormControl fullWidth>
                   <InputLabel>Escolaridade Atual</InputLabel>
-                  <Select value={formData.escolaridade_actual} onChange={handleChange("escolaridade_actual")} label="Escolaridade Atual">
+                  <Select value={formData.escolaridade_actual} onChange={handleChange("escolaridade_actual")} label="Escolaridade Atual" disabled={isView}>
                     {classesList.map((c) => (
                       <MenuItem key={c} value={c}>{c}</MenuItem>
                     ))}
@@ -302,16 +394,16 @@ function EducationalModuleFormPage(props) {
                 </FormControl>
               </Grid>
               <Grid item xs={12} sm={6}>
-                <TextField label="Data de Nascimento" type="date" fullWidth InputLabelProps={{ shrink: true }} value={formData.dataNascimento} onChange={handleChange("dataNascimento")} />
+                <TextField label="Data de Nascimento" type="date" fullWidth InputLabelProps={{ shrink: true }} value={formData.dataNascimento} onChange={handleChange("dataNascimento")} disabled={isView} />
               </Grid>
               <Grid item xs={12} sm={6}>
-                <TextField label="ID da Criança" fullWidth value={formData.ID_da_crianca} onChange={handleChange("ID_da_crianca")} />
+                <TextField label="ID da Criança" fullWidth value={formData.ID_da_crianca} onChange={handleChange("ID_da_crianca")} disabled={isView} />
               </Grid>
               <Grid item xs={12} sm={6}>
                 <FormControl fullWidth>
                   <InputLabel>Sexo</InputLabel>
                   <Select value={formData.sexo} onChange={handleChange("sexo")}
-                    label="Sexo">
+                    label="Sexo" disabled={isView}>
                     <MenuItem value="Masculino">Masculino</MenuItem>
                     <MenuItem value="Feminino">Feminino</MenuItem>
                   </Select>
@@ -326,14 +418,14 @@ function EducationalModuleFormPage(props) {
                 <FormControl fullWidth>
                   <InputLabel>Os dados escolares estão corretos?</InputLabel>
                   <Select value={formData.dadosEscolaresCorrectos} onChange={handleChange("dadosEscolaresCorrectos")}
-                    label="Os dados escolares estão corretos?">
+                    label="Os dados escolares estão corretos?" disabled={isView}>
                     <MenuItem value={true}>Sim</MenuItem>
                     <MenuItem value={false}>Não</MenuItem>
                   </Select>
                 </FormControl>
               </Grid>
               <Grid item xs={12} sm={6}>
-                <TextField label="Escola Atual" fullWidth value={formData.escolaActual} onChange={handleChange("escolaActual")} />
+                <TextField label="Escola Atual" fullWidth value={formData.escolaActual} onChange={handleChange("escolaActual")} disabled={isView} />
               </Grid>
             </Grid>
           </div>
@@ -341,7 +433,7 @@ function EducationalModuleFormPage(props) {
             <Typography variant="h6" className={classes.sectionTitle}>A5-A9: Informações de Localização</Typography>
             <Grid container spacing={2}>
               <Grid item xs={12} sm={6}>
-                <TextField label="Nome da Região" fullWidth value={formData.informacoesLocalizacao.nomeDaRegiao} onChange={handleLocalizacaoChange("nomeDaRegiao")} />
+                <TextField label="Nome da Região" fullWidth value={formData.informacoesLocalizacao.nomeDaRegiao} onChange={handleLocalizacaoChange("nomeDaRegiao")} disabled={isView} />
               </Grid>
               <Grid item xs={12} sm={6}>
                 <FormControl fullWidth>
@@ -350,6 +442,7 @@ function EducationalModuleFormPage(props) {
                     value={formData.informacoesLocalizacao.distritoId}
                     onChange={handleLocalizacaoChange("distritoId")}
                     label="Distrito"
+                    disabled={isView}
                   >
                     {districts.map((d) => (
                       <MenuItem key={d.value} value={d.value}>{d.label}</MenuItem>
@@ -358,16 +451,16 @@ function EducationalModuleFormPage(props) {
                 </FormControl>
               </Grid>
               <Grid item xs={12} sm={6}>
-                <TextField label="Localidade" fullWidth value={formData.informacoesLocalizacao.Localidade} onChange={handleLocalizacaoChange("Localidade")} />
+                <TextField label="Localidade" fullWidth value={formData.informacoesLocalizacao.Localidade} onChange={handleLocalizacaoChange("Localidade")} disabled={isView} />
               </Grid>
               <Grid item xs={12} sm={6}>
-                <TextField label="Nome da Escola" fullWidth value={formData.informacoesLocalizacao.nomeEscola} onChange={handleLocalizacaoChange("nomeEscola")} />
+                <TextField label="Nome da Escola" fullWidth value={formData.informacoesLocalizacao.nomeEscola} onChange={handleLocalizacaoChange("nomeEscola")} disabled={isView} />
               </Grid>
               <Grid item xs={12} sm={6}>
-                <TextField label="Ponto de Referência" fullWidth value={formData.informacoesLocalizacao.pontoReferencia} onChange={handleLocalizacaoChange("pontoReferencia")} />
+                <TextField label="Ponto de Referência" fullWidth value={formData.informacoesLocalizacao.pontoReferencia} onChange={handleLocalizacaoChange("pontoReferencia")} disabled={isView} />
               </Grid>
               <Grid item xs={12} sm={6}>
-                <TextField label="Meio Residência" fullWidth value={formData.informacoesLocalizacao.meioResidencia} onChange={handleLocalizacaoChange("meioResidencia")} />
+                <TextField label="Meio Residência" fullWidth value={formData.informacoesLocalizacao.meioResidencia} onChange={handleLocalizacaoChange("meioResidencia")} disabled={isView} />
               </Grid>
             </Grid>
           </div>
@@ -377,7 +470,7 @@ function EducationalModuleFormPage(props) {
               <Grid item xs={12} sm={6}>
                 <FormControl fullWidth>
                   <InputLabel>Classe</InputLabel>
-                  <Select value={formData.classeQueFrequenta} onChange={handleChange("classeQueFrequenta")} label="Classe">
+                  <Select value={formData.classeQueFrequenta} onChange={handleChange("classeQueFrequenta")} label="Classe" disabled={isView}>
                     {classesList.map((c) => (
                       <MenuItem key={c} value={c}>{c}</MenuItem>
                     ))}
@@ -392,7 +485,7 @@ function EducationalModuleFormPage(props) {
               <Grid item xs={12} sm={6}>
                 <FormControl fullWidth>
                   <InputLabel>Quantas faltas teve no 1º trimestre?</InputLabel>
-                  <Select value={formData.aproveitamentoPrimeiroTrimestre} onChange={handleChange("aproveitamentoPrimeiroTrimestre")} label="Quantas faltas teve no 1º trimestre?">
+                  <Select value={formData.aproveitamentoPrimeiroTrimestre} onChange={handleChange("aproveitamentoPrimeiroTrimestre")} label="Quantas faltas teve no 1º trimestre?" disabled={isView}>
                     {aproveitamentoList.map((f) => (
                       <MenuItem key={f} value={f}>{f}</MenuItem>
                     ))}
@@ -402,7 +495,7 @@ function EducationalModuleFormPage(props) {
               <Grid item xs={12} sm={6}>
                 <FormControl fullWidth>
                   <InputLabel>Faixa de Faltas</InputLabel>
-                  <Select value={formData.faixaDeFaltas} onChange={handleChange("faixaDeFaltas")} label="Faixa de Faltas">
+                  <Select value={formData.faixaDeFaltas} onChange={handleChange("faixaDeFaltas")} label="Faixa de Faltas" disabled={isView}>
                     {faltasList.map((f) => (
                       <MenuItem key={f} value={f}>{f}</MenuItem>
                     ))}
@@ -420,7 +513,7 @@ function EducationalModuleFormPage(props) {
                   {disciplinasBasicas.map((d) => (
                     <FormControlLabel
                       key={d}
-                      control={<Checkbox color="primary" checked={formData.disciplinasBasicas.includes(d)} onChange={handleCheckboxChange("disciplinasBasicas", d)} />}
+                      control={<Checkbox color="primary" checked={formData.disciplinasBasicas.includes(d)} onChange={handleCheckboxChange("disciplinasBasicas", d)} disabled={isView} />}
                       label={d}
                     />
                   ))}
@@ -432,7 +525,7 @@ function EducationalModuleFormPage(props) {
                   {disciplinasAvancadas.map((d) => (
                     <FormControlLabel
                       key={d}
-                      control={<Checkbox color="primary" checked={formData.disciplinasAvancadas.includes(d)} onChange={handleCheckboxChange("disciplinasAvancadas", d)} />}
+                      control={<Checkbox color="primary" checked={formData.disciplinasAvancadas.includes(d)} onChange={handleCheckboxChange("disciplinasAvancadas", d)} disabled={isView} />}
                       label={d}
                     />
                   ))}
@@ -450,11 +543,14 @@ function EducationalModuleFormPage(props) {
               value={formData.observacoes}
               onChange={handleChange("observacoes")}
               placeholder="Observações adicionais sobre a assiduidade escolar..."
+              disabled={isView}
             />
           </div>
-          <div className={classes.buttonContainer}>
-            <Button variant="contained" color="primary" type="submit" startIcon={<SaveIcon />}>Submeter Formulário</Button>
-          </div>
+          {!isView && (
+            <div className={classes.buttonContainer}>
+              <Button variant="contained" color="primary" type="submit" startIcon={<SaveIcon />}>Submeter Formulário</Button>
+            </div>
+          )}
         </form>
       </Paper>
     </div>
