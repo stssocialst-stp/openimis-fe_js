@@ -46,13 +46,13 @@ function PrlMainMenu(props) {
       route: "/" + PRL_ROUTE_SUPERVISION,
       withDivider: false,
     },
-    {
-      id: "prl.familyGroup",
-      text: formatMessage(intl, "prl", "menu.familyGroup"),
-      icon: <AssignmentTurnedIn />,
-      route: "/" + PRL_ROUTE_FAMILY_GROUP,
-      withDivider: true,
-    },
+    // {
+    //   id: "prl.familyGroup",
+    //   text: formatMessage(intl, "prl", "menu.familyGroup"),
+    //   icon: <AssignmentTurnedIn />,
+    //   route: "/" + PRL_ROUTE_FAMILY_GROUP,
+    //   withDivider: true,
+    // },
     {
       id: "prl.bimonthlyReport",
       text: formatMessage(intl, "prl", "menu.bimonthlyReport"),
