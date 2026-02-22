@@ -813,7 +813,7 @@ function SupervisionReportFormPage(props) {
                   fullWidth
                   multiline
                   minRows={2}
-                  label="Pontos a Aproveitar"
+                  label="Pontos a Aprimorar"
                   value={tecnico.pontosAprimorar}
                   onChange={(e) => handleTecnicoChange(tecnico.id, 'pontosAprimorar', e.target.value)}
                   variant="outlined"
