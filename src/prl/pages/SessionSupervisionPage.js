@@ -52,7 +52,10 @@ function SessionSupervisionPage(props) {
           sessao {
             codigoSessao
             dataSessao
-            nomeModulo
+            modulo {
+              id
+              nome
+            }
           }
           supervisor {
             id

@@ -152,7 +152,11 @@ function SessionExecutionFormPage(props) {
           dataPlanejamento
           dataSessao
           horaSessao
-          nomeModulo
+          modulo {
+            id
+            codigo
+            nome
+          }
           tecnicoSocial {
             id
             lastName
@@ -228,7 +232,7 @@ function SessionExecutionFormPage(props) {
           dataPlanejamento: edge.node.dataPlanejamento,
           dataSessao: edge.node.dataSessao,
           horaSessao: edge.node.horaSessao,
-          nomeModulo: edge.node.nomeModulo,
+          modulo: edge.node.modulo,
           tecnicoSocial: edge.node.tecnicoSocial,
           coordenadorDistrital: edge.node.coordenadorDistrital,
           distrito: edge.node.distrito,
@@ -593,7 +597,7 @@ function SessionExecutionFormPage(props) {
         <Button onClick={handleBack}>
           <ChevronLeftIcon fontSize="small" />
           <Typography className={classes.headerTitle}>
-            {formatMessage(intl, "prl", isViewMode ? "title.viewExecution" : "title.createExecution")}
+            {formatMessage(intl, "prl", "form")} 03 - {formatMessage(intl, "prl", isViewMode ? "title.viewExecution" : "title.createExecution")}
           </Typography>
         </Button>
 
@@ -652,7 +656,7 @@ function SessionExecutionFormPage(props) {
             <TextField
               fullWidth
               label={formatMessage(intl, "prl", "attendance.moduleName")}
-              value={selectedSession?.nomeModulo || ""}
+              value={selectedSession?.modulo ? `${selectedSession.modulo.codigo} - ${selectedSession.modulo.nome}` : ""}
               variant="outlined"
               size="small"
               disabled

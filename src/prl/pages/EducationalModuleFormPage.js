@@ -8,7 +8,6 @@ import ChevronLeftIcon from "@material-ui/icons/ChevronLeft";
 import SaveIcon from "@material-ui/icons/Save";
 import { formatMessage, withModulesManager, Helmet, baseApiUrl, apiHeaders } from "@openimis/fe-core";
 import { PRL_ROUTE_EDUCATIONAL_MODULE } from "../constants";
-import { CLASSES_LIST, ESCOLAS_LIST } from "../constants/schoolClassLists";
 
 const styles = (theme) => ({
   page: theme.page,
@@ -88,6 +87,10 @@ function EducationalModuleFormPage(props) {
     observacoes: "",
   });
   const [districts, setDistricts] = useState([]);
+  const [escolasAPI, setEscolasAPI] = useState([]);
+  const [classesAPI, setClassesAPI] = useState([]);
+  const [disciplinasBasicasAPI, setDisciplinasBasicasAPI] = useState([]);
+  const [disciplinasAvancadasAPI, setDisciplinasAvancadasAPI] = useState([]);
   const queryParams = new URLSearchParams(location.search);
   const groupId = queryParams.get('id');
   // Visualização se houver id e não for criação (sem id)
@@ -101,22 +104,41 @@ function EducationalModuleFormPage(props) {
       idMembroCrianca
       nome
       nomeEncarregado
-      escola
+      escola {
+        id
+        nome
+      }
       escolaridadeActual
       dataNascimento
       idDaCrianca
       sexo
       dadosEscolarCorrectos
-      escolaActual
-      classe
+      escolaActual {
+        id
+        nome
+      }
+      classe {
+        id
+        codigo
+        nome
+      }
       idade
       dadosEscolaresCorrectos
       informacoesLocalizacao
-      classeQueFrequenta
+      classeQueFrequenta {
+        id
+        codigo
+        nome
+      }
       aproveitamentoPrimeiroTrimestre
       faixaDeFaltas
-      disciplinasBasicas
-      disciplinasAvancadas
+      disciplinas {
+        disciplina {
+          id
+          nome
+          nivel
+        }
+      }
       observacoes
     }
   }`;
@@ -158,6 +180,44 @@ function EducationalModuleFormPage(props) {
     }
   }`;
 
+  const escolasQuery = `query GetEscolas {
+    escolas(ativo: true, orderBy: ["nome"]) {
+      edges {
+        node {
+          id
+          nome
+          nivel
+        }
+      }
+    }
+  }`;
+
+  const classesQuery = `query GetClasses {
+    classes(ativo: true, orderBy: ["ordem"]) {
+      edges {
+        node {
+          id
+          codigo
+          nome
+          nivel
+          ordem
+        }
+      }
+    }
+  }`;
+
+  const disciplinasQuery = `query GetDisciplinas($nivel: String) {
+    disciplinas(nivel: $nivel, ativo: true, orderBy: ["nome"]) {
+      edges {
+        node {
+          id
+          nome
+          nivel
+        }
+      }
+    }
+  }`;
+
   // Função para obter o CSRF token do cookie
   const getCookie = (name) => {
     let cookieValue = null;
@@ -194,8 +254,64 @@ function EducationalModuleFormPage(props) {
     }
   };
 
+  const fetchEscolas = async () => {
+    try {
+      const response = await fetch(`${baseApiUrl}/graphql`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken'), ...apiHeaders() },
+        body: JSON.stringify({ query: escolasQuery }),
+      });
+      const result = await response.json();
+      if (result.data?.escolas?.edges) {
+        setEscolasAPI(result.data.escolas.edges.map(e => ({ id: e.node.id, nome: e.node.nome, nivel: e.node.nivel })));
+      }
+    } catch (error) { setEscolasAPI([]); }
+  };
+
+  const fetchClasses = async () => {
+    try {
+      const response = await fetch(`${baseApiUrl}/graphql`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken'), ...apiHeaders() },
+        body: JSON.stringify({ query: classesQuery }),
+      });
+      const result = await response.json();
+      if (result.data?.classes?.edges) {
+        setClassesAPI(result.data.classes.edges.map(c => ({ id: c.node.id, codigo: c.node.codigo, nome: c.node.nome, nivel: c.node.nivel })));
+      }
+    } catch (error) { setClassesAPI([]); }
+  };
+
+  const fetchDisciplinas = async () => {
+    try {
+      const [resBasicas, resAvancadas] = await Promise.all([
+        fetch(`${baseApiUrl}/graphql`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken'), ...apiHeaders() },
+          body: JSON.stringify({ query: disciplinasQuery, variables: { nivel: 'BASICA' } }),
+        }),
+        fetch(`${baseApiUrl}/graphql`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken'), ...apiHeaders() },
+          body: JSON.stringify({ query: disciplinasQuery, variables: { nivel: 'AVANCADA' } }),
+        }),
+      ]);
+      const [rBasicas, rAvancadas] = await Promise.all([resBasicas.json(), resAvancadas.json()]);
+      if (rBasicas.data?.disciplinas?.edges) {
+        setDisciplinasBasicasAPI(rBasicas.data.disciplinas.edges.map(d => ({ id: d.node.id, nome: d.node.nome })));
+      }
+      if (rAvancadas.data?.disciplinas?.edges) {
+        setDisciplinasAvancadasAPI(rAvancadas.data.disciplinas.edges.map(d => ({ id: d.node.id, nome: d.node.nome })));
+      }
+    } catch (error) { console.error('Error fetching disciplinas:', error); }
+  };
+
   useEffect(() => {
     fetchDistricts();
+    // Fetch parametrization tables
+    fetchEscolas();
+    fetchClasses();
+    fetchDisciplinas();
     // Se houver id (edição ou visualização), buscar dados do módulo
     if (groupId) {
       (async () => {
@@ -216,14 +332,14 @@ function EducationalModuleFormPage(props) {
               idMembro: data.idMembroCrianca || "",
               nome: data.nome || "",
               nomeEncarregado: data.nomeEncarregado || "",
-              escola: data.escola || "",
+              escola: data.escola?.id || "",
               escolaridade_actual: data.escolaridadeActual || "",
               dataNascimento: data.dataNascimento || "",
               ID_da_crianca: data.idDaCrianca || "",
               sexo: data.sexo === 'M' ? 'Masculino' : data.sexo === 'F' ? 'Feminino' : "",
               dadosEscolaresCorrectos: data.dadosEscolaresCorrectos ?? data.dadosEscolarCorrectos ?? null,
-              escolaActual: data.escolaActual || "",
-              classe: data.classe || "",
+              escolaActual: data.escolaActual?.id || "",
+              classe: data.classe?.id || "",
               idade: data.idade || "",
               informacoesLocalizacao: (() => {
                 try {
@@ -246,11 +362,11 @@ function EducationalModuleFormPage(props) {
                   };
                 }
               })(),
-              classeQueFrequenta: data.classeQueFrequenta || "",
+              classeQueFrequenta: data.classeQueFrequenta?.id || "",
               aproveitamentoPrimeiroTrimestre: data.aproveitamentoPrimeiroTrimestre || "",
               faixaDeFaltas: data.faixaDeFaltas || "",
-              disciplinasBasicas: data.disciplinasBasicas ? data.disciplinasBasicas.split(',').map(s => s.trim()).filter(Boolean) : [],
-              disciplinasAvancadas: data.disciplinasAvancadas ? data.disciplinasAvancadas.split(',').map(s => s.trim()).filter(Boolean) : [],
+              disciplinasBasicas: (data.disciplinas || []).filter(d => d.disciplina?.nivel === 'BASICA').map(d => d.disciplina.id),
+              disciplinasAvancadas: (data.disciplinas || []).filter(d => d.disciplina?.nivel === 'AVANCADA').map(d => d.disciplina.id),
               observacoes: data.observacoes || "",
             });
           }
@@ -284,22 +400,21 @@ function EducationalModuleFormPage(props) {
       idMembroCrianca: formData.idMembro,
       nome: formData.nome,
       nomeEncarregado: formData.nomeEncarregado,
-      escola: formData.escola,
+      escolaId: formData.escola || null,
       escolaridadeActual: formData.escolaridade_actual,
       dataNascimento: formData.dataNascimento || null,
       idDaCrianca: formData.ID_da_crianca,
       sexo: formData.sexo === 'Masculino' ? 'M' : formData.sexo === 'Feminino' ? 'F' : null,
       dadosEscolarCorrectos: formData.dadosEscolaresCorrectos,
-      escolaActual: formData.escolaActual,
-      classe: formData.classe,
+      escolaActualId: formData.escolaActual || null,
+      classeId: formData.classe || null,
       idade: formData.idade ? parseInt(formData.idade) : null,
       dadosEscolaresCorrectos: formData.dadosEscolaresCorrectos,
       informacoesLocalizacao: JSON.stringify(formData.informacoesLocalizacao),
-      classeQueFrequenta: formData.classeQueFrequenta,
+      classeQueFrequentaId: formData.classeQueFrequenta || null,
       aproveitamentoPrimeiroTrimestre: formData.aproveitamentoPrimeiroTrimestre,
       faixaDeFaltas: formData.faixaDeFaltas,
-      disciplinasBasicas: formData.disciplinasBasicas.join(", ") || null,
-      disciplinasAvancadas: formData.disciplinasAvancadas.join(", ") || null,
+      disciplinasIds: [...formData.disciplinasBasicas, ...formData.disciplinasAvancadas],
       observacoes: formData.observacoes,
     };
     const mutation = isEdit ? updateMutation : createMutation;
@@ -330,16 +445,8 @@ function EducationalModuleFormPage(props) {
   };
 
   // Listas
-  const classesList = CLASSES_LIST;
-  const escolasList = ESCOLAS_LIST;
   const faltasList = ["1-3", "4-6", "7-10", "+10"];
   const aproveitamentoList = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "+10"];
-  const disciplinasBasicas = [
-    "Ciências Naturais", "Geografia", "História", "Língua Francesa", "Língua Inglesa", "Língua Portuguesa", "Matemática", "Física", "Educação Visual e Oficial", "Educação Ambiental", "Educação Física", "Química", "Educação p/ Saúde", "Expressões Motoras", "Expressões Musical", "Expressões Plástica"
-  ];
-  const disciplinasAvancadas = [
-    "Ciências Naturais e Sociais", "Formação Cívica", "Filosofia", "Finanças/Migais", "Informática/TIC", "Biologia", "Geologia", "Empreendedorismo", "Alemão", "Espanhol", "Economia", "Geografia", "Direito", "Sociologia", "Psicologia", "Oficina de Artes", "Geometria Descritiva"
-  ];
 
   const handleBack = () => {
     history.push(`/${PRL_ROUTE_EDUCATIONAL_MODULE}`);
@@ -377,8 +484,8 @@ function EducationalModuleFormPage(props) {
                 <FormControl fullWidth>
                   <InputLabel>Escola</InputLabel>
                   <Select value={formData.escola} onChange={handleChange("escola")} label="Escola" disabled={isView}>
-                    {escolasList.map((e) => (
-                      <MenuItem key={e} value={e}>{e}</MenuItem>
+                    {escolasAPI.map((e) => (
+                      <MenuItem key={e.id} value={e.id}>{e.nome}</MenuItem>
                     ))}
                   </Select>
                 </FormControl>
@@ -387,8 +494,8 @@ function EducationalModuleFormPage(props) {
                 <FormControl fullWidth>
                   <InputLabel>Escolaridade Atual</InputLabel>
                   <Select value={formData.escolaridade_actual} onChange={handleChange("escolaridade_actual")} label="Escolaridade Atual" disabled={isView}>
-                    {classesList.map((c) => (
-                      <MenuItem key={c} value={c}>{c}</MenuItem>
+                    {classesAPI.map((c) => (
+                      <MenuItem key={c.id} value={c.nome}>{c.nome}</MenuItem>
                     ))}
                   </Select>
                 </FormControl>
@@ -425,7 +532,12 @@ function EducationalModuleFormPage(props) {
                 </FormControl>
               </Grid>
               <Grid item xs={12} sm={6}>
-                <TextField label="Escola Atual" fullWidth value={formData.escolaActual} onChange={handleChange("escolaActual")} disabled={isView} />
+                <TextField label="Escola Atual" fullWidth value={formData.escolaActual}
+                  onChange={handleChange("escolaActual")} disabled={isView} select>
+                  {escolasAPI.map((e) => (
+                    <MenuItem key={e.id} value={e.id}>{e.nome}</MenuItem>
+                  ))}
+                </TextField>
               </Grid>
             </Grid>
           </div>
@@ -471,8 +583,8 @@ function EducationalModuleFormPage(props) {
                 <FormControl fullWidth>
                   <InputLabel>Classe</InputLabel>
                   <Select value={formData.classeQueFrequenta} onChange={handleChange("classeQueFrequenta")} label="Classe" disabled={isView}>
-                    {classesList.map((c) => (
-                      <MenuItem key={c} value={c}>{c}</MenuItem>
+                    {classesAPI.map((c) => (
+                      <MenuItem key={c.id} value={c.id}>{c.nome}</MenuItem>
                     ))}
                   </Select>
                 </FormControl>
@@ -510,11 +622,11 @@ function EducationalModuleFormPage(props) {
               <Grid item xs={12} sm={6}>
                 <Typography variant="subtitle1">Disciplinas Básicas</Typography>
                 <FormGroup>
-                  {disciplinasBasicas.map((d) => (
+                  {disciplinasBasicasAPI.map((d) => (
                     <FormControlLabel
-                      key={d}
-                      control={<Checkbox color="primary" checked={formData.disciplinasBasicas.includes(d)} onChange={handleCheckboxChange("disciplinasBasicas", d)} disabled={isView} />}
-                      label={d}
+                      key={d.id}
+                      control={<Checkbox color="primary" checked={formData.disciplinasBasicas.includes(d.id)} onChange={handleCheckboxChange("disciplinasBasicas", d.id)} disabled={isView} />}
+                      label={d.nome}
                     />
                   ))}
                 </FormGroup>
@@ -522,11 +634,11 @@ function EducationalModuleFormPage(props) {
               <Grid item xs={12} sm={6}>
                 <Typography variant="subtitle1">Disciplinas Avançadas</Typography>
                 <FormGroup>
-                  {disciplinasAvancadas.map((d) => (
+                  {disciplinasAvancadasAPI.map((d) => (
                     <FormControlLabel
-                      key={d}
-                      control={<Checkbox color="primary" checked={formData.disciplinasAvancadas.includes(d)} onChange={handleCheckboxChange("disciplinasAvancadas", d)} disabled={isView} />}
-                      label={d}
+                      key={d.id}
+                      control={<Checkbox color="primary" checked={formData.disciplinasAvancadas.includes(d.id)} onChange={handleCheckboxChange("disciplinasAvancadas", d.id)} disabled={isView} />}
+                      label={d.nome}
                     />
                   ))}
                 </FormGroup>

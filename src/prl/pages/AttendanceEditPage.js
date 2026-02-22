@@ -85,7 +85,11 @@ function AttendanceEditPage(props) {
         id
         codigoSessao
         dataPlanejamento
-        nomeModulo
+        modulo {
+          id
+          codigo
+          nome
+        }
         dataSessao
         horaSessao
         tecnicoSocial {
@@ -113,6 +117,11 @@ function AttendanceEditPage(props) {
       grupoId
       estado
       codigoEncaminhamento
+      tipoEncaminhamento {
+        id
+        codigo
+        nome
+      }
       observacoes
     }
   }`;
@@ -124,7 +133,11 @@ function AttendanceEditPage(props) {
           id
           codigoSessao
           dataPlanejamento
-          nomeModulo
+          modulo {
+            id
+            codigo
+            nome
+          }
           dataSessao
           horaSessao
           tecnicoSocial {
@@ -191,6 +204,18 @@ function AttendanceEditPage(props) {
             uuid
             name
           }
+        }
+      }
+    }
+  }`;
+
+  const tiposEncaminhamentoQuery = `query GetTiposEncaminhamento {
+    tiposEncaminhamento(ativo: true) {
+      edges {
+        node {
+          id
+          codigo
+          nome
         }
       }
     }
@@ -269,7 +294,7 @@ function AttendanceEditPage(props) {
           id: edge.node.id,
           codigoSessao: edge.node.codigoSessao,
           dataPlanejamento: edge.node.dataPlanejamento,
-          nomeModulo: edge.node.nomeModulo,
+          modulo: edge.node.modulo,
           dataSessao: edge.node.dataSessao,
           horaSessao: edge.node.horaSessao,
           tecnicoSocial: edge.node.tecnicoSocial,
@@ -381,6 +406,7 @@ function AttendanceEditPage(props) {
     fetchDistricts();
     fetchFormadores();
     fetchFamilias();
+    fetchTiposEncaminhamento();
   }, [attendanceId, initialData, fetchAttendance]);
 
   // Fetch attendance by ID (for viewing/editing from list)
@@ -420,7 +446,7 @@ function AttendanceEditPage(props) {
             id: sessao.id,
             codigoSessao: sessao.codigoSessao,
             dataPlanejamento: sessao.dataPlanejamento,
-            nomeModulo: sessao.nomeModulo,
+            modulo: sessao.modulo,
             dataSessao: sessao.dataSessao,
             horaSessao: sessao.horaSessao,
             tecnicoSocial: sessao.tecnicoSocial,
@@ -443,7 +469,7 @@ function AttendanceEditPage(props) {
           sequencia: 1,
           estado: attendance.estado || "PRES",
           codigoEncaminhamento: attendance.codigoEncaminhamento || "",
-          nomeInstituicao: attendance.nomeInstituicao || "",
+          tipoEncaminhamentoId: attendance.tipoEncaminhamento?.id || "",
           localidade: "",
         }]);
       } else if (result.errors) {
@@ -453,6 +479,30 @@ function AttendanceEditPage(props) {
       console.error('Error:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchTiposEncaminhamento = async () => {
+    try {
+      const response = await fetch(`${baseApiUrl}/graphql`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCookie('csrftoken'),
+          ...apiHeaders(),
+        },
+        body: JSON.stringify({ query: tiposEncaminhamentoQuery }),
+      });
+      const result = await response.json();
+      if (result.data?.tiposEncaminhamento?.edges) {
+        setTiposEncaminhamento(result.data.tiposEncaminhamento.edges.map(edge => ({
+          id: edge.node.id,
+          codigo: edge.node.codigo,
+          nome: edge.node.nome,
+        })));
+      }
+    } catch (error) {
+      console.error('Error fetching tipos encaminhamento:', error);
     }
   };
 
@@ -492,7 +542,7 @@ function AttendanceEditPage(props) {
       sequencia: presencas.length + 1,
       estado: "PRES",
       codigoEncaminhamento: "",
-      nomeInstituicao: "",
+      tipoEncaminhamentoId: "",
       localidade: "",
     };
     setPresencas((prev) => [...prev, newPresenca]);
@@ -561,7 +611,7 @@ function AttendanceEditPage(props) {
             alert(formatMessage(intl, "prl", "attendance.codigoEncaminhamentoRequired"));
             return;
           }
-          if (!presenca.nomeInstituicao) {
+          if (!presenca.tipoEncaminhamentoId) {
             alert(formatMessage(intl, "prl", "attendance.institutionNameRequired"));
             return;
           }
@@ -575,14 +625,14 @@ function AttendanceEditPage(props) {
         distritoId: selectedSession?.distrito?.id || "",
         formadorId: formData.formador,
         localidadeId: formData.localidade || null,
-        nomeModulo: selectedSession?.nomeModulo || "",
+        moduloId: selectedSession?.modulo?.id || null,
         codigoSessao: selectedSession?.codigoSessao || "",
         grupoFamiliaId: selectedSession?.grupoFamilia?.id || "",
         presencas: presencas.map(p => ({
           familiaId: p.familiaId,
           estado: p.estado,
           codigoEncaminhamento: p.codigoEncaminhamento || null,
-          nomeInstituicao: p.nomeInstituicao || null,
+          tipoEncaminhamentoId: p.tipoEncaminhamentoId || null,
         })),
       };
 
@@ -621,6 +671,7 @@ function AttendanceEditPage(props) {
         <Button onClick={handleBack}>
           <ChevronLeftIcon fontSize="small" />
           <Typography className={classes.headerTitle}>
+            {formatMessage(intl, "prl", "form")} 02 - {' '}
             {readOnly
               ? formatMessage(intl, "prl", "title.viewAttendance")
               : initialData?.id
@@ -683,7 +734,7 @@ function AttendanceEditPage(props) {
             <TextField
               fullWidth
               label={formatMessage(intl, "prl", "attendance.moduleName")}
-              value={selectedSession?.nomeModulo || ""}
+              value={selectedSession?.modulo ? `${selectedSession.modulo.codigo} - ${selectedSession.modulo.nome}` : ""}
               variant="outlined"
               size="small"
               disabled
@@ -903,14 +954,22 @@ function AttendanceEditPage(props) {
 
                 <Grid item xs={12} sm={2}>
                   <TextField
+                    select
                     fullWidth
                     size="small"
                     variant="outlined"
-                    placeholder={formatMessage(intl, "prl", "attendance.institutionName")}
-                    value={presenca.nomeInstituicao}
-                    onChange={(e) => handlePresencaChange(index, "nomeInstituicao", e.target.value)}
+                    label={formatMessage(intl, "prl", "attendance.institutionName")}
+                    value={presenca.tipoEncaminhamentoId}
+                    onChange={(e) => handlePresencaChange(index, "tipoEncaminhamentoId", e.target.value)}
                     disabled={readOnly || presenca.estado !== 'ENCA'}
-                  />
+                  >
+                    <MenuItem value="">{formatMessage(intl, "prl", "attendance.selectTipoEncaminhamento")}</MenuItem>
+                    {tiposEncaminhamento.map((tipo) => (
+                      <MenuItem key={tipo.id} value={tipo.id}>
+                        {tipo.codigo} - {tipo.nome}
+                      </MenuItem>
+                    ))}
+                  </TextField>
                 </Grid>
 
                 {!readOnly && (

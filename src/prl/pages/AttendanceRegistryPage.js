@@ -72,7 +72,11 @@ function AttendanceRegistryPage(props) {
           grupoId
           estado
           codigoEncaminhamento
-          nomeInstituicao
+          tipoEncaminhamento {
+            id
+            codigo
+            nome
+          }
           observacoes
         }
       }
@@ -122,7 +126,7 @@ function AttendanceRegistryPage(props) {
       groupId: attendance.grupoId,
       state: attendance.estado,
       referralCode: attendance.codigoEncaminhamento,
-      institutionName: attendance.nomeInstituicao,
+      institutionName: attendance.tipoEncaminhamento?.nome || '',
       observations: attendance.observacoes,
     }));
 

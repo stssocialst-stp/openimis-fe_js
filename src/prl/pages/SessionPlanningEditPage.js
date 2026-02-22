@@ -94,7 +94,12 @@ function SessionPlanningEditPage(props) {
       id
       codigoSessao
       dataPlanejamento
-      nomeModulo
+      modulo {
+        id
+        codigo
+        nome
+        ordem
+      }
       coordenadorDistrital {
         id
         username
@@ -163,18 +168,19 @@ function SessionPlanningEditPage(props) {
     }
   }`;
 
-  // const modulesQuery = `query GetModulosEducacionais($first: Int) {
-  //   modulosEducacionais(first: $first, orderBy: ["ordem"]) {
-  //     edges {
-  //       node {
-  //         id
-  //         codigo
-  //         nome
-  //         ordem
-  //       }
-  //     }
-  //   }
-  // }`;
+  const modulosPEPQuery = `query GetModulosPEP {
+    modulosPep(ativo: true, orderBy: ["ordem"]) {
+      edges {
+        node {
+          id
+          codigo
+          nome
+          ordem
+          duracaoSemanas
+        }
+      }
+    }
+  }`;
 
   const familyGroupsQuery = `query GetGruposFamiliares($first: Int) {
     gruposFamiliares(first: $first) {
@@ -208,7 +214,7 @@ function SessionPlanningEditPage(props) {
     coordenadorDistrital: null,
     tecnicoSocial: null,
     distrito: null,
-    nomeModulo: "",
+    modulo: null,
     mesModuloAnterior: "",
     observacoes: "",
     status: "PLAN",
@@ -231,7 +237,7 @@ function SessionPlanningEditPage(props) {
   const [districts, setDistricts] = useState([]);
   const [coordinators, setCoordinators] = useState([]);
   const [socialTechnicians, setSocialTechnicians] = useState([]);
-  // const [modules, setModules] = useState([]); // Commented out as nomeModulo is now a text field
+  const [modules, setModules] = useState([]);
   const [familyGroups, setFamilyGroups] = useState([]);
 
   useEffect(() => {
@@ -242,7 +248,7 @@ function SessionPlanningEditPage(props) {
     fetchDistricts();
     fetchCoordinators();
     fetchSocialTechnicians();
-    // fetchModules(); // Commented out as nomeModulo is now a text field
+    fetchModules();
     fetchFamilyGroups();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -259,19 +265,23 @@ function SessionPlanningEditPage(props) {
 
     const result = await response.json();
     if (result.data?.sessaoPep) {
-      setFormData(result.data.sessaoPep);
+      const pep = result.data.sessaoPep;
+      setFormData({
+        ...pep,
+        modulo: pep.modulo || null,
+      });
       // Populate sessions array for display
       setSessions([{
-        id: result.data.sessaoPep.id,
-        diaSemana: result.data.sessaoPep.diaSemana,
-        dataSessao: result.data.sessaoPep.dataSessao,
-        zona: result.data.sessaoPep.zona,
-        numeroFamilias: result.data.sessaoPep.numeroFamilias,
-        grupoFamilia: result.data.sessaoPep.grupoFamilia,
-        horaSessao: result.data.sessaoPep.horaSessao,
-        tempoDeslocamento: result.data.sessaoPep.tempoDeslocamento,
-        feedbackDocumentacao: result.data.sessaoPep.feedbackDocumentacao,
-        temSupervisao: result.data.sessaoPep.temSupervisao,
+        id: pep.id,
+        diaSemana: pep.diaSemana,
+        dataSessao: pep.dataSessao,
+        zona: pep.zona,
+        numeroFamilias: pep.numeroFamilias,
+        grupoFamilia: pep.grupoFamilia,
+        horaSessao: pep.horaSessao,
+        tempoDeslocamento: pep.tempoDeslocamento,
+        feedbackDocumentacao: pep.feedbackDocumentacao,
+        temSupervisao: pep.temSupervisao,
       }]);
     } else if (result.errors) {
       console.error('Error fetching session:', result.errors);
@@ -353,30 +363,30 @@ function SessionPlanningEditPage(props) {
     }
   };
 
-  // const fetchModules = async () => {
-  //   try {
-  //     const response = await fetch(`${baseApiUrl}/graphql`, {
-  //       method: 'POST',
-  //       headers: {
-  //         'Content-Type': 'application/json',
-  //         'X-CSRFToken': getCookie('csrftoken'),
-  //         ...apiHeaders(),
-  //       },
-  //       body: JSON.stringify({ query: modulesQuery, variables: { first: 100 } }),
-  //     });
+  const fetchModules = async () => {
+    try {
+      const response = await fetch(`${baseApiUrl}/graphql`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCookie('csrftoken'),
+          ...apiHeaders(),
+        },
+        body: JSON.stringify({ query: modulosPEPQuery }),
+      });
 
-  //     const result = await response.json();
-  //     if (result.data?.modulosEducacionais?.edges) {
-  //       const moduleList = result.data.modulosEducacionais.edges.map(edge => ({
-  //         value: edge.node.id,
-  //         label: `${edge.node.codigo} - ${edge.node.nome}`,
-  //       }));
-  //       setModules(moduleList);
-  //     }
-  //   } catch (error) {
-  //     console.error('Error fetching modules:', error);
-  //   }
-  // };
+      const result = await response.json();
+      if (result.data?.modulosPep?.edges) {
+        const moduleList = result.data.modulosPep.edges.map(edge => ({
+          value: edge.node.id,
+          label: `${edge.node.codigo} - ${edge.node.nome}`,
+        }));
+        setModules(moduleList);
+      }
+    } catch (error) {
+      console.error('Error fetching modules:', error);
+    }
+  };
 
   const fetchFamilyGroups = async () => {
     try {
@@ -631,7 +641,7 @@ function SessionPlanningEditPage(props) {
       if (!formData.coordenadorDistrital?.id || formData.coordenadorDistrital.id === "") missingBasicFields.push('Coordenador Distrital');
       if (!formData.tecnicoSocial?.id || formData.tecnicoSocial.id === "") missingBasicFields.push('Técnico Social');
       if (!formData.distrito?.id || formData.distrito.id === "") missingBasicFields.push('Distrito');
-      if (!formData.nomeModulo) missingBasicFields.push('Nome do Módulo');
+      if (!formData.modulo?.id) missingBasicFields.push('Módulo PEP+');
 
       if (missingBasicFields.length > 0) {
         console.error('Missing required fields in basic info:', missingBasicFields);
@@ -697,7 +707,7 @@ function SessionPlanningEditPage(props) {
           id: extractNumericId(session.id),
           codigoSessao: formData.codigoSessao,
           dataPlanejamento: formData.dataPlanejamento,
-          nomeModulo: formData.nomeModulo,
+          moduloId: formData.modulo?.id || null,
           coordenadorDistritalId: coordenadorId,
           tecnicoSocialId: tecnicoId,
           distritoId: distritoId,
@@ -738,7 +748,7 @@ function SessionPlanningEditPage(props) {
           coordenadorDistritalId: coordenadorId,
           tecnicoSocialId: tecnicoId,
           distritoId: distritoId,
-          nomeModulo: formData.nomeModulo,
+          moduloId: formData.modulo?.id || null,
           mesModuloAnterior: formData.mesModuloAnterior,
           diaSemana: session.diaSemana,
           dataSessao: session.dataSessao,
@@ -805,7 +815,7 @@ function SessionPlanningEditPage(props) {
         <Button onClick={handleBack}>
           <ChevronLeftIcon fontSize="small" />
           <Typography className={classes.headerTitle}>
-            {formatMessage(intl, "prl", "title.sessionPlanning")}
+            {formatMessage(intl, "prl", "form")} 01 - {formatMessage(intl, "prl", "title.sessionPlanning")}
           </Typography>
         </Button>
       </Paper>
@@ -896,17 +906,20 @@ function SessionPlanningEditPage(props) {
           </Grid>
           <Grid item xs={12} sm={4}>
             <TextField
+              select
               fullWidth
               label={formatMessage(intl, "prl", "sessionPlanning.moduleName")}
-              placeholder="Ex: Módulo 1 - Introdução ao PEP+"
-              value={formData.nomeModulo}
-              onChange={handleChange("nomeModulo")}
+              value={formData.modulo?.id || ""}
+              onChange={(e) => setFormData(prev => ({ ...prev, modulo: { id: e.target.value } }))}
               variant="outlined"
               size="small"
               required
-              InputLabelProps={{ shrink: true }}
               disabled={readOnly}
-            />
+            >
+              {modules.map((option) => (
+                <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>
+              ))}
+            </TextField>
           </Grid>
           <Grid item xs={12} sm={4}>
             <TextField

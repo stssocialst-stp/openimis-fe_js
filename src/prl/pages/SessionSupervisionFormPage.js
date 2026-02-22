@@ -171,7 +171,11 @@ function SessionSupervisionFormPage(props) {
           dataPlanejamento
           dataSessao
           horaSessao
-          nomeModulo
+          modulo {
+            id
+            codigo
+            nome
+          }
           tecnicoSocial {
             id
             lastName
@@ -227,7 +231,10 @@ function SessionSupervisionFormPage(props) {
         id
         codigoSessao
         dataSessao
-        nomeModulo
+        modulo {
+          id
+          nome
+        }
         distrito {
           name
         }
@@ -295,13 +302,13 @@ function SessionSupervisionFormPage(props) {
           dataPlanejamento: edge.node.dataPlanejamento,
           dataSessao: edge.node.dataSessao,
           horaSessao: edge.node.horaSessao,
-          nomeModulo: edge.node.nomeModulo,
+          modulo: edge.node.modulo,
           tecnicoSocial: edge.node.tecnicoSocial,
           coordenadorDistrital: edge.node.coordenadorDistrital,
           distrito: edge.node.distrito?.name,
           grupoFamilia: edge.node.grupoFamilia?.nome,
           status: edge.node.status,
-          label: `${edge.node.codigoSessao} - ${edge.node.dataSessao} - ${edge.node.nomeModulo || '-'}`,
+          label: `${edge.node.codigoSessao} - ${edge.node.dataSessao} - ${edge.node.modulo?.nome || '-'}`,
         }));
         setSessions(sessionList);
       }
@@ -373,7 +380,7 @@ function SessionSupervisionFormPage(props) {
             id: data.sessao.id,
             codigoSessao: data.sessao.codigoSessao,
             dataSessao: data.sessao.dataSessao,
-            nomeModulo: data.sessao.nomeModulo,
+            modulo: data.sessao.modulo,
             distrito: data.sessao.distrito?.name,
             grupoFamilia: data.sessao.grupoFamilia?.nome,
             status: data.sessao.status,
@@ -598,7 +605,7 @@ function SessionSupervisionFormPage(props) {
         <Button onClick={handleBack}>
           <ChevronLeftIcon fontSize="small" />
           <Typography className={classes.headerTitle}>
-            {isEditMode ? "Editar Supervisão" : formatMessage(intl, "prl", "title.supervision")}
+            {formatMessage(intl, "prl", "form")} 04 - {isEditMode ? "Editar Supervisão" : formatMessage(intl, "prl", "title.supervision")}
           </Typography>
         </Button>
 
@@ -634,10 +641,10 @@ function SessionSupervisionFormPage(props) {
             <TextField
               fullWidth
               label="Módulo"
-              value={selectedSession?.nomeModulo}
+              value={selectedSession?.modulo?.nome}
               variant="outlined"
               size="small"
-              InputLabelProps={{ shrink: selectedSession?.nomeModulo ? true : false }}
+              InputLabelProps={{ shrink: selectedSession?.modulo?.nome ? true : false }}
               disabled
             />
           </Grid>

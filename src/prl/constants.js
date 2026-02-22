@@ -21,17 +21,6 @@ export const PRL_ROUTE_SUPERVISION_REPORT_FORM = "prl/supervisionReport/form";
 // Module Name
 export const MODULE_NAME = "prl";
 
-// PEP+ Modules
-export const PEP_MODULES = [
-  { value: "M1", label: "Módulo 1 - Introdução" },
-  { value: "M2", label: "Módulo 2 - Comunicação Familiar" },
-  { value: "M3", label: "Módulo 3 - Disciplina Positiva" },
-  { value: "M4", label: "Módulo 4 - Saúde e Nutrição" },
-  { value: "M5", label: "Módulo 5 - Educação" },
-  { value: "M6", label: "Módulo 6 - Proteção" },
-  { value: "M7", label: "Módulo 7 - Encerramento" },
-];
-
 // Status
 export const SESSION_STATUS = {
   PLANNED: "PLANNED",

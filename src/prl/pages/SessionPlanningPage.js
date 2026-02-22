@@ -43,7 +43,7 @@ function SessionPlanningPage(props) {
     return cookieValue;
   };
 
-  const query = `query GetSessoesPep($first: Int, $distritoId: ID, $dataSessao_Gte: Date, $dataSessao_Lte: Date, $status: SessaoPEPStatus, $codigoSessao_Icontains: String, $nomeModulo_Icontains: String, $dataPlanejamento_Gte: Date, $orderBy: [String]) {
+  const query = `query GetSessoesPep($first: Int, $distritoId: ID, $dataSessao_Gte: Date, $dataSessao_Lte: Date, $status: SessaoPEPStatus, $codigoSessao_Icontains: String, $moduloId: ID, $dataPlanejamento_Gte: Date, $orderBy: [String]) {
     sessoesPep(
       first: $first
       distritoId: $distritoId
@@ -51,7 +51,7 @@ function SessionPlanningPage(props) {
       dataSessao_Lte: $dataSessao_Lte
       status: $status
       codigoSessao_Icontains: $codigoSessao_Icontains
-      nomeModulo_Icontains: $nomeModulo_Icontains
+      moduloId: $moduloId
       dataPlanejamento_Gte: $dataPlanejamento_Gte
       orderBy: $orderBy
     ) {
@@ -65,7 +65,10 @@ function SessionPlanningPage(props) {
           id
           codigoSessao
           dataPlanejamento
-          nomeModulo
+          modulo {
+            id
+            nome
+          }
           dataSessao
           horaSessao
           distrito {
@@ -89,7 +92,7 @@ function SessionPlanningPage(props) {
       dataSessao_Lte: filters.dataSessao_Lte?.value || null,
       status: filters.status?.value || null,
       codigoSessao_Icontains: filters.codigoSessao_Icontains?.value || null,
-      nomeModulo_Icontains: filters.nomeModulo_Icontains?.value || null,
+      moduloId: filters.moduloId?.value || null,
       dataPlanejamento_Gte: filters.dataPlanejamento_Gte?.value || null,
       orderBy: params.orderBy || ["-dataSessao"],
     };
@@ -120,7 +123,7 @@ function SessionPlanningPage(props) {
       id: session.id,
       sessionCode: session.codigoSessao,
       planningDate: session.dataPlanejamento,
-      module: session.nomeModulo,
+      module: session.modulo?.nome || '',
       district: session.distrito?.name || '',
       plannedDate: session.dataSessao,
       trainer: session.grupoFamilia?.nome || '',
@@ -228,7 +231,6 @@ function SessionPlanningPage(props) {
 
   const filterConfig = [
     { field: "codigoSessao_Icontains", label: "prl.sessionPlanning.sessionCode", xs: 4 },
-    { field: "nomeModulo_Icontains", label: "prl.sessionPlanning.moduleName", xs: 4 },
     { field: "dataPlanejamento_Gte", label: "prl.sessionPlanning.planningDate", xs: 4 },
     { field: "status", label: "prl.sessionPlanning.status", options: STATUS_OPTIONS, xs: 4 },
     { field: "dataSessao_Gte", label: "prl.sessionPlanning.plannedDate", xs: 4 },
