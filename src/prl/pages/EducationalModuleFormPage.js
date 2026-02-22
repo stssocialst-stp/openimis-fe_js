@@ -8,6 +8,7 @@ import ChevronLeftIcon from "@material-ui/icons/ChevronLeft";
 import SaveIcon from "@material-ui/icons/Save";
 import { formatMessage, withModulesManager, Helmet, baseApiUrl, apiHeaders } from "@openimis/fe-core";
 import { PRL_ROUTE_EDUCATIONAL_MODULE } from "../constants";
+import { aproveitamentoList, escolaridadeList, faltasList, sexoList } from "../../helpers/constants";
 
 const styles = (theme) => ({
   page: theme.page,
@@ -206,7 +207,7 @@ function EducationalModuleFormPage(props) {
     }
   }`;
 
-  const disciplinasQuery = `query GetDisciplinas($nivel: String) {
+  const disciplinasQuery = `query GetDisciplinas($nivel: DisciplinaNivel) {
     disciplinas(nivel: $nivel, ativo: true, orderBy: ["nome"]) {
       edges {
         node {
@@ -336,7 +337,7 @@ function EducationalModuleFormPage(props) {
               escolaridade_actual: data.escolaridadeActual || "",
               dataNascimento: data.dataNascimento || "",
               ID_da_crianca: data.idDaCrianca || "",
-              sexo: data.sexo === 'M' ? 'Masculino' : data.sexo === 'F' ? 'Feminino' : "",
+              sexo: data.sexo || "",
               dadosEscolaresCorrectos: data.dadosEscolaresCorrectos ?? data.dadosEscolarCorrectos ?? null,
               escolaActual: data.escolaActual?.id || "",
               classe: data.classe?.id || "",
@@ -404,7 +405,7 @@ function EducationalModuleFormPage(props) {
       escolaridadeActual: formData.escolaridade_actual,
       dataNascimento: formData.dataNascimento || null,
       idDaCrianca: formData.ID_da_crianca,
-      sexo: formData.sexo === 'Masculino' ? 'M' : formData.sexo === 'Feminino' ? 'F' : null,
+      sexo: formData.sexo || null,
       dadosEscolarCorrectos: formData.dadosEscolaresCorrectos,
       escolaActualId: formData.escolaActual || null,
       classeId: formData.classe || null,
@@ -444,10 +445,7 @@ function EducationalModuleFormPage(props) {
     }
   };
 
-  // Listas
-  const faltasList = ["1-3", "4-6", "7-10", "+10"];
-  const aproveitamentoList = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "+10"];
-
+  // Listas com valores enum do backend
   const handleBack = () => {
     history.push(`/${PRL_ROUTE_EDUCATIONAL_MODULE}`);
   };
@@ -494,8 +492,8 @@ function EducationalModuleFormPage(props) {
                 <FormControl fullWidth>
                   <InputLabel>Escolaridade Atual</InputLabel>
                   <Select value={formData.escolaridade_actual} onChange={handleChange("escolaridade_actual")} label="Escolaridade Atual" disabled={isView}>
-                    {classesAPI.map((c) => (
-                      <MenuItem key={c.id} value={c.nome}>{c.nome}</MenuItem>
+                    {escolaridadeList.map((e) => (
+                      <MenuItem key={e.value} value={e.value}>{e.label}</MenuItem>
                     ))}
                   </Select>
                 </FormControl>
@@ -511,8 +509,9 @@ function EducationalModuleFormPage(props) {
                   <InputLabel>Sexo</InputLabel>
                   <Select value={formData.sexo} onChange={handleChange("sexo")}
                     label="Sexo" disabled={isView}>
-                    <MenuItem value="Masculino">Masculino</MenuItem>
-                    <MenuItem value="Feminino">Feminino</MenuItem>
+                    {sexoList.map((s) => (
+                      <MenuItem key={s.value} value={s.value}>{s.label}</MenuItem>
+                    ))}
                   </Select>
                 </FormControl>
               </Grid>
@@ -599,7 +598,7 @@ function EducationalModuleFormPage(props) {
                   <InputLabel>Quantas faltas teve no 1º trimestre?</InputLabel>
                   <Select value={formData.aproveitamentoPrimeiroTrimestre} onChange={handleChange("aproveitamentoPrimeiroTrimestre")} label="Quantas faltas teve no 1º trimestre?" disabled={isView}>
                     {aproveitamentoList.map((f) => (
-                      <MenuItem key={f} value={f}>{f}</MenuItem>
+                      <MenuItem key={f.value} value={f.value}>{f.label}</MenuItem>
                     ))}
                   </Select>
                 </FormControl>
@@ -609,7 +608,7 @@ function EducationalModuleFormPage(props) {
                   <InputLabel>Faixa de Faltas</InputLabel>
                   <Select value={formData.faixaDeFaltas} onChange={handleChange("faixaDeFaltas")} label="Faixa de Faltas" disabled={isView}>
                     {faltasList.map((f) => (
-                      <MenuItem key={f} value={f}>{f}</MenuItem>
+                      <MenuItem key={f.value} value={f.value}>{f.label}</MenuItem>
                     ))}
                   </Select>
                 </FormControl>

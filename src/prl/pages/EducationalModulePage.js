@@ -38,24 +38,30 @@ function EducationalModulePage(props) {
     return cookieValue;
   };
 
-  const query = `query GetModulosEducacionais($first: Int, $offset: Int, $nome_Icontains: String, $classe_Icontains: String, $escola_Icontains: String, $idDaCrianca_Icontains: String, $escolaActual_Icontains: String) {
+  const query = `query GetModulosEducacionais($first: Int, $offset: Int, $nome_Icontains: String, $idDaCrianca_Icontains: String) {
     modulosEducacionais(
       first: $first
       offset: $offset
       nome_Icontains: $nome_Icontains
-      classe_Icontains: $classe_Icontains
-      escola_Icontains: $escola_Icontains
       idDaCrianca_Icontains: $idDaCrianca_Icontains
-      escolaActual_Icontains: $escolaActual_Icontains
     ) {
       edges {
         node {
           id
           nome
-          classeQueFrequenta
-          escola
+          classeQueFrequenta {
+            id
+            nome
+          }
+          escola {
+            id
+            nome
+          }
           idDaCrianca
-          escolaActual
+          escolaActual {
+            id
+            nome
+          }
         }
       }
       totalCount
@@ -71,10 +77,7 @@ function EducationalModulePage(props) {
       first: pageSize,
       offset,
       nome_Icontains: filters.nome?.value || null,
-      classe_Icontains: filters.classe?.value || null,
-      escola_Icontains: filters.escola?.value || null,
       idDaCrianca_Icontains: filters.idDaCrianca?.value || null,
-      escolaActual_Icontains: filters.escolaActual?.value || null,
     };
 
     const response = await fetch(`${baseApiUrl}/graphql`, {
@@ -102,10 +105,10 @@ function EducationalModulePage(props) {
     const mappedData = modules.map(module => ({
       id: module.id,
       name: module.nome,
-      class: module.classeQueFrequenta,
-      school: module.escola,
+      class: module.classeQueFrequenta?.nome || "",
+      school: module.escola?.nome || "",
       idDaCrianca: module.idDaCrianca,
-      escolaActual: module.escolaActual,
+      escolaActual: module.escolaActual?.nome || "",
     }));
     return mappedData;
   };
@@ -186,11 +189,8 @@ function EducationalModulePage(props) {
   ];
 
   const filterConfig = [
-    { field: "nome", label: "prl.educationalModule.name", xs: 4 },
-    { field: "classe", label: "prl.educationalModule.class", xs: 4 },
-    { field: "escola", label: "prl.educationalModule.school", xs: 4 },
-    { field: "idDaCrianca", label: "prl.educationalModule.idDaCrianca", xs: 4 },
-    { field: "escolaActual", label: "prl.educationalModule.escolaActual", xs: 4 },
+    { field: "nome", label: "prl.educationalModule.name", xs: 6 },
+    { field: "idDaCrianca", label: "prl.educationalModule.idDaCrianca", xs: 6 },
   ];
 
   const FilterPane = (filterProps) => (
