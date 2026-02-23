@@ -19,3 +19,14 @@ export const PARAMS_ROUTE_TIPO_ENCAMINHAMENTO_FORM = "params/tipoEncaminhamento/
 
 // Disciplina nivel enum values
 export const DISCIPLINA_NIVEL_OPTIONS = ["BASICA", "AVANCADA"];
+
+// Classe
+export const PARAMS_ROUTE_CLASSE = "params/classe";
+export const PARAMS_ROUTE_CLASSE_FORM = "params/classe/form";
+
+// Classe nivel enum values (same as Escola)
+export const CLASSE_NIVEL_OPTIONS = ["EP1", "EP2", "ESG1", "ESG2", "OUTRO"];
+
+// Coordenação Distrital
+export const PARAMS_ROUTE_COORDENACAO_DISTRITAL = "params/coordenacaoDistrital";
+export const PARAMS_ROUTE_COORDENACAO_DISTRITAL_FORM = "params/coordenacaoDistrital/form";

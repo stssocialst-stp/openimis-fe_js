@@ -182,13 +182,14 @@ function SessionPlanningEditPage(props) {
     }
   }`;
 
-  const familyGroupsQuery = `query GetGruposFamiliares($first: Int) {
-    gruposFamiliares(first: $first) {
+  const familyGroupsQuery = `query GetGruposFamiliares($first: Int, $distritoId: String) {
+    gruposFamiliares(first: $first, distritoId: $distritoId, ativo: true) {
       edges {
         node {
           id
           codigo
           nome
+          numeroFamilias
         }
       }
     }
@@ -277,6 +278,7 @@ function SessionPlanningEditPage(props) {
   const [coordinators, setCoordinators] = useState([]);
   const [socialTechnicians, setSocialTechnicians] = useState([]);
   const [modules, setModules] = useState([]);
+  // familyGroups stores { value, label, numeroFamilias } objects
   const [familyGroups, setFamilyGroups] = useState([]);
 
   useEffect(() => {
@@ -288,8 +290,14 @@ function SessionPlanningEditPage(props) {
     fetchCoordinators();
     fetchSocialTechnicians();
     fetchModules();
-    fetchFamilyGroups();
+    fetchFamilyGroups(null);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Re-fetch family groups filtered by the selected district
+  useEffect(() => {
+    const distritoId = formData.distrito?.id || null;
+    fetchFamilyGroups(distritoId);
+  }, [formData.distrito?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchSession = async (id) => {
     const response = await fetch(`${baseApiUrl}/graphql`, {
@@ -427,7 +435,7 @@ function SessionPlanningEditPage(props) {
     }
   };
 
-  const fetchFamilyGroups = async () => {
+  const fetchFamilyGroups = async (distritoId) => {
     try {
       const response = await fetch(`${baseApiUrl}/graphql`, {
         method: 'POST',
@@ -436,7 +444,7 @@ function SessionPlanningEditPage(props) {
           'X-CSRFToken': getCookie('csrftoken'),
           ...apiHeaders(),
         },
-        body: JSON.stringify({ query: familyGroupsQuery, variables: { first: 100 } }),
+        body: JSON.stringify({ query: familyGroupsQuery, variables: { first: 100, distritoId: distritoId || null } }),
       });
 
       const result = await response.json();
@@ -444,6 +452,7 @@ function SessionPlanningEditPage(props) {
         const groupList = result.data.gruposFamiliares.edges.map(edge => ({
           value: edge.node.id,
           label: `${edge.node.codigo} - ${edge.node.nome}`,
+          numeroFamilias: edge.node.numeroFamilias || 0,
         }));
         setFamilyGroups(groupList);
       }
@@ -474,7 +483,16 @@ function SessionPlanningEditPage(props) {
   const handleSessionSelectChange = (field) => (event) => {
     if (readOnly) return;
     const { value } = event.target;
-    setSessionData((prev) => ({ ...prev, [field]: { id: value } }));
+    if (field === 'grupoFamilia') {
+      const selectedGroup = familyGroups.find(g => g.value === value);
+      setSessionData((prev) => ({
+        ...prev,
+        grupoFamilia: { id: value },
+        numeroFamilias: selectedGroup?.numeroFamilias ?? prev.numeroFamilias,
+      }));
+    } else {
+      setSessionData((prev) => ({ ...prev, [field]: { id: value } }));
+    }
   };
 
   const handleAddSession = () => {
@@ -503,7 +521,20 @@ function SessionPlanningEditPage(props) {
   };
 
   const handleSessionSelectUpdate = (index, field, value) => {
-    setSessions(prev => prev.map((s, i) => i === index ? { ...s, [field]: { id: value } } : s));
+    if (field === 'grupoFamilia') {
+      // Auto-fill numeroFamilias from the selected group
+      const selectedGroup = familyGroups.find(g => g.value === value);
+      setSessions(prev => prev.map((s, i) => i === index
+        ? {
+          ...s,
+          grupoFamilia: { id: value },
+          numeroFamilias: selectedGroup?.numeroFamilias ?? s.numeroFamilias,
+        }
+        : s
+      ));
+    } else {
+      setSessions(prev => prev.map((s, i) => i === index ? { ...s, [field]: { id: value } } : s));
+    }
   };
 
   const renderSessionForm = (session, index) => (
@@ -746,7 +777,7 @@ function SessionPlanningEditPage(props) {
           id: extractNumericId(session.id),
           codigoSessao: formData.codigoSessao,
           dataPlanejamento: formData.dataPlanejamento,
-          moduloId: formData.modulo?.id || null,
+          moduloId: extractNumericId(formData.modulo?.id),
           coordenadorDistritalId: coordenadorId,
           tecnicoSocialId: tecnicoId,
           distritoId: distritoId,
@@ -756,7 +787,7 @@ function SessionPlanningEditPage(props) {
           horaSessao: session.horaSessao,
           zona: session.zona,
           numeroFamilias: parseInt(session.numeroFamilias),
-          grupoFamiliaId: session.grupoFamilia?.id || null,
+          grupoFamiliaId: extractNumericId(session.grupoFamilia?.id),
           tempoDeslocamento: parseInt(session.tempoDeslocamento),
           feedbackDocumentacao: session.feedbackDocumentacao,
           temSupervisao: session.temSupervisao,
@@ -787,14 +818,14 @@ function SessionPlanningEditPage(props) {
           coordenadorDistritalId: coordenadorId,
           tecnicoSocialId: tecnicoId,
           distritoId: distritoId,
-          moduloId: formData.modulo?.id || null,
+          moduloId: extractNumericId(formData.modulo?.id),
           mesModuloAnterior: formData.mesModuloAnterior,
           diaSemana: session.diaSemana,
           dataSessao: session.dataSessao,
           horaSessao: session.horaSessao,
           zona: session.zona,
           numeroFamilias: parseInt(session.numeroFamilias),
-          grupoFamiliaId: session.grupoFamilia.id,
+          grupoFamiliaId: extractNumericId(session.grupoFamilia.id),
           tempoDeslocamento: parseInt(session.tempoDeslocamento),
           feedbackDocumentacao: session.feedbackDocumentacao,
           temSupervisao: session.temSupervisao,

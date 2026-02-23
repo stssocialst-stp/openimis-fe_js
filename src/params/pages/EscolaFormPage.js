@@ -22,7 +22,7 @@ const styles = (theme) => ({
 const FETCH_QUERY = `query GetEscola($id: ID!) {
   escola(id: $id) { id nome codigo nivel ativo distrito { id name } localidade { id name } }
 }`;
-const DISTRICTS_QUERY = `query GetDistritos { locations(first: 200, type: "D") { edges { node { id code name } } } }`;
+const DISTRICTS_QUERY = `query GetDistritos { locations(first: 100, type: "D") { edges { node { id code name } } } }`;
 const CREATE_MUTATION = `mutation CreateEscola($input: CreateEscolaMutationInput!) {
   createEscola(input: $input) { clientMutationId internalId }
 }`;

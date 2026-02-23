@@ -7,6 +7,8 @@ import {
   PARAMS_ROUTE_ESCOLA,
   PARAMS_ROUTE_DISCIPLINA,
   PARAMS_ROUTE_TIPO_ENCAMINHAMENTO,
+  PARAMS_ROUTE_CLASSE,
+  PARAMS_ROUTE_COORDENACAO_DISTRITAL,
 } from "../constants";
 
 function ParametrizacoesMenu(props) {
@@ -28,6 +30,13 @@ function ParametrizacoesMenu(props) {
       withDivider: false,
     },
     {
+      id: "params.classe",
+      text: formatMessage(intl, "params", "menu.classe"),
+      icon: <Settings />,
+      route: "/" + PARAMS_ROUTE_CLASSE,
+      withDivider: false,
+    },
+    {
       id: "params.disciplina",
       text: formatMessage(intl, "params", "menu.disciplina"),
       icon: <Settings />,
@@ -39,6 +48,13 @@ function ParametrizacoesMenu(props) {
       text: formatMessage(intl, "params", "menu.tipoEncaminhamento"),
       icon: <Settings />,
       route: "/" + PARAMS_ROUTE_TIPO_ENCAMINHAMENTO,
+      withDivider: false,
+    },
+    {
+      id: "params.coordenacaoDistrital",
+      text: formatMessage(intl, "params", "menu.coordenacaoDistrital"),
+      icon: <Settings />,
+      route: "/" + PARAMS_ROUTE_COORDENACAO_DISTRITAL,
       withDivider: false,
     },
   ];

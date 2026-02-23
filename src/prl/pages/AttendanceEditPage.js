@@ -620,6 +620,19 @@ function AttendanceEditPage(props) {
         }
       }
 
+      // Helper to extract plain numeric ID from Relay Global ID (base64)
+      const extractNumericId = (relayId) => {
+        if (!relayId) return null;
+        if (!isNaN(relayId) && parseInt(relayId) < 2147483647) return parseInt(relayId);
+        try {
+          const decoded = atob(relayId);
+          const match = decoded.match(/:([0-9]+)$/);
+          return match ? parseInt(match[1]) : null;
+        } catch {
+          return null;
+        }
+      };
+
       // Preparar input para mutation batch
       const input = {
         sessaoId: formData.sessaoId,
@@ -627,9 +640,9 @@ function AttendanceEditPage(props) {
         distritoId: selectedSession?.distrito?.id || "",
         formadorId: formData.formador,
         localidadeId: formData.localidade || null,
-        moduloId: selectedSession?.modulo?.id || null,
+        moduloId: extractNumericId(selectedSession?.modulo?.id),
         codigoSessao: selectedSession?.codigoSessao || "",
-        grupoFamiliaId: selectedSession?.grupoFamilia?.id || "",
+        grupoFamiliaId: extractNumericId(selectedSession?.grupoFamilia?.id),
         presencas: presencas.map(p => ({
           familiaId: p.familiaId,
           estado: p.estado,

@@ -41,7 +41,7 @@ function FamilyGroupPage(props) {
     return cookieValue;
   };
 
-  const query = `query GetGruposFamiliares($first: Int, $offset: Int, $codigo_Icontains: String, $nome_Icontains: String, $distritoId: ID, $localidadeId: ID, $ativo: Boolean) {
+  const query = `query GetGruposFamiliares($first: Int, $offset: Int, $codigo_Icontains: String, $nome_Icontains: String, $distritoId: String, $localidadeId: ID, $ativo: Boolean) {
     gruposFamiliares(
       first: $first
       offset: $offset

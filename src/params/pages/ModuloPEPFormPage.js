@@ -21,10 +21,10 @@ const styles = (theme) => ({
 const FETCH_QUERY = `query GetModuloPEP($id: ID!) {
   moduloPep(id: $id) { id codigo nome descricao ordem duracaoSemanas ativo }
 }`;
-const CREATE_MUTATION = `mutation CreateModuloPEP($input: CreateModuloPepMutationInput!) {
+const CREATE_MUTATION = `mutation CreateModuloPEP($input: CreateModuloPEPMutationInput!) {
   createModuloPep(input: $input) { clientMutationId internalId }
 }`;
-const UPDATE_MUTATION = `mutation UpdateModuloPEP($input: UpdateModuloPepMutationInput!) {
+const UPDATE_MUTATION = `mutation UpdateModuloPEP($input: UpdateModuloPEPMutationInput!) {
   updateModuloPep(input: $input) { clientMutationId internalId }
 }`;
 

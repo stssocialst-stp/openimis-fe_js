@@ -11,6 +11,10 @@ import DisciplinaPage from "./pages/DisciplinaPage";
 import DisciplinaFormPage from "./pages/DisciplinaFormPage";
 import TipoEncaminhamentoPage from "./pages/TipoEncaminhamentoPage";
 import TipoEncaminhamentoFormPage from "./pages/TipoEncaminhamentoFormPage";
+import ClassePage from "./pages/ClassePage";
+import ClasseFormPage from "./pages/ClasseFormPage";
+import CoordenacaoDistritalPage from "./pages/CoordenacaoDistritalPage";
+import CoordenacaoDistritalFormPage from "./pages/CoordenacaoDistritalFormPage";
 
 import {
   PARAMS_ROUTE_MODULO_PEP,
@@ -21,6 +25,10 @@ import {
   PARAMS_ROUTE_DISCIPLINA_FORM,
   PARAMS_ROUTE_TIPO_ENCAMINHAMENTO,
   PARAMS_ROUTE_TIPO_ENCAMINHAMENTO_FORM,
+  PARAMS_ROUTE_CLASSE,
+  PARAMS_ROUTE_CLASSE_FORM,
+  PARAMS_ROUTE_COORDENACAO_DISTRITAL,
+  PARAMS_ROUTE_COORDENACAO_DISTRITAL_FORM,
 } from "./constants";
 
 const DEFAULT_CONFIG = {
@@ -38,6 +46,10 @@ const DEFAULT_CONFIG = {
     { path: PARAMS_ROUTE_DISCIPLINA_FORM, component: DisciplinaFormPage },
     { path: PARAMS_ROUTE_TIPO_ENCAMINHAMENTO, component: TipoEncaminhamentoPage },
     { path: PARAMS_ROUTE_TIPO_ENCAMINHAMENTO_FORM, component: TipoEncaminhamentoFormPage },
+    { path: PARAMS_ROUTE_CLASSE, component: ClassePage },
+    { path: PARAMS_ROUTE_CLASSE_FORM, component: ClasseFormPage },
+    { path: PARAMS_ROUTE_COORDENACAO_DISTRITAL, component: CoordenacaoDistritalPage },
+    { path: PARAMS_ROUTE_COORDENACAO_DISTRITAL_FORM, component: CoordenacaoDistritalFormPage },
   ],
 };
 

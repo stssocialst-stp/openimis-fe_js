@@ -83,9 +83,11 @@ function EducationalModuleFormPage(props) {
     classeQueFrequenta: "",
     aproveitamentoPrimeiroTrimestre: "",
     faixaDeFaltas: "",
+    // disciplinas: array of { disciplinaId, faltas, faixaDeFaltas } objects
     disciplinasBasicas: [],
     disciplinasAvancadas: [],
     observacoes: "",
+    ano: new Date().getFullYear(),
   });
   const [districts, setDistricts] = useState([]);
   const [escolasAPI, setEscolasAPI] = useState([]);
@@ -139,8 +141,11 @@ function EducationalModuleFormPage(props) {
           nome
           nivel
         }
+        faltas
+        faixaDeFaltas
       }
       observacoes
+      anoRegisto
     }
   }`;
 
@@ -156,15 +161,26 @@ function EducationalModuleFormPage(props) {
       },
     }));
   };
-  const handleCheckboxChange = (field, value) => (event) => {
+  // Toggle discipline selection; when checked add with default faltas=0; when unchecked remove
+  const handleDisciplinaToggle = (field, disciplinaId) => (event) => {
     setFormData((prev) => {
       const arr = prev[field] || [];
       if (event.target.checked) {
-        return { ...prev, [field]: [...arr, value] };
+        return { ...prev, [field]: [...arr, { disciplinaId, faltas: 0, faixaDeFaltas: '' }] };
       } else {
-        return { ...prev, [field]: arr.filter((v) => v !== value) };
+        return { ...prev, [field]: arr.filter((d) => d.disciplinaId !== disciplinaId) };
       }
     });
+  };
+
+  const handleDisciplinaFaltasChange = (field, disciplinaId, subField) => (event) => {
+    const value = subField === 'faltas' ? parseInt(event.target.value) || 0 : event.target.value;
+    setFormData((prev) => ({
+      ...prev,
+      [field]: (prev[field] || []).map(d =>
+        d.disciplinaId === disciplinaId ? { ...d, [subField]: value } : d
+      ),
+    }));
   };
 
 
@@ -214,6 +230,8 @@ function EducationalModuleFormPage(props) {
           id
           nome
           nivel
+          quantidadeFaltasAceitaveis
+          faixaFaltasAceitaveis
         }
       }
     }
@@ -299,10 +317,18 @@ function EducationalModuleFormPage(props) {
       ]);
       const [rBasicas, rAvancadas] = await Promise.all([resBasicas.json(), resAvancadas.json()]);
       if (rBasicas.data?.disciplinas?.edges) {
-        setDisciplinasBasicasAPI(rBasicas.data.disciplinas.edges.map(d => ({ id: d.node.id, nome: d.node.nome })));
+        setDisciplinasBasicasAPI(rBasicas.data.disciplinas.edges.map(d => ({
+          id: d.node.id, nome: d.node.nome,
+          quantidadeFaltasAceitaveis: d.node.quantidadeFaltasAceitaveis || 0,
+          faixaFaltasAceitaveis: d.node.faixaFaltasAceitaveis || '',
+        })));
       }
       if (rAvancadas.data?.disciplinas?.edges) {
-        setDisciplinasAvancadasAPI(rAvancadas.data.disciplinas.edges.map(d => ({ id: d.node.id, nome: d.node.nome })));
+        setDisciplinasAvancadasAPI(rAvancadas.data.disciplinas.edges.map(d => ({
+          id: d.node.id, nome: d.node.nome,
+          quantidadeFaltasAceitaveis: d.node.quantidadeFaltasAceitaveis || 0,
+          faixaFaltasAceitaveis: d.node.faixaFaltasAceitaveis || '',
+        })));
       }
     } catch (error) { console.error('Error fetching disciplinas:', error); }
   };
@@ -366,9 +392,15 @@ function EducationalModuleFormPage(props) {
               classeQueFrequenta: data.classeQueFrequenta?.id || "",
               aproveitamentoPrimeiroTrimestre: data.aproveitamentoPrimeiroTrimestre || "",
               faixaDeFaltas: data.faixaDeFaltas || "",
-              disciplinasBasicas: (data.disciplinas || []).filter(d => d.disciplina?.nivel === 'BASICA').map(d => d.disciplina.id),
-              disciplinasAvancadas: (data.disciplinas || []).filter(d => d.disciplina?.nivel === 'AVANCADA').map(d => d.disciplina.id),
+              // Build per-disciplina faltas objects from saved disciplinas
+              disciplinasBasicas: (data.disciplinas || [])
+                .filter(d => d.disciplina?.nivel === 'BASICA')
+                .map(d => ({ disciplinaId: d.disciplina.id, faltas: d.faltas || 0, faixaDeFaltas: d.faixaDeFaltas || '' })),
+              disciplinasAvancadas: (data.disciplinas || [])
+                .filter(d => d.disciplina?.nivel === 'AVANCADA')
+                .map(d => ({ disciplinaId: d.disciplina.id, faltas: d.faltas || 0, faixaDeFaltas: d.faixaDeFaltas || '' })),
               observacoes: data.observacoes || "",
+              ano: data.anoRegisto || new Date().getFullYear(),
             });
           }
         } catch (e) {
@@ -410,13 +442,31 @@ function EducationalModuleFormPage(props) {
       escolaActualId: formData.escolaActual || null,
       classeId: formData.classe || null,
       idade: formData.idade ? parseInt(formData.idade) : null,
-      dadosEscolaresCorrectos: formData.dadosEscolaresCorrectos,
+      dadosEscolaresCorrectos: true, //formData.dadosEscolaresCorrectos
       informacoesLocalizacao: JSON.stringify(formData.informacoesLocalizacao),
       classeQueFrequentaId: formData.classeQueFrequenta || null,
       aproveitamentoPrimeiroTrimestre: formData.aproveitamentoPrimeiroTrimestre,
       faixaDeFaltas: formData.faixaDeFaltas,
-      disciplinasIds: [...formData.disciplinasBasicas, ...formData.disciplinasAvancadas],
+      // Send disciplinas as structured array with per-discipline faltas
+      disciplinas: [
+        ...formData.disciplinasBasicas.map(d => ({
+          disciplinaId: d.disciplinaId,
+          faltas: d.faltas || 0,
+          faixaDeFaltas: d.faixaDeFaltas || null,
+        })),
+        ...formData.disciplinasAvancadas.map(d => ({
+          disciplinaId: d.disciplinaId,
+          faltas: d.faltas || 0,
+          faixaDeFaltas: d.faixaDeFaltas || null,
+        })),
+      ],
+      // Also send flat IDs for backward compatibility
+      disciplinasIds: [
+        ...formData.disciplinasBasicas.map(d => d.disciplinaId),
+        ...formData.disciplinasAvancadas.map(d => d.disciplinaId),
+      ],
       observacoes: formData.observacoes,
+      anoRegisto: parseInt(formData.ano) || new Date().getFullYear(),
     };
     const mutation = isEdit ? updateMutation : createMutation;
     const variables = isEdit ? { input: { ...input, id: groupId } } : { input };
@@ -520,7 +570,7 @@ function EducationalModuleFormPage(props) {
           <div className={classes.formSection}>
             <Typography variant="h6" className={classes.sectionTitle}>A2: Verificação de Dados Escolares</Typography>
             <Grid container spacing={2}>
-              <Grid item xs={12} sm={6}>
+              {/* <Grid item xs={12} sm={6}>
                 <FormControl fullWidth>
                   <InputLabel>Os dados escolares estão corretos?</InputLabel>
                   <Select value={formData.dadosEscolaresCorrectos} onChange={handleChange("dadosEscolaresCorrectos")}
@@ -529,7 +579,7 @@ function EducationalModuleFormPage(props) {
                     <MenuItem value={false}>Não</MenuItem>
                   </Select>
                 </FormControl>
-              </Grid>
+              </Grid> */}
               <Grid item xs={12} sm={6}>
                 <TextField label="Escola Atual" fullWidth value={formData.escolaActual}
                   onChange={handleChange("escolaActual")} disabled={isView} select>
@@ -576,7 +626,7 @@ function EducationalModuleFormPage(props) {
             </Grid>
           </div>
           <div className={classes.formSection}>
-            <Typography variant="h6" className={classes.sectionTitle}>Que classe frequenta?</Typography>
+            <Typography variant="h6" className={classes.sectionTitle}>Que classe frequenta e ano do registo?</Typography>
             <Grid container spacing={2}>
               <Grid item xs={12} sm={6}>
                 <FormControl fullWidth>
@@ -587,6 +637,18 @@ function EducationalModuleFormPage(props) {
                     ))}
                   </Select>
                 </FormControl>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="Ano do registo"
+                  type="number"
+                  fullWidth
+                  value={formData.ano}
+                  onChange={handleChange("anoRegisto")}
+                  disabled={isView}
+                  inputProps={{ min: 2000, max: new Date().getFullYear() + 5 }}
+                  helperText="Ano letivo do registo (ex: 2024)"
+                />
               </Grid>
             </Grid>
           </div>
@@ -616,30 +678,126 @@ function EducationalModuleFormPage(props) {
             </Grid>
           </div>
           <div className={classes.formSection}>
-            <Typography variant="h6" className={classes.sectionTitle}>Disciplinas</Typography>
+            <Typography variant="h6" className={classes.sectionTitle}>Disciplinas e Faltas</Typography>
             <Grid container spacing={2}>
               <Grid item xs={12} sm={6}>
                 <Typography variant="subtitle1">Disciplinas Básicas</Typography>
                 <FormGroup>
-                  {disciplinasBasicasAPI.map((d) => (
-                    <FormControlLabel
-                      key={d.id}
-                      control={<Checkbox color="primary" checked={formData.disciplinasBasicas.includes(d.id)} onChange={handleCheckboxChange("disciplinasBasicas", d.id)} disabled={isView} />}
-                      label={d.nome}
-                    />
-                  ))}
+                  {disciplinasBasicasAPI.map((d) => {
+                    const sel = (formData.disciplinasBasicas || []).find(x => x.disciplinaId === d.id);
+                    const checked = !!sel;
+                    const maxFaltas = d.quantidadeFaltasAceitaveis || 10;
+                    return (
+                      <div key={d.id} style={{ marginBottom: 8 }}>
+                        <FormControlLabel
+                          control={
+                            <Checkbox
+                              color="primary"
+                              checked={checked}
+                              onChange={handleDisciplinaToggle("disciplinasBasicas", d.id)}
+                              disabled={isView}
+                            />
+                          }
+                          label={`${d.nome} (máx. ${maxFaltas} faltas)`}
+                        />
+                        {checked && (
+                          <Grid container spacing={1} style={{ paddingLeft: 32 }}>
+                            <Grid item xs={6}>
+                              <FormControl fullWidth size="small">
+                                <InputLabel>Número de Faltas</InputLabel>
+                                <Select
+                                  value={sel.faltas || 0}
+                                  onChange={handleDisciplinaFaltasChange("disciplinasBasicas", d.id, "faltas")}
+                                  label="Número de Faltas"
+                                  disabled={isView}
+                                >
+                                  {Array.from({ length: maxFaltas + 1 }, (_, i) => i).map(n => (
+                                    <MenuItem key={n} value={n}>{n}</MenuItem>
+                                  ))}
+                                </Select>
+                              </FormControl>
+                            </Grid>
+                            <Grid item xs={6}>
+                              <FormControl fullWidth size="small">
+                                <InputLabel>Faixa de Faltas</InputLabel>
+                                <Select
+                                  value={sel.faixaDeFaltas || ''}
+                                  onChange={handleDisciplinaFaltasChange("disciplinasBasicas", d.id, "faixaDeFaltas")}
+                                  label="Faixa de Faltas"
+                                  disabled={isView}
+                                >
+                                  <MenuItem value="">-</MenuItem>
+                                  {faltasList.map(f => (
+                                    <MenuItem key={f.value} value={f.value}>{f.label}</MenuItem>
+                                  ))}
+                                </Select>
+                              </FormControl>
+                            </Grid>
+                          </Grid>
+                        )}
+                      </div>
+                    );
+                  })}
                 </FormGroup>
               </Grid>
               <Grid item xs={12} sm={6}>
                 <Typography variant="subtitle1">Disciplinas Avançadas</Typography>
                 <FormGroup>
-                  {disciplinasAvancadasAPI.map((d) => (
-                    <FormControlLabel
-                      key={d.id}
-                      control={<Checkbox color="primary" checked={formData.disciplinasAvancadas.includes(d.id)} onChange={handleCheckboxChange("disciplinasAvancadas", d.id)} disabled={isView} />}
-                      label={d.nome}
-                    />
-                  ))}
+                  {disciplinasAvancadasAPI.map((d) => {
+                    const sel = (formData.disciplinasAvancadas || []).find(x => x.disciplinaId === d.id);
+                    const checked = !!sel;
+                    const maxFaltas = d.quantidadeFaltasAceitaveis || 10;
+                    return (
+                      <div key={d.id} style={{ marginBottom: 8 }}>
+                        <FormControlLabel
+                          control={
+                            <Checkbox
+                              color="primary"
+                              checked={checked}
+                              onChange={handleDisciplinaToggle("disciplinasAvancadas", d.id)}
+                              disabled={isView}
+                            />
+                          }
+                          label={`${d.nome} (máx. ${maxFaltas} faltas)`}
+                        />
+                        {checked && (
+                          <Grid container spacing={1} style={{ paddingLeft: 32 }}>
+                            <Grid item xs={6}>
+                              <FormControl fullWidth size="small">
+                                <InputLabel>Número de Faltas</InputLabel>
+                                <Select
+                                  value={sel.faltas || 0}
+                                  onChange={handleDisciplinaFaltasChange("disciplinasAvancadas", d.id, "faltas")}
+                                  label="Número de Faltas"
+                                  disabled={isView}
+                                >
+                                  {Array.from({ length: maxFaltas + 1 }, (_, i) => i).map(n => (
+                                    <MenuItem key={n} value={n}>{n}</MenuItem>
+                                  ))}
+                                </Select>
+                              </FormControl>
+                            </Grid>
+                            <Grid item xs={6}>
+                              <FormControl fullWidth size="small">
+                                <InputLabel>Faixa de Faltas</InputLabel>
+                                <Select
+                                  value={sel.faixaDeFaltas || ''}
+                                  onChange={handleDisciplinaFaltasChange("disciplinasAvancadas", d.id, "faixaDeFaltas")}
+                                  label="Faixa de Faltas"
+                                  disabled={isView}
+                                >
+                                  <MenuItem value="">-</MenuItem>
+                                  {faltasList.map(f => (
+                                    <MenuItem key={f.value} value={f.value}>{f.label}</MenuItem>
+                                  ))}
+                                </Select>
+                              </FormControl>
+                            </Grid>
+                          </Grid>
+                        )}
+                      </div>
+                    );
+                  })}
                 </FormGroup>
               </Grid>
             </Grid>

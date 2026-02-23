@@ -19,8 +19,6 @@ const styles = (theme) => ({
   actionIcon: { padding: 4 },
 });
 
-
-
 function EducationalModulePage(props) {
   const { classes, intl, rights, history } = props;
 
@@ -28,6 +26,7 @@ function EducationalModulePage(props) {
   const [classesAPI, setClassesAPI] = useState([]);
   const [filterDistrito, setFilterDistrito] = useState("");
   const [filterLocalidade, setFilterLocalidade] = useState("");
+  const [filterAno, setFilterAno] = useState("");
 
   const getCookie = (name) => {
     let cookieValue = null;
@@ -80,8 +79,11 @@ function EducationalModulePage(props) {
     $nome_Icontains: String,
     $idDaCrianca_Icontains: String,
     $sexo: ModuloEducacionalSexo,
-    $escolaId: ID,
-    $classeQueFrequentaId: ID
+    $escolaId: String,
+    $classeQueFrequentaId: String,
+    $anoRegisto: Int,
+    $distritoId: String,
+    $faixaDeFaltas: ModuloEducacionalFaixaDeFaltas
   ) {
     modulosEducacionais(
       first: $first
@@ -91,6 +93,9 @@ function EducationalModulePage(props) {
       sexo: $sexo
       escolaId: $escolaId
       classeQueFrequentaId: $classeQueFrequentaId
+      anoRegisto: $anoRegisto
+      distritoId: $distritoId
+      faixaDeFaltas: $faixaDeFaltas
     ) {
       edges {
         node {
@@ -102,6 +107,7 @@ function EducationalModulePage(props) {
             nome
           }
           faixaDeFaltas
+          anoRegisto
           disciplinas {
             disciplina {
               id
@@ -136,6 +142,9 @@ function EducationalModulePage(props) {
       sexo: filters.sexo?.value || null,
       escolaId: filters.escolaId?.value || null,
       classeQueFrequentaId: filters.classeQueFrequentaId?.value || null,
+      anoRegisto: filters.anoRegisto?.value ? parseInt(filters.anoRegisto.value) : null,
+      distritoId: filters.distritoId?.value || null,
+      faixaDeFaltas: filters.faixaDeFaltas?.value || null,
     };
 
     const response = await fetch(`${baseApiUrl}/graphql`, {
@@ -163,6 +172,7 @@ function EducationalModulePage(props) {
       id: module.id,
       idAluno: module.idDaCrianca || "",
       name: module.nome,
+      ano: module.anoRegisto || "-",
       escolaActual: module.escolaActual?.nome || "",
       disciplinas: (module.disciplinas || []).map(d => d.disciplina?.nome).filter(Boolean).join(", "),
       numeroDeFaltas: FAIXA_FALTAS_LABELS[module.faixaDeFaltas] || module.faixaDeFaltas || "-",
@@ -177,6 +187,7 @@ function EducationalModulePage(props) {
   const headers = [
     "prl.educationalModule.idAluno",
     "prl.educationalModule.name",
+    "prl.educationalModule.ano",
     "prl.educationalModule.escolaActual",
     "prl.educationalModule.disciplinas",
     "prl.educationalModule.numeroDeFaltas",
@@ -215,6 +226,7 @@ function EducationalModulePage(props) {
   const itemFormatters = [
     (item) => item.idAluno,
     (item) => item.name,
+    (item) => item.ano,
     (item) => item.escolaActual,
     (item) => item.disciplinas,
     (item) => item.numeroDeFaltas,
@@ -246,6 +258,7 @@ function EducationalModulePage(props) {
   const sorts = [
     ["idAluno", true],
     ["name", true],
+    ["ano", true],
     ["escolaActual", true],
     ["disciplinas", false],
     ["numeroDeFaltas", false],
@@ -287,6 +300,8 @@ function EducationalModulePage(props) {
       setFilterLocalidade("");
       const newFilters = { ...filters };
       delete newFilters.escolaId;
+      if (value) newFilters.distritoId = { value };
+      else delete newFilters.distritoId;
       onChangeFilters(newFilters);
     };
 
@@ -376,6 +391,41 @@ function EducationalModulePage(props) {
               {classesAPI.map(c => <MenuItem key={c.id} value={c.id}>{c.nome}</MenuItem>)}
             </Select>
           </FormControl>
+        </Grid>
+        <Grid item xs={12} sm={4}>
+          <FormControl fullWidth size="small" variant="outlined">
+            <InputLabel>{formatMessage(intl, "prl", "educationalModule.filterFaixaFaltas")}</InputLabel>
+            <Select
+              value={filters.faixaDeFaltas?.value || ""}
+              onChange={handleChange("faixaDeFaltas")}
+              label={formatMessage(intl, "prl", "educationalModule.filterFaixaFaltas")}
+            >
+              <MenuItem value="">{formatMessage(intl, "prl", "filter.all")}</MenuItem>
+              <MenuItem value="A_1_3">1-3</MenuItem>
+              <MenuItem value="A_4_6">4-6</MenuItem>
+              <MenuItem value="A_7_10">7-10</MenuItem>
+              <MenuItem value="_10">+10</MenuItem>
+            </Select>
+          </FormControl>
+        </Grid>
+        <Grid item xs={12} sm={4}>
+          <TextField
+            fullWidth
+            type="number"
+            label={formatMessage(intl, "prl", "educationalModule.filterAno")}
+            value={filterAno}
+            onChange={(e) => {
+              const value = e.target.value;
+              setFilterAno(value);
+              const newFilters = { ...filters };
+              if (!value) delete newFilters.anoRegisto;
+              else newFilters.anoRegisto = { value };
+              onChangeFilters(newFilters);
+            }}
+            variant="outlined"
+            size="small"
+            inputProps={{ min: 2000, max: new Date().getFullYear() + 5 }}
+          />
         </Grid>
       </Grid>
     );

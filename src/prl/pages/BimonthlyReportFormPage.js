@@ -4,6 +4,7 @@ import { withTheme, withStyles } from "@material-ui/core/styles";
 import {
   Paper, Typography, Grid, TextField, Button, MenuItem, Box, IconButton, Tooltip,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
+  Checkbox, FormControlLabel,
 } from "@material-ui/core";
 import ChevronLeftIcon from "@material-ui/icons/ChevronLeft";
 import SaveIcon from "@material-ui/icons/Save";
@@ -93,19 +94,21 @@ const PERIODO_OPTIONS = [
   { value: "BIM6", label: "Novembro e Dezembro" },
 ];
 
-const ENCAMINHAMENTOS = [
-  { codigo: "001", descricao: "Encaminhamento devido à violência contra a mulher" },
-  { codigo: "002", descricao: "Encaminhamento devido à dependência química" },
-  { codigo: "003", descricao: "Encaminhamento devido à Insegurança Alimentar" },
-  { codigo: "004", descricao: "Encaminhamento devido à violação de direitos da criança – vítimas de agressão" },
-  { codigo: "005", descricao: "Encaminhamento devido à violação de direitos da criança – vítimas de abuso sexual" },
-  { codigo: "006", descricao: "Encaminhamento devido à violação de direitos da criança – Registo da criança" },
-  { codigo: "007", descricao: "Encaminhamento devido à Saúde mental do cuidador" },
-  { codigo: "008", descricao: "Encaminhamento por falta de acesso a educação" },
-  { codigo: "009", descricao: "Encaminhamento para apoio jurídico" },
-  { codigo: "010", descricao: "Encaminhamento por falta de acesso à saúde" },
-  { codigo: "011", descricao: "Outros" },
-];
+// ENCAMINHAMENTOS is now loaded from the tiposEncaminhamento API
+// Fallback static list used only when the API is unavailable
+// const FALLBACK_ENCAMINHAMENTOS = [
+//   { codigo: "001", descricao: "Encaminhamento devido à violência contra a mulher" },
+//   { codigo: "002", descricao: "Encaminhamento devido à dependência química" },
+//   { codigo: "003", descricao: "Encaminhamento devido à Insegurança Alimentar" },
+//   { codigo: "004", descricao: "Encaminhamento devido à violação de direitos da criança – vítimas de agressão" },
+//   { codigo: "005", descricao: "Encaminhamento devido à violação de direitos da criança – vítimas de abuso sexual" },
+//   { codigo: "006", descricao: "Encaminhamento devido à violação de direitos da criança – Registo da criança" },
+//   { codigo: "007", descricao: "Encaminhamento devido à Saúde mental do cuidador" },
+//   { codigo: "008", descricao: "Encaminhamento por falta de acesso a educação" },
+//   { codigo: "009", descricao: "Encaminhamento para apoio jurídico" },
+//   { codigo: "010", descricao: "Encaminhamento por falta de acesso à saúde" },
+//   { codigo: "011", descricao: "Outros" },
+// ];
 
 function BimonthlyReportFormPage(props) {
   const { classes, intl, history, location } = props;
@@ -130,7 +133,9 @@ function BimonthlyReportFormPage(props) {
   // 1. Identificação
   const [formData, setFormData] = useState({
     coordenadorDistritalId: "",
+    coordenadorDistritalNome: "",
     tecnicoAdministrativoId: "",
+    tecnicoAdministrativoNome: "",
     numeroLocalidadesAtendidas: 0,
     numeroFamiliasAtendidas: 0,
     numeroTecnicosFormadores: 0,
@@ -176,14 +181,16 @@ function BimonthlyReportFormPage(props) {
     mais15Cuidadores: 0,
   });
 
-  // 8. Encaminhamentos
-  const [encaminhamentos, setEncaminhamentos] = useState(
-    ENCAMINHAMENTOS.map(e => ({ ...e, numeroTotal: 0 }))
-  );
+  // 8. Encaminhamentos — populated from tiposEncaminhamento API
+  const [encaminhamentos, setEncaminhamentos] = useState([]);
+  // ENCA presences available for selection in this district/period
+  const [presencasDisponiveis, setPresencasDisponiveis] = useState([]);
+  // IDs of presences the user selected to include in the report
+  const [selectedPresencasIds, setSelectedPresencasIds] = useState([]);
 
   const [loading, setLoading] = useState(false);
   const [districts, setDistricts] = useState([]);
-  const [users, setUsers] = useState([]);
+  const [previewLoaded, setPreviewLoaded] = useState(false);
 
   const districtQuery = `query GetDistritos($first: Int) {
     locations(first: $first, type: "D") {
@@ -197,15 +204,69 @@ function BimonthlyReportFormPage(props) {
     }
   }`;
 
-  const usersQuery = `query GetUsers($first: Int) {
-    users(first: $first) {
+  const coordenacoesDistritaisQuery = `query GetCoordenacaoByDistrito($distritoId: ID!) {
+    coordenacoesDistritais(distritoId: $distritoId, ativo: true) {
       edges {
         node {
           id
-          otherNames
-          lastName
+          coordenador { id username otherNames lastName }
+          tecnicoAdministrativo { id username otherNames lastName }
         }
       }
+    }
+  }`;
+
+  const tiposEncaminhamentoQuery = `query GetTiposEncaminhamento {
+    tiposEncaminhamento(ativo: true) {
+      edges {
+        node {
+          id
+          codigo
+          nome
+          descricao
+        }
+      }
+    }
+  }`;
+
+  const previewRelatorioQuery = `query PreviewRelatorioDistrital($distritoId: String!, $periodo: String!, $ano: Int!) {
+    previewRelatorioDistrital(distritoId: $distritoId, periodo: $periodo, ano: $ano) {
+      periodoInicio
+      periodoFim
+      numeroSessoesConduzidas
+      numeroSessoesEsperadas
+      numeroSessoesPerdidas
+      numeroLocalidadesAtendidas
+      numeroTecnicosFormadores
+      numeroFamiliasPresentes
+      numeroFamiliasEsperadas
+      numeroFamiliasMigraram
+      numeroFamiliasAtendidas
+      percentualSessoes
+      percentualFamilias
+      mediaFamiliaPresente
+      mediaFamiliaEsperada
+    }
+  }`;
+
+  const presencasEncaminhadasDispQuery = `query GetPresencasEncaminhadasDisp($distritoId: String!, $periodoInicio: String!, $periodoFim: String!) {
+    presencasEncaminhadasDisponiveis(distritoId: $distritoId, periodoInicio: $periodoInicio, periodoFim: $periodoFim) {
+      edges {
+        node {
+          id
+          familiaId
+          nomeFamilia
+          codigoEncaminhamento
+          tipoEncaminhamento { id codigo nome }
+          sessao { codigoSessao dataSessao }
+        }
+      }
+    }
+  }`;
+
+  const setEncaminhamentosMutation = `mutation SetEncaminhamentosRelatorio($input: SetEncaminhamentosRelatorioMutationInput!) {
+    setEncaminhamentosRelatorio(input: $input) {
+      internalId
     }
   }`;
 
@@ -261,16 +322,35 @@ function BimonthlyReportFormPage(props) {
       dadosTecnicos
       dadosEncaminhamentos
       observacoes
+      encaminhamentosEstruturados {
+        id
+        presenca { id }
+      }
     }
   }`;
 
   useEffect(() => {
     fetchDistricts();
-    fetchUsers();
+    fetchTiposEncaminhamento();
     if (initialData?.id) {
       fetchReportData(initialData.id);
     }
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Fetch coordenacao distrital whenever district changes
+  useEffect(() => {
+    if (formData.distritoId && !initialData?.id) {
+      fetchCoordenacaoByDistrito(formData.distritoId);
+    }
+  }, [formData.distritoId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Auto-fill from previewRelatorioDistrital whenever district + period + year are complete
+  useEffect(() => {
+    if (formData.distritoId && formData.periodo && formData.ano && !initialData?.id) {
+      setPreviewLoaded(false);
+      autoFillFromPreview();
+    }
+  }, [formData.distritoId, formData.periodo, formData.ano]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchReportData = async (id) => {
     try {
@@ -291,7 +371,9 @@ function BimonthlyReportFormPage(props) {
         // Populate form data
         setFormData({
           coordenadorDistritalId: data.coordenadorDistrital?.id || "",
+          coordenadorDistritalNome: data.coordenadorDistrital ? `${data.coordenadorDistrital.lastName} ${data.coordenadorDistrital.otherNames}`.trim() : "",
           tecnicoAdministrativoId: data.tecnicoAdministrativo?.id || "",
+          tecnicoAdministrativoNome: data.tecnicoAdministrativo ? `${data.tecnicoAdministrativo.lastName} ${data.tecnicoAdministrativo.otherNames}`.trim() : "",
           numeroLocalidadesAtendidas: data.numeroLocalidadesAtendidas || 0,
           numeroFamiliasAtendidas: data.numeroFamiliasAtendidas || 0,
           numeroTecnicosFormadores: data.numeroTecnicosFormadores || 0,
@@ -337,26 +419,62 @@ function BimonthlyReportFormPage(props) {
           }
         }
 
-        // Populate encaminhamentos
+        // Populate encaminhamentos — merge saved totals into the current (API-driven) list
         if (data.dadosEncaminhamentos) {
           try {
             const encData = typeof data.dadosEncaminhamentos === 'string'
               ? JSON.parse(data.dadosEncaminhamentos)
               : data.dadosEncaminhamentos;
             if (Array.isArray(encData)) {
-              setEncaminhamentos(prev => prev.map(e => {
-                const found = encData.find(d => d.codigo === e.codigo);
-                return found ? { ...e, numeroTotal: found.numeroTotal || 0 } : e;
-              }));
+              setEncaminhamentos(prev => {
+                const merged = prev.length > 0
+                  ? prev.map(e => {
+                    const found = encData.find(d => d.codigo === e.codigo);
+                    return found ? { ...e, numeroTotal: found.numeroTotal || 0 } : e;
+                  })
+                  : encData.map(d => ({ codigo: d.codigo, descricao: d.descricao || '', numeroTotal: d.numeroTotal || 0 }));
+                return merged;
+              });
             }
           } catch (e) {
             console.error('Error parsing dadosEncaminhamentos:', e);
           }
         }
+
+        // Pre-select presences already linked to this report
+        if (data.encaminhamentosEstruturados?.length > 0) {
+          setSelectedPresencasIds(data.encaminhamentosEstruturados.map(e => e.presenca?.id).filter(Boolean));
+        }
       }
     } catch (error) {
       console.error('Error fetching report data:', error);
       alert('Erro ao carregar dados do relatório: ' + error.message);
+    }
+  };
+
+  const fetchCoordenacaoByDistrito = async (distritoId) => {
+    try {
+      const response = await fetch(`${baseApiUrl}/graphql`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCookie('csrftoken'),
+          ...apiHeaders(),
+        },
+        body: JSON.stringify({ query: coordenacoesDistritaisQuery, variables: { distritoId } }),
+      });
+      const result = await response.json();
+      const node = result.data?.coordenacoesDistritais?.edges?.[0]?.node;
+      const getUserLabel = (u) => u ? `${u.lastName || ''} ${u.otherNames || ''}`.trim() || u.username : '';
+      setFormData(prev => ({
+        ...prev,
+        coordenadorDistritalId: node?.coordenador?.id || '',
+        coordenadorDistritalNome: getUserLabel(node?.coordenador),
+        tecnicoAdministrativoId: node?.tecnicoAdministrativo?.id || '',
+        tecnicoAdministrativoNome: getUserLabel(node?.tecnicoAdministrativo),
+      }));
+    } catch (error) {
+      console.error('Error fetching coordenacao distrital:', error);
     }
   };
 
@@ -386,7 +504,7 @@ function BimonthlyReportFormPage(props) {
     }
   };
 
-  const fetchUsers = async () => {
+  const fetchTiposEncaminhamento = async () => {
     try {
       const response = await fetch(`${baseApiUrl}/graphql`, {
         method: 'POST',
@@ -395,19 +513,110 @@ function BimonthlyReportFormPage(props) {
           'X-CSRFToken': getCookie('csrftoken'),
           ...apiHeaders(),
         },
-        body: JSON.stringify({ query: usersQuery, variables: { first: 100 } }),
+        body: JSON.stringify({ query: tiposEncaminhamentoQuery }),
       });
-
       const result = await response.json();
-      if (result.data?.users?.edges) {
-        const userList = result.data.users.edges.map(edge => ({
-          id: edge.node.id,
-          nome: `${edge.node.lastName} ${edge.node.otherNames}`,
-        }));
-        setUsers(userList);
+      const tipos = result.data?.tiposEncaminhamento?.edges?.map(e => e.node) ?? [];
+      if (tipos.length > 0) {
+        setEncaminhamentos(tipos.map(t => ({
+          codigo: t.codigo,
+          descricao: t.descricao || t.nome,
+          id: t.id,
+          numeroTotal: 0,
+        })));
+      } else {
+        // Fallback to static list if API returns nothing
+        //setEncaminhamentos(FALLBACK_ENCAMINHAMENTOS.map(e => ({ ...e, numeroTotal: 0 })));
       }
     } catch (error) {
-      console.error('Error fetching users:', error);
+      console.error('Error fetching tipos encaminhamento:', error);
+      //setEncaminhamentos(FALLBACK_ENCAMINHAMENTOS.map(e => ({ ...e, numeroTotal: 0 })));
+    }
+  };
+
+  const autoFillFromPreview = async () => {
+    try {
+      const response = await fetch(`${baseApiUrl}/graphql`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCookie('csrftoken'),
+          ...apiHeaders(),
+        },
+        body: JSON.stringify({
+          query: previewRelatorioQuery,
+          variables: {
+            distritoId: formData.distritoId,
+            periodo: formData.periodo,
+            ano: parseInt(formData.ano),
+          },
+        }),
+      });
+      const result = await response.json();
+      const preview = result.data?.previewRelatorioDistrital;
+      if (!preview) return;
+      // Auto-fill identification (coordinator/technician names come from fetchCoordenacaoByDistrito)
+      setFormData(prev => ({
+        ...prev,
+        periodoInicio: preview.periodoInicio || prev.periodoInicio,
+        periodoFim: preview.periodoFim || prev.periodoFim,
+        numeroLocalidadesAtendidas: preview.numeroLocalidadesAtendidas ?? prev.numeroLocalidadesAtendidas,
+        numeroFamiliasAtendidas: preview.numeroFamiliasAtendidas ?? prev.numeroFamiliasAtendidas,
+        numeroTecnicosFormadores: preview.numeroTecnicosFormadores ?? prev.numeroTecnicosFormadores,
+      }));
+      // Auto-fill session summary
+      setResumoSessoes(prev => ({
+        ...prev,
+        numeroSessoesConduzidas: preview.numeroSessoesConduzidas ?? prev.numeroSessoesConduzidas,
+        numeroTotalFamiliasPresentes: preview.numeroFamiliasPresentes ?? prev.numeroTotalFamiliasPresentes,
+        numeroSessoesEsperadas: preview.numeroSessoesEsperadas ?? prev.numeroSessoesEsperadas,
+        numeroTotalFamiliasEsperadas: preview.numeroFamiliasEsperadas ?? prev.numeroTotalFamiliasEsperadas,
+        numeroFamiliasMigraram: preview.numeroFamiliasMigraram ?? prev.numeroFamiliasMigraram,
+        numeroSessoesPerdidas: preview.numeroSessoesPerdidas ?? prev.numeroSessoesPerdidas,
+      }));
+      // Auto-calculate encaminhamentos from PresencaSessao records
+      autoCalculateEncaminhamentos(preview.periodoInicio, preview.periodoFim);
+      setPreviewLoaded(true);
+    } catch (error) {
+      console.error('Error fetching preview relatorio:', error);
+    }
+  };
+
+  const autoCalculateEncaminhamentos = async (periodoInicio, periodoFim) => {
+    if (!formData.distritoId || !periodoInicio || !periodoFim) return;
+    try {
+      const response = await fetch(`${baseApiUrl}/graphql`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCookie('csrftoken'),
+          ...apiHeaders(),
+        },
+        body: JSON.stringify({
+          query: presencasEncaminhadasDispQuery,
+          variables: { distritoId: formData.distritoId, periodoInicio, periodoFim },
+        }),
+      });
+      const result = await response.json();
+      const presencas = result.data?.presencasEncaminhadasDisponiveis?.edges?.map(e => e.node) ?? [];
+      // Populate available list for the checkbox selector
+      setPresencasDisponiveis(presencas);
+      // Auto-select all available (user can deselect)
+      if (!initialData?.id) {
+        setSelectedPresencasIds(presencas.map(p => p.id));
+      }
+      // Count per tipoEncaminhamento.codigo for the totals table
+      const counts = {};
+      presencas.forEach(p => {
+        const cod = p.tipoEncaminhamento?.codigo;
+        if (cod) counts[cod] = (counts[cod] || 0) + 1;
+      });
+      setEncaminhamentos(prev => prev.map(e => ({
+        ...e,
+        numeroTotal: counts[e.codigo] !== undefined ? counts[e.codigo] : e.numeroTotal,
+      })));
+    } catch (error) {
+      console.error('Error fetching presencas encaminhadas:', error);
     }
   };
 
@@ -511,6 +720,26 @@ function BimonthlyReportFormPage(props) {
     return periodMap[periodo] || { inicio: '', fim: '' };
   };
 
+  const handleSetEncaminhamentos = async (relatorioRelayId) => {
+    if (selectedPresencasIds.length === 0 && presencasDisponiveis.length === 0) return;
+    try {
+      await fetch(`${baseApiUrl}/graphql`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCookie('csrftoken'),
+          ...apiHeaders(),
+        },
+        body: JSON.stringify({
+          query: setEncaminhamentosMutation,
+          variables: { input: { relatorioId: relatorioRelayId, presencasIds: selectedPresencasIds } },
+        }),
+      });
+    } catch (error) {
+      console.error('Error setting encaminhamentos:', error);
+    }
+  };
+
   const handleSave = async () => {
     try {
       // Validate required fields
@@ -522,8 +751,8 @@ function BimonthlyReportFormPage(props) {
         alert('Por favor, selecione um período.');
         return;
       }
-      if (!formData.coordenadorDistritalId) {
-        alert('Por favor, selecione o coordenador distrital.');
+      if (formData.distritoId && !formData.coordenadorDistritalNome) {
+        alert('O distrito seleccionado não tem uma Coordenação Distrital activa. Configure-a antes de criar o relatório.');
         return;
       }
 
@@ -595,7 +824,17 @@ function BimonthlyReportFormPage(props) {
       });
 
       const result = await response.json();
-      if (result.data?.createRelatorioDistrital || result.data?.updateRelatorioDistrital) {
+      const createData = result.data?.createRelatorioDistrital;
+      const updateData = result.data?.updateRelatorioDistrital;
+      if (createData || updateData) {
+        // Associate selected ENCA families with the report
+        let relatorioRelayId = initialData?.id || null;
+        if (createData?.internalId) {
+          relatorioRelayId = btoa(`RelatorioDistritalBimestral:${createData.internalId}`);
+        }
+        if (relatorioRelayId) {
+          await handleSetEncaminhamentos(relatorioRelayId);
+        }
         handleBack();
       } else if (result.errors) {
         console.error('Error saving report:', result.errors);
@@ -623,89 +862,10 @@ function BimonthlyReportFormPage(props) {
         </Button>
       </Paper>
 
-      {/* 1. Identificação */}
+      {/* 1. Marque seu Distrito */}
       <Paper className={classes.paper}>
         <Typography variant="h6" className={classes.sectionTitle}>
-          1. Identificação
-        </Typography>
-        <Grid container spacing={3}>
-          <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              select
-              label="Nome do Coordenador Distrital"
-              value={formData.coordenadorDistritalId}
-              onChange={handleChange("coordenadorDistritalId")}
-              variant="outlined"
-              size="small"
-              required
-              disabled={readOnly}
-            >
-              {users.map((user) => (
-                <MenuItem key={user.id} value={user.id}>{user.nome}</MenuItem>
-              ))}
-            </TextField>
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              select
-              label="Nome do Técnico Administrativo"
-              value={formData.tecnicoAdministrativoId}
-              onChange={handleChange("tecnicoAdministrativoId")}
-              variant="outlined"
-              size="small"
-              disabled={readOnly}
-            >
-              <MenuItem value="">Selecionar técnico administrativo</MenuItem>
-              {users.map((user) => (
-                <MenuItem key={user.id} value={user.id}>{user.nome}</MenuItem>
-              ))}
-            </TextField>
-          </Grid>
-          <Grid item xs={12} sm={4}>
-            <TextField
-              fullWidth
-              type="number"
-              label="Número de Localidades Atendidas"
-              value={formData.numeroLocalidadesAtendidas}
-              onChange={handleChange("numeroLocalidadesAtendidas")}
-              variant="outlined"
-              size="small"
-              disabled={readOnly}
-            />
-          </Grid>
-          <Grid item xs={12} sm={4}>
-            <TextField
-              fullWidth
-              type="number"
-              label="Número de Famílias Atendidas"
-              value={formData.numeroFamiliasAtendidas}
-              onChange={handleChange("numeroFamiliasAtendidas")}
-              variant="outlined"
-              size="small"
-              disabled={readOnly}
-            />
-          </Grid>
-          <Grid item xs={12} sm={4}>
-            <TextField
-              fullWidth
-              type="number"
-              label="Número de Técnicos Formadores"
-              value={formData.numeroTecnicosFormadores}
-              onChange={handleChange("numeroTecnicosFormadores")}
-              variant="outlined"
-              size="small"
-              disabled={readOnly}
-            />
-          </Grid>
-        </Grid>
-      </Paper>
-
-      {/* 2. Marque seu Distrito */}
-      <Paper className={classes.paper}>
-        <Typography variant="h6" className={classes.sectionTitle}>
-          2. Marque seu Distrito
+          1. Marque seu Distrito
         </Typography>
         <Grid container spacing={3}>
           <Grid item xs={12} sm={12}>
@@ -727,6 +887,81 @@ function BimonthlyReportFormPage(props) {
                 </MenuItem>
               ))}
             </TextField>
+          </Grid>
+        </Grid>
+      </Paper>
+
+      {/* 2. Identificação */}
+      <Paper className={classes.paper}>
+        <Typography variant="h6" className={classes.sectionTitle}>
+          1. Identificação
+        </Typography>
+        <Grid container spacing={3}>
+          <Grid item xs={12} sm={6}>
+            <TextField
+              fullWidth
+              label="Nome do Coordenador Distrital"
+              value={formData.coordenadorDistritalNome || ''}
+              variant="outlined"
+              size="small"
+              required
+              InputProps={{ readOnly: true }}
+              InputLabelProps={{ shrink: true }}
+              placeholder={!formData.distritoId ? "Selecione um distrito primeiro" : "A carregar..."}
+              helperText={formData.distritoId && !formData.coordenadorDistritalNome ? "⚠️ Distrito sem coordenação activa" : ""}
+              error={!!(formData.distritoId && !formData.coordenadorDistritalNome)}
+            />
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <TextField
+              fullWidth
+              label="Nome do Técnico Administrativo"
+              value={formData.tecnicoAdministrativoNome || ''}
+              variant="outlined"
+              size="small"
+              InputProps={{ readOnly: true }}
+              InputLabelProps={{ shrink: true }}
+              placeholder={!formData.distritoId ? "Selecione um distrito primeiro" : "Não definido"}
+            />
+          </Grid>
+          <Grid item xs={12} sm={4}>
+            <TextField
+              fullWidth
+              type="number"
+              label="Número de Localidades Atendidas"
+              value={formData.numeroLocalidadesAtendidas}
+              onChange={handleChange("numeroLocalidadesAtendidas")}
+              variant="outlined"
+              size="small"
+              disabled={readOnly || previewLoaded}
+              helperText={previewLoaded ? "Calculado automaticamente" : ""}
+            />
+          </Grid>
+          <Grid item xs={12} sm={4}>
+            <TextField
+              fullWidth
+              type="number"
+              label="Número de Famílias Atendidas"
+              value={formData.numeroFamiliasAtendidas}
+              onChange={handleChange("numeroFamiliasAtendidas")}
+              variant="outlined"
+              size="small"
+              disabled={readOnly || previewLoaded}
+              helperText={previewLoaded ? "Calculado automaticamente" : ""}
+            />
+          </Grid>
+          <Grid item xs={12} sm={4}>
+            <TextField
+              fullWidth
+              type="number"
+              label="Número de Técnicos Formadores"
+              value={formData.numeroTecnicosFormadores}
+              onChange={handleChange("numeroTecnicosFormadores")}
+              variant="outlined"
+              size="small"
+              disabled={readOnly || previewLoaded}
+              helperText={previewLoaded ? "Calculado automaticamente" : ""}
+            />
           </Grid>
         </Grid>
       </Paper>
@@ -766,7 +1001,8 @@ function BimonthlyReportFormPage(props) {
               onChange={handleResumoChange("numeroSessoesConduzidas")}
               variant="outlined"
               size="small"
-              disabled={readOnly}
+              disabled={readOnly || previewLoaded}
+              helperText={previewLoaded ? "Calculado automaticamente" : ""}
             />
           </Grid>
           <Grid item xs={12} sm={6}>
@@ -778,7 +1014,8 @@ function BimonthlyReportFormPage(props) {
               onChange={handleResumoChange("numeroTotalFamiliasPresentes")}
               variant="outlined"
               size="small"
-              disabled={readOnly}
+              disabled={readOnly || previewLoaded}
+              helperText={previewLoaded ? "Calculado automaticamente" : ""}
             />
           </Grid>
           <Grid item xs={12} sm={6}>
@@ -790,7 +1027,8 @@ function BimonthlyReportFormPage(props) {
               onChange={handleResumoChange("numeroSessoesEsperadas")}
               variant="outlined"
               size="small"
-              disabled={readOnly}
+              disabled={readOnly || previewLoaded}
+              helperText={previewLoaded ? "Calculado automaticamente" : ""}
             />
           </Grid>
           <Grid item xs={12} sm={6}>
@@ -802,7 +1040,8 @@ function BimonthlyReportFormPage(props) {
               onChange={handleResumoChange("numeroTotalFamiliasEsperadas")}
               variant="outlined"
               size="small"
-              disabled={readOnly}
+              disabled={readOnly || previewLoaded}
+              helperText={previewLoaded ? "Calculado automaticamente" : ""}
             />
           </Grid>
           <Grid item xs={12} sm={6}>
@@ -824,7 +1063,8 @@ function BimonthlyReportFormPage(props) {
               onChange={handleResumoChange("numeroFamiliasMigraram")}
               variant="outlined"
               size="small"
-              disabled={readOnly}
+              disabled={readOnly || previewLoaded}
+              helperText={previewLoaded ? "Calculado automaticamente" : ""}
             />
           </Grid>
           <Grid item xs={12} sm={6}>
@@ -836,7 +1076,8 @@ function BimonthlyReportFormPage(props) {
               onChange={handleResumoChange("numeroSessoesPerdidas")}
               variant="outlined"
               size="small"
-              disabled={readOnly}
+              disabled={readOnly || previewLoaded}
+              helperText={previewLoaded ? "Calculado automaticamente" : ""}
             />
           </Grid>
         </Grid>
@@ -1082,6 +1323,48 @@ function BimonthlyReportFormPage(props) {
         <Typography variant="h6" className={classes.sectionTitle}>
           8. Encaminhamentos (total de encaminhamento no distrito)
         </Typography>
+
+        {/* 8a. Famílias encaminhadas disponíveis (checkboxes) */}
+        {presencasDisponiveis.length > 0 && (
+          <Box mb={2}>
+            <Typography variant="subtitle1" style={{ fontWeight: 'bold', marginBottom: 8 }}>
+              Famílias Encaminhadas no Período
+            </Typography>
+            <Typography variant="body2" color="textSecondary" style={{ marginBottom: 8 }}>
+              Selecione as famílias a incluir neste relatório:
+            </Typography>
+            <Box style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+              {presencasDisponiveis.map((p) => (
+                <FormControlLabel
+                  key={p.id}
+                  control={
+                    <Checkbox
+                      checked={selectedPresencasIds.includes(p.id)}
+                      onChange={(e) => {
+                        if (readOnly) return;
+                        setSelectedPresencasIds(prev =>
+                          e.target.checked ? [...prev, p.id] : prev.filter(id => id !== p.id)
+                        );
+                      }}
+                      color="primary"
+                      size="small"
+                    />
+                  }
+                  label={
+                    <Typography variant="body2">
+                      {p.nomeFamilia || p.familiaId}
+                      {p.tipoEncaminhamento?.nome ? ` — ${p.tipoEncaminhamento.nome}` : ''}
+                      {p.sessao?.codigoSessao ? ` (${p.sessao.codigoSessao})` : ''}
+                    </Typography>
+                  }
+                  style={{ minWidth: 280, margin: 0 }}
+                />
+              ))}
+            </Box>
+          </Box>
+        )}
+
+        {/* 8b. Totals per tipo (auto-calculated, still editable) */}
         <TableContainer>
           <Table size="small">
             <TableHead className={classes.tableHeader}>

@@ -19,7 +19,7 @@ const styles = (theme) => ({
 });
 
 const FETCH_QUERY = `query GetDisciplina($id: ID!) {
-  disciplina(id: $id) { id nome nivel ativo }
+  disciplina(id: $id) { id nome nivel ativo faixaFaltasAceitaveis quantidadeFaltasAceitaveis }
 }`;
 const CREATE_MUTATION = `mutation CreateDisciplina($input: CreateDisciplinaMutationInput!) {
   createDisciplina(input: $input) { clientMutationId internalId }
@@ -33,7 +33,7 @@ function DisciplinaFormPage(props) {
   const id = new URLSearchParams(location?.search).get("id");
   const isEdit = !!id;
 
-  const [form, setForm] = useState({ nome: "", nivel: "BASICA", ativo: true });
+  const [form, setForm] = useState({ nome: "", nivel: "BASICA", ativo: true, faixaFaltasAceitaveis: "", quantidadeFaltasAceitaveis: "" });
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -46,7 +46,7 @@ function DisciplinaFormPage(props) {
       .then((r) => r.json())
       .then((json) => {
         const d = json?.data?.disciplina;
-        if (d) setForm({ nome: d.nome ?? "", nivel: d.nivel ?? "BASICA", ativo: d.ativo ?? true });
+        if (d) setForm({ nome: d.nome ?? "", nivel: d.nivel ?? "BASICA", ativo: d.ativo ?? true, faixaFaltasAceitaveis: d.faixaFaltasAceitaveis ?? "", quantidadeFaltasAceitaveis: d.quantidadeFaltasAceitaveis ?? "" });
       })
       .catch(console.error);
   }, [id]);
@@ -57,7 +57,14 @@ function DisciplinaFormPage(props) {
   const handleSave = async () => {
     setSaving(true);
     try {
-      const input = { ...(isEdit ? { id } : {}), nome: form.nome, nivel: form.nivel, ativo: form.ativo };
+      const input = {
+        ...(isEdit ? { id } : {}),
+        nome: form.nome,
+        nivel: form.nivel,
+        ativo: form.ativo,
+        ...(form.faixaFaltasAceitaveis ? { faixaFaltasAceitaveis: form.faixaFaltasAceitaveis } : {}),
+        ...(form.quantidadeFaltasAceitaveis !== "" ? { quantidadeFaltasAceitaveis: parseInt(form.quantidadeFaltasAceitaveis) } : {}),
+      };
       await fetch(`${baseApiUrl}/graphql`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "X-CSRFToken": getCookie("csrftoken"), ...apiHeaders() },
@@ -96,6 +103,18 @@ function DisciplinaFormPage(props) {
               control={<Switch checked={form.ativo} onChange={handleSwitch("ativo")} color="primary" />}
               label={formatMessage(intl, "params", "label.ativo")}
             />
+          </Grid>
+          <Grid item xs={12} sm={4}>
+            <TextField fullWidth select label={formatMessage(intl, "params", "disciplina.faixaFaltasAceitaveis")} value={form.faixaFaltasAceitaveis} onChange={handleChange("faixaFaltasAceitaveis")} variant="outlined" size="small">
+              <MenuItem value=""><em>—</em></MenuItem>
+              <MenuItem value="A_1_3">1–3</MenuItem>
+              <MenuItem value="A_4_6">4–6</MenuItem>
+              <MenuItem value="A_7_10">7–10</MenuItem>
+              <MenuItem value="+10">+10</MenuItem>
+            </TextField>
+          </Grid>
+          <Grid item xs={12} sm={4}>
+            <TextField fullWidth type="number" label={formatMessage(intl, "params", "disciplina.quantidadeFaltasAceitaveis")} value={form.quantidadeFaltasAceitaveis} onChange={handleChange("quantidadeFaltasAceitaveis")} variant="outlined" size="small" inputProps={{ min: 0 }} helperText={formatMessage(intl, "params", "disciplina.quantidadeFaltasAceitaveis.helperText")} />
           </Grid>
         </Grid>
         <div className={classes.buttonContainer}>
