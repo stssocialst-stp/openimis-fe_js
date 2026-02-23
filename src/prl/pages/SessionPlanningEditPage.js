@@ -233,6 +233,45 @@ function SessionPlanningEditPage(props) {
   });
 
   const [sessions, setSessions] = useState([]);
+  const [codigoSessaoError, setCodigoSessaoError] = useState("");
+
+  // Formats input into the pattern: AA-MOxx-MMM-YYYY
+  const formatCodigoSessao = (value) => {
+    const raw = value.replace(/-/g, "").toUpperCase();
+    let p1 = [], p2 = [], p3 = [], p4 = [];
+    let seg = 0;
+    for (let i = 0; i < raw.length; i++) {
+      const c = raw[i];
+      if (seg === 0) {
+        if (/[A-Z]/.test(c)) { p1.push(c); if (p1.length === 2) seg = 1; }
+      } else if (seg === 1) {
+        if (p2.length < 2 && /[A-Z]/.test(c)) { p2.push(c); }
+        else if (p2.length >= 2 && /[0-9]/.test(c)) { p2.push(c); if (p2.length === 4) seg = 2; }
+      } else if (seg === 2) {
+        if (/[A-Z]/.test(c)) { p3.push(c); if (p3.length === 3) seg = 3; }
+      } else if (seg === 3) {
+        if (/[0-9]/.test(c)) { p4.push(c); if (p4.length === 4) break; }
+      }
+    }
+    let result = p1.join("");
+    if (p2.length > 0) result += "-" + p2.join("");
+    if (p3.length > 0) result += "-" + p3.join("");
+    if (p4.length > 0) result += "-" + p4.join("");
+    return result;
+  };
+
+  const handleCodigoSessaoChange = (event) => {
+    if (readOnly) return;
+    const formatted = formatCodigoSessao(event.target.value);
+    const parts = formatted.split("-");
+    if (parts.length === 4 && parts[3].length === 4) {
+      const year = parseInt(parts[3]);
+      setCodigoSessaoError(year < 2000 ? "O ano deve ser igual ou superior a 2000." : "");
+    } else {
+      setCodigoSessaoError("");
+    }
+    setFormData((prev) => ({ ...prev, codigoSessao: formatted }));
+  };
 
   const [districts, setDistricts] = useState([]);
   const [coordinators, setCoordinators] = useState([]);
@@ -815,7 +854,7 @@ function SessionPlanningEditPage(props) {
         <Button onClick={handleBack}>
           <ChevronLeftIcon fontSize="small" />
           <Typography className={classes.headerTitle}>
-            {formatMessage(intl, "prl", "form")} 01 - {formatMessage(intl, "prl", "title.sessionPlanning")}
+            {formatMessage(intl, "prl", "tool")} 01 - {formatMessage(intl, "prl", "title.sessionPlanning")}
           </Typography>
         </Button>
       </Paper>
@@ -829,13 +868,16 @@ function SessionPlanningEditPage(props) {
             <TextField
               fullWidth
               label={formatMessage(intl, "prl", "sessionPlanning.introCode")}
-              placeholder="Ex: AG-MD01-Jan-2025"
+              placeholder="Ex: AM-MO01-JAN-2026"
               value={formData.codigoSessao}
-              onChange={handleChange("codigoSessao")}
+              onChange={handleCodigoSessaoChange}
               variant="outlined"
               size="small"
               required
               InputLabelProps={{ shrink: true }}
+              inputProps={{ maxLength: 16 }}
+              error={!!codigoSessaoError}
+              helperText={codigoSessaoError || "Formato: AA-MOxx-MMM-AAAA (ex: AM-MO01-JAN-2026)"}
               disabled={readOnly}
             />
           </Grid>

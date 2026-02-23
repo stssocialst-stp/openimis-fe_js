@@ -597,7 +597,7 @@ function SessionExecutionFormPage(props) {
         <Button onClick={handleBack}>
           <ChevronLeftIcon fontSize="small" />
           <Typography className={classes.headerTitle}>
-            {formatMessage(intl, "prl", "form")} 03 - {formatMessage(intl, "prl", isViewMode ? "title.viewExecution" : "title.createExecution")}
+            {formatMessage(intl, "prl", "tool")} 03 - {formatMessage(intl, "prl", isViewMode ? "title.viewExecution" : "title.createExecution")}
           </Typography>
         </Button>
 

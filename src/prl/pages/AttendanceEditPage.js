@@ -36,6 +36,7 @@ const ESTADO_OPTIONS = [
   { value: "PRES", labelKey: "attendance.estado.presente" },
   { value: "FALT", labelKey: "attendance.estado.faltou" },
   { value: "ENCA", labelKey: "attendance.estado.encaminhado" },
+  { value: "MIGR", labelKey: "attendance.estado.migrou" },
 ];
 
 function AttendanceEditPage(props) {
@@ -77,6 +78,7 @@ function AttendanceEditPage(props) {
   const [formadores, setFormadores] = useState([]);
   const [familias, setFamilias] = useState([]);
   const [presencas, setPresencas] = useState([]);
+  const [tiposEncaminhamento, setTiposEncaminhamento] = useState([]);
 
   const fetchQuery = `query GetPresencaSessao($id: ID!) {
     presencaSessao(id: $id) {
@@ -671,7 +673,7 @@ function AttendanceEditPage(props) {
         <Button onClick={handleBack}>
           <ChevronLeftIcon fontSize="small" />
           <Typography className={classes.headerTitle}>
-            {formatMessage(intl, "prl", "form")} 02 - {' '}
+            {formatMessage(intl, "prl", "tool")} 02 - {' '}
             {readOnly
               ? formatMessage(intl, "prl", "title.viewAttendance")
               : initialData?.id

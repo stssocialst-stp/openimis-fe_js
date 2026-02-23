@@ -605,7 +605,7 @@ function SessionSupervisionFormPage(props) {
         <Button onClick={handleBack}>
           <ChevronLeftIcon fontSize="small" />
           <Typography className={classes.headerTitle}>
-            {formatMessage(intl, "prl", "form")} 04 - {isEditMode ? "Editar Supervisão" : formatMessage(intl, "prl", "title.supervision")}
+            {formatMessage(intl, "prl", "tool")} 04 - {isEditMode ? "Editar Supervisão" : formatMessage(intl, "prl", "title.supervision")}
           </Typography>
         </Button>
 
