@@ -1424,7 +1424,7 @@ function BimonthlyReportFormPage(props) {
         >
           {readOnly ? formatMessage(intl, "prl", "button.back") : formatMessage(intl, "prl", "button.cancel")}
         </Button>
-        {!readOnly && (
+        {/* {!readOnly && (
           <Button
             variant="contained"
             color="primary"
@@ -1434,7 +1434,7 @@ function BimonthlyReportFormPage(props) {
           >
             Submeter Relatório Distrital
           </Button>
-        )}
+        )} */}
       </Box>
     </div>
   );
