@@ -4,6 +4,7 @@ import { AssignmentTurnedIn } from "@material-ui/icons";
 import { formatMessage, MainMenuContribution, withModulesManager } from "@openimis/fe-core";
 import {
   PRL_ROUTE_EDUCATIONAL_MODULE,
+  PRL_ROUTE_ALUNO,
 } from "../constants";
 
 function EducationalModuleMenu(props) {
@@ -15,6 +16,13 @@ function EducationalModuleMenu(props) {
       text: formatMessage(intl, "prl", "menu.educationalModule") || "Assiduidade Escolar",
       icon: <AssignmentTurnedIn />,
       route: "/" + PRL_ROUTE_EDUCATIONAL_MODULE,
+      withDivider: false,
+    },
+    {
+      id: "prl.alunos",
+      text: formatMessage(intl, "prl", "menu.alunos") || "Alunos",
+      icon: <AssignmentTurnedIn />,
+      route: "/" + PRL_ROUTE_ALUNO,
       withDivider: false,
     },
   ];

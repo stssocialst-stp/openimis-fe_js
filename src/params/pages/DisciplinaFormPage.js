@@ -107,9 +107,9 @@ function DisciplinaFormPage(props) {
           <Grid item xs={12} sm={4}>
             <TextField fullWidth select label={formatMessage(intl, "params", "disciplina.faixaFaltasAceitaveis")} value={form.faixaFaltasAceitaveis} onChange={handleChange("faixaFaltasAceitaveis")} variant="outlined" size="small">
               <MenuItem value=""><em>—</em></MenuItem>
-              <MenuItem value="A_1_3">1–3</MenuItem>
-              <MenuItem value="A_4_6">4–6</MenuItem>
-              <MenuItem value="A_7_10">7–10</MenuItem>
+              <MenuItem value="1-3">1–3</MenuItem>
+              <MenuItem value="4-6">4–6</MenuItem>
+              <MenuItem value="7-10">7–10</MenuItem>
               <MenuItem value="+10">+10</MenuItem>
             </TextField>
           </Grid>

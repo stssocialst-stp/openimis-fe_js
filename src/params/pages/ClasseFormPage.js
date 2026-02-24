@@ -29,24 +29,6 @@ const styles = (theme) => ({
   },
 });
 
-const FETCH_QUERY = `query GetClasse($id: ID!) {
-  classe(id: $id) {
-    id
-    nome
-    codigo
-    nivel
-    ordem
-    ativo
-    disciplinasAssociadas {
-      edges {
-        node {
-          disciplina { id nome nivel }
-        }
-      }
-    }
-  }
-}`;
-
 const DISCIPLINAS_QUERY = `query GetDisciplinas {
   disciplinas(ativo: true, orderBy: ["nivel", "nome"]) {
     edges {
@@ -106,30 +88,19 @@ function ClasseFormPage(props) {
       .catch(console.error);
   }, []);
 
-  // Load existing classe if editing
+  // Load existing classe from URL state
   useEffect(() => {
-    if (!id) return;
-    fetch(`${baseApiUrl}/graphql`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "X-CSRFToken": getCookie("csrftoken"), ...apiHeaders() },
-      body: JSON.stringify({ query: FETCH_QUERY, variables: { id } }),
-    })
-      .then((r) => r.json())
-      .then((json) => {
-        const d = json?.data?.classe;
-        if (d) {
-          setForm({
-            nome: d.nome ?? "",
-            codigo: d.codigo ?? "",
-            nivel: d.nivel ?? "EP1",
-            ordem: d.ordem ?? 1,
-            ativo: d.ativo ?? true,
-            disciplinasIds: (d.disciplinasAssociadas?.edges || []).map((e) => e.node.disciplina.id),
-          });
-        }
-      })
-      .catch(console.error);
-  }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
+    const d = location?.state?.classe;
+    if (!d) return;
+    setForm({
+      nome: d.nome ?? "",
+      codigo: d.codigo ?? "",
+      nivel: d.nivel ?? "EP1",
+      ordem: d.ordem ?? 1,
+      ativo: d.ativo ?? true,
+      disciplinasIds: (d.disciplinasAssociadas?.edges || []).map((e) => e.node.disciplina.id),
+    });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleChange = (field) => (e) => setForm((f) => ({ ...f, [field]: e.target.value }));
   const handleSwitch = (field) => (e) => setForm((f) => ({ ...f, [field]: e.target.checked }));

@@ -151,7 +151,7 @@ function ClassePage(props) {
                 </TableCell>
                 <TableCell>
                   <Tooltip title={formatMessage(intl, "params", "button.edit")}>
-                    <IconButton size="small" onClick={() => history.push(`/${PARAMS_ROUTE_CLASSE_FORM}?id=${row.id}`)}>
+                    <IconButton size="small" onClick={() => history.push({ pathname: `/${PARAMS_ROUTE_CLASSE_FORM}`, search: `?id=${row.id}`, state: { classe: row } })}>
                       <EditIcon fontSize="small" />
                     </IconButton>
                   </Tooltip>
