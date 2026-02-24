@@ -116,7 +116,6 @@ function EducationalModulePage(props) {
           nomeEncarregado
           escola { id nome }
           escolaActual { id nome }
-          escolaridadeActual
           classe { id nome }
           classeQueFrequenta { id nome }
           dadosEscolaresCorrectos
@@ -156,7 +155,7 @@ function EducationalModulePage(props) {
 
     const result = await gqlFetch(query, variables);
 
-    if (result.errors) {
+    if (result.errors && !result.data) {
       throw new Error(result.errors[0].message);
     }
 
@@ -245,12 +244,10 @@ function EducationalModulePage(props) {
   ];
 
   const sorts = [
-    ["idAluno", true],
     ["name", true],
     ["ano", true],
     ["escolaActual", true],
     ["disciplinas", false],
-    ["faixaDeFaltas", false],
     null,
   ];
 
