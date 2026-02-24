@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import { injectIntl } from "react-intl";
 import { connect } from "react-redux";
 import { withTheme, withStyles } from "@material-ui/core/styles";
@@ -7,6 +7,7 @@ import {
   Grid, FormControl, InputLabel, Select, MenuItem, TextField,
 } from "@material-ui/core";
 import AddIcon from "@material-ui/icons/Add";
+import EditIcon from "@material-ui/icons/Edit";
 import VisibilityIcon from "@material-ui/icons/Visibility";
 import DeleteIcon from "@material-ui/icons/Delete";
 import { formatMessage, withModulesManager, Helmet, baseApiUrl, apiHeaders } from "@openimis/fe-core";
@@ -43,30 +44,29 @@ function EducationalModulePage(props) {
     return cookieValue;
   };
 
+  const gqlFetch = async (query, variables = {}) => {
+    const response = await fetch(`${baseApiUrl}/graphql`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCookie('csrftoken'),
+        ...apiHeaders(),
+      },
+      body: JSON.stringify({ query, variables }),
+    });
+    return response.json();
+  };
+
   useEffect(() => {
     const fetchEscolas = async () => {
       try {
-        const res = await fetch(`${baseApiUrl}/graphql`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken'), ...apiHeaders() },
-          body: JSON.stringify({
-            query: `query { escolas(ativo: true, orderBy: ["nome"]) { edges { node { id nome distrito { id name } localidade { id name } } } } }`,
-          }),
-        });
-        const json = await res.json();
+        const json = await gqlFetch(`query { escolas(ativo: true, orderBy: ["nome"]) { edges { node { id nome distrito { id name } localidade { id name } } } } }`);
         setEscolasAPI(json?.data?.escolas?.edges?.map(e => e.node) ?? []);
       } catch (e) { console.error(e); }
     };
     const fetchClasses = async () => {
       try {
-        const res = await fetch(`${baseApiUrl}/graphql`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken'), ...apiHeaders() },
-          body: JSON.stringify({
-            query: `query { classes(ativo: true, orderBy: ["ordem"]) { edges { node { id nome } } } }`,
-          }),
-        });
-        const json = await res.json();
+        const json = await gqlFetch(`query { classes(ativo: true, orderBy: ["ordem"]) { edges { node { id nome } } } }`);
         setClassesAPI(json?.data?.classes?.edges?.map(e => e.node) ?? []);
       } catch (e) { console.error(e); }
     };
@@ -77,57 +77,64 @@ function EducationalModulePage(props) {
   const query = `query GetModulosEducacionais(
     $first: Int, $offset: Int,
     $nome_Icontains: String,
-    $idDaCrianca_Icontains: String,
     $sexo: ModuloEducacionalSexo,
     $escolaId: String,
     $classeQueFrequentaId: String,
     $anoRegisto: Int,
     $distritoId: String,
+    $localidadeId: String,
     $faixaDeFaltas: ModuloEducacionalFaixaDeFaltas
   ) {
     modulosEducacionais(
       first: $first
       offset: $offset
       nome_Icontains: $nome_Icontains
-      idDaCrianca_Icontains: $idDaCrianca_Icontains
       sexo: $sexo
       escolaId: $escolaId
       classeQueFrequentaId: $classeQueFrequentaId
       anoRegisto: $anoRegisto
       distritoId: $distritoId
+      localidadeId: $localidadeId
       faixaDeFaltas: $faixaDeFaltas
     ) {
       edges {
         node {
           id
-          idDaCrianca
-          nome
-          escolaActual {
-            id
-            nome
-          }
-          faixaDeFaltas
           anoRegisto
-          disciplinas {
-            disciplina {
-              id
-              nome
-              quantidadeFaltasAceitaveis
-              faixaFaltasAceitaveis
-            }
+          aluno {
+            id
+            firstName
+            lastName
+            dob
+            sexo
+            distrito { name }
+            localidade { name }
           }
+          nome
+          idMembroCrianca
+          idDaCrianca
+          nomeEncarregado
+          escola { id nome }
+          escolaActual { id nome }
+          escolaridadeActual
+          classe { id nome }
+          classeQueFrequenta { id nome }
+          dadosEscolaresCorrectos
+          aproveitamentoPrimeiroTrimestre
+          faixaDeFaltas
+          disciplinas {
+            disciplina { id nome nivel }
+            tipo
+          }
+          observacoes
+          sexo
+          idade
+          dataNascimento
         }
       }
       totalCount
     }
   }`;
-
-  const FAIXA_FALTAS_LABELS = {
-    A_1_3: "1-3",
-    A_4_6: "4-6",
-    A_7_10: "7-10",
-    _10: "+10",
-  };
 
   const fetchModules = async (params) => {
     const filters = params.filters || {};
@@ -138,60 +145,50 @@ function EducationalModulePage(props) {
       first: pageSize,
       offset,
       nome_Icontains: filters.nome?.value || null,
-      idDaCrianca_Icontains: filters.idDaCrianca?.value || null,
       sexo: filters.sexo?.value || null,
       escolaId: filters.escolaId?.value || null,
       classeQueFrequentaId: filters.classeQueFrequentaId?.value || null,
       anoRegisto: filters.anoRegisto?.value ? parseInt(filters.anoRegisto.value) : null,
       distritoId: filters.distritoId?.value || null,
+      localidadeId: filters.localidadeId?.value || null,
       faixaDeFaltas: filters.faixaDeFaltas?.value || null,
     };
 
-    const response = await fetch(`${baseApiUrl}/graphql`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRFToken': getCookie('csrftoken'),
-        ...apiHeaders(),
-      },
-      body: JSON.stringify({ query, variables }),
-    });
-
-    if (!response.ok) {
-      throw new Error('Network response was not ok');
-    }
-
-    const result = await response.json();
+    const result = await gqlFetch(query, variables);
 
     if (result.errors) {
       throw new Error(result.errors[0].message);
     }
 
     const modules = result.data.modulosEducacionais.edges.map(edge => edge.node);
-    const mappedData = modules.map(module => ({
-      id: module.id,
-      idAluno: module.idDaCrianca || "",
-      name: module.nome,
-      ano: module.anoRegisto || "-",
-      escolaActual: module.escolaActual?.nome || "",
-      disciplinas: (module.disciplinas || []).map(d => d.disciplina?.nome).filter(Boolean).join(", "),
-      numeroDeFaltas: FAIXA_FALTAS_LABELS[module.faixaDeFaltas] || module.faixaDeFaltas || "-",
-      limiteDeFaltas: (module.disciplinas || [])
-        .map(d => d.disciplina?.quantidadeFaltasAceitaveis)
-        .filter(v => v != null)
-        .join(", ") || "-",
-    }));
+    const mappedData = modules.map(module => {
+      const alunoName = module.aluno
+        ? `${module.aluno.firstName || ""} ${module.aluno.lastName || ""}`.trim()
+        : module.nome || "";
+
+      const discList = module.disciplinas || [];
+      const discNames = discList.map(d => d?.disciplina?.nome).filter(Boolean).join(", ");
+
+      return {
+        id: module.id,
+        //idAluno: module.idDaCrianca || "",
+        name: alunoName || module.nome || "",
+        ano: module.anoRegisto || "-",
+        escolaActual: module.escolaActual?.nome || "",
+        disciplinas: discNames || "-",
+        faixaDeFaltas: module.faixaDeFaltas || "-",
+      };
+    });
     return mappedData;
   };
 
   const headers = [
-    "prl.educationalModule.idAluno",
+    //"prl.educationalModule.idAluno",
     "prl.educationalModule.name",
     "prl.educationalModule.ano",
     "prl.educationalModule.escolaActual",
     "prl.educationalModule.disciplinas",
-    "prl.educationalModule.numeroDeFaltas",
-    "prl.educationalModule.limiteDeFaltas",
+    //"prl.educationalModule.numeroDeFaltas",
     "emptyLabel",
   ];
 
@@ -203,54 +200,46 @@ function EducationalModulePage(props) {
     history.push(`/${PRL_ROUTE_EDUCATIONAL_MODULE_FORM}?id=${item.id}`);
   };
 
-  // Deletar módulo educacional
+  const handleEdit = (item) => {
+    history.push(`/${PRL_ROUTE_EDUCATIONAL_MODULE_FORM}?id=${item.id}&edit=true`);
+  };
+
   const handleDelete = async (item) => {
-    const mutation = `mutation deleteModuloEducacional($input: DeleteModuloEducacionalMutationInput!) {\n  deleteModuloEducacional(input: $input) {\n    internalId\n    clientMutationId\n  }\n}`;
+    if (!window.confirm(formatMessage(intl, "prl", "aluno.confirmDelete") || "Tem certeza que deseja eliminar este registo?")) return;
+    const mutation = `mutation deleteModuloEducacional($input: DeleteModuloEducacionalMutationInput!) {
+      deleteModuloEducacional(input: $input) { internalId clientMutationId }
+    }`;
     try {
-      const response = await fetch(`${baseApiUrl}/graphql`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRFToken': getCookie('csrftoken'),
-          ...apiHeaders(),
-        },
-        body: JSON.stringify({ query: mutation, variables: { input: { id: item.id } } }),
-      });
-      const result = await response.json();
-      fetchModules();
+      await gqlFetch(mutation, { input: { id: item.id } });
     } catch (e) {
       console.error('Erro ao deletar.', e);
     }
   };
 
   const itemFormatters = [
-    (item) => item.idAluno,
+    //(item) => item.idAluno,
     (item) => item.name,
     (item) => item.ano,
     (item) => item.escolaActual,
     (item) => item.disciplinas,
-    (item) => item.numeroDeFaltas,
-    (item) => item.limiteDeFaltas,
+    //(item) => item.faixaDeFaltas,
     (item) => (
       <div style={{ display: 'flex', justifyContent: 'center' }}>
-        <span>
-          <Tooltip title={formatMessage(intl, "prl", "educationalModuleDetail")}>
-            <IconButton
-              size="small"
-              className={classes.actionIcon}
-              onClick={() => handleView(item)}
-            >
-              <VisibilityIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-        </span>
-        <span>
-          <Tooltip title={formatMessage(intl, "prl", "button.delete")}>
-            <IconButton size="small" className={classes.actionIcon} onClick={() => handleDelete(item)}>
-              <DeleteIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-        </span>
+        <Tooltip title={formatMessage(intl, "prl", "button.view")}>
+          <IconButton size="small" className={classes.actionIcon} onClick={() => handleView(item)}>
+            <VisibilityIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+        <Tooltip title={formatMessage(intl, "prl", "button.edit")}>
+          <IconButton size="small" className={classes.actionIcon} onClick={() => handleEdit(item)}>
+            <EditIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+        <Tooltip title={formatMessage(intl, "prl", "button.delete")}>
+          <IconButton size="small" className={classes.actionIcon} onClick={() => handleDelete(item)}>
+            <DeleteIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
       </div>
     ),
   ];
@@ -261,8 +250,8 @@ function EducationalModulePage(props) {
     ["ano", true],
     ["escolaActual", true],
     ["disciplinas", false],
-    ["numeroDeFaltas", false],
-    ["limiteDeFaltas", false],
+    ["faixaDeFaltas", false],
+    null,
   ];
 
   const FilterPane = (filterProps) => {
@@ -276,19 +265,16 @@ function EducationalModulePage(props) {
       onChangeFilters(newFilters);
     };
 
-    // Cascading: unique distritos from all escolas
     const distritos = [...new Map(
       escolasAPI.filter(e => e.distrito).map(e => [e.distrito.id, e.distrito])
     ).values()];
 
-    // Localidades filtered by selected distrito
     const localidades = [...new Map(
       escolasAPI
         .filter(e => e.localidade && (!filterDistrito || e.distrito?.id === filterDistrito))
         .map(e => [e.localidade.id, e.localidade])
     ).values()];
 
-    // Escolas filtered by distrito and localidade
     const escolasFiltradas = escolasAPI.filter(e =>
       (!filterDistrito || e.distrito?.id === filterDistrito) &&
       (!filterLocalidade || e.localidade?.id === filterLocalidade)
@@ -300,6 +286,7 @@ function EducationalModulePage(props) {
       setFilterLocalidade("");
       const newFilters = { ...filters };
       delete newFilters.escolaId;
+      delete newFilters.localidadeId;
       if (value) newFilters.distritoId = { value };
       else delete newFilters.distritoId;
       onChangeFilters(newFilters);
@@ -310,6 +297,8 @@ function EducationalModulePage(props) {
       setFilterLocalidade(value);
       const newFilters = { ...filters };
       delete newFilters.escolaId;
+      if (value) newFilters.localidadeId = { value };
+      else delete newFilters.localidadeId;
       onChangeFilters(newFilters);
     };
 
@@ -401,10 +390,10 @@ function EducationalModulePage(props) {
               label={formatMessage(intl, "prl", "educationalModule.filterFaixaFaltas")}
             >
               <MenuItem value="">{formatMessage(intl, "prl", "filter.all")}</MenuItem>
-              <MenuItem value="A_1_3">1-3</MenuItem>
-              <MenuItem value="A_4_6">4-6</MenuItem>
-              <MenuItem value="A_7_10">7-10</MenuItem>
-              <MenuItem value="_10">+10</MenuItem>
+              <MenuItem value="1-3">1-3</MenuItem>
+              <MenuItem value="4-6">4-6</MenuItem>
+              <MenuItem value="7-10">7-10</MenuItem>
+              <MenuItem value="+10">+10</MenuItem>
             </Select>
           </FormControl>
         </Grid>

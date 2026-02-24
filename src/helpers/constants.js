@@ -1,8 +1,8 @@
 export const faltasList = [
-  { value: "A_1_3", label: "1-3" },
-  { value: "A_4_6", label: "4-6" },
-  { value: "A_7_10", label: "7-10" },
-  { value: "_10", label: "+10" },
+  { value: "1-3", label: "1-3" },
+  { value: "4-6", label: "4-6" },
+  { value: "7-10", label: "7-10" },
+  { value: "+10", label: "+10" },
 ];
 export const aproveitamentoList = [
   { value: "A_0", label: "0" },
