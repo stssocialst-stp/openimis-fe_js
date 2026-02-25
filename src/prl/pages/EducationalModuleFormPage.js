@@ -715,7 +715,7 @@ function EducationalModuleFormPage(props) {
           </div>
 
           {/* Section A4: Absences */}
-          {/* <div className={classes.formSection}>
+          <div className={classes.formSection}>
             <Typography variant="h6" className={classes.sectionTitle}>A4: Faltas no Primeiro Trimestre</Typography>
             <Grid container spacing={2}>
               <Grid item xs={12} sm={6}>
@@ -737,7 +737,7 @@ function EducationalModuleFormPage(props) {
                 </FormControl>
               </Grid>
             </Grid>
-          </div> */}
+          </div>
 
           {/* Disciplinas */}
           <div className={classes.formSection}>

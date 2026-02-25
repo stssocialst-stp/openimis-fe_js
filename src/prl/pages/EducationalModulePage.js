@@ -187,7 +187,7 @@ function EducationalModulePage(props) {
     "prl.educationalModule.ano",
     "prl.educationalModule.escolaActual",
     "prl.educationalModule.disciplinas",
-    //"prl.educationalModule.numeroDeFaltas",
+    "prl.educationalModule.numeroDeFaltas",
     "emptyLabel",
   ];
 
@@ -221,7 +221,7 @@ function EducationalModulePage(props) {
     (item) => item.ano,
     (item) => item.escolaActual,
     (item) => item.disciplinas,
-    //(item) => item.faixaDeFaltas,
+    (item) => item.faixaDeFaltas,
     (item) => (
       <div style={{ display: 'flex', justifyContent: 'center' }}>
         <Tooltip title={formatMessage(intl, "prl", "button.view")}>
