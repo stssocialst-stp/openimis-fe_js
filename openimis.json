@@ -123,6 +123,10 @@
     {
       "name": "PrlModule",
       "path": "./prl"
+    },
+    {
+      "name": "ParamsModule",
+      "path": "./params"
     }
   ]
 }
