@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { injectIntl } from "react-intl";
-import { useLocation } from "react-router-dom";
 import { withTheme, withStyles } from "@material-ui/core/styles";
 import {
   Paper, Typography, Grid, TextField, Button, MenuItem, Divider, Box,
@@ -32,9 +31,8 @@ const styles = (theme) => ({
 });
 
 function SessionExecutionFormPage(props) {
-  const { classes, intl, history } = props;
-  const location = useLocation();
-  const viewData = location.state?.data;
+  const { classes, intl, history, location } = props;
+  const viewData = location?.state?.data;
   const isViewMode = !!viewData;
 
   const getCookie = (name) => {
