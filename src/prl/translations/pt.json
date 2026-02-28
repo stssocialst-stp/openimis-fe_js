@@ -350,5 +350,9 @@
   "prl.aluno.filterLocalidade": "Localidade",
   "prl.aluno.filterEscola": "Escola",
   "prl.aluno.filterEscolaridade": "Escolaridade",
-  "prl.aluno.filterClasse": "Classe"
+  "prl.aluno.filterClasse": "Classe",
+  "core.menuSection.programasSociais": "Programas Sociais",
+  "core.menuSection.operacoesFinanceiras": "Operações Financeiras",
+  "core.menuSection.monitorizacao": "Monitorização",
+  "core.menuSection.administracao": "Administração"
 }

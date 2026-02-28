@@ -36,7 +36,7 @@ const DEFAULT_CONFIG = {
     { key: "en", messages: messages_en },
     { key: "pt", messages: messages_pt },
   ],
-  "core.MainMenu": [ParametrizacoesMenu],
+  "core.MainMenu": [{ name: "ParametrizacoesMenu", component: ParametrizacoesMenu }],
   "core.Router": [
     { path: PARAMS_ROUTE_MODULO_PEP, component: ModuloPEPPage },
     { path: PARAMS_ROUTE_MODULO_PEP_FORM, component: ModuloPEPFormPage },

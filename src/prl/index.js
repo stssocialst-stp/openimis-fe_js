@@ -54,7 +54,10 @@ const DEFAULT_CONFIG = {
     { key: "en", messages: messages_en },
     { key: "pt", messages: messages_pt },
   ],
-  "core.MainMenu": [PrlMainMenu, EducationalModuleMenu],
+  "core.MainMenu": [
+    { name: "PrlMainMenu", component: PrlMainMenu },
+    { name: "EducationalModuleMenu", component: EducationalModuleMenu },
+  ],
   "core.Router": [
     { path: PRL_ROUTE_SESSION_PLANNING, component: SessionPlanningPage },
     { path: PRL_ROUTE_SESSION_PLANNING_FORM, component: SessionPlanningEditPage },
