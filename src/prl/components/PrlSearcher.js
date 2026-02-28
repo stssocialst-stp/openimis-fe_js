@@ -3,7 +3,7 @@ import {
   Searcher,
   useModulesManager,
   useTranslations,
-} from '@openimis/fe-core';
+} from '@stssocialst-stp/fe-corefe-core';
 
 function PrlSearcher({
   module = 'prl',

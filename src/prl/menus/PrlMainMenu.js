@@ -2,7 +2,7 @@
 import { injectIntl } from "react-intl";
 import { connect } from "react-redux";
 import { AssignmentTurnedIn } from "@material-ui/icons";
-import { formatMessage, MainMenuContribution, withModulesManager } from "@openimis/fe-core";
+import { formatMessage, MainMenuContribution, withModulesManager } from "@stssocialst-stp/fe-corefe-core";
 import {
   PRL_ROUTE_SESSION_PLANNING,
   PRL_ROUTE_ATTENDANCE,

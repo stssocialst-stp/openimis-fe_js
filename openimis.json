@@ -28,15 +28,15 @@
   "modules": [
     {
       "name": "CoreModule",
-      "npm": "@openimis/fe-core@git+https://github.com/dpssf-stp/openimis-fe-core_js.git#stp-changes"
+      "npm": "@stssocialst-stp/fe-core@^1.4.0"
     },
     {
       "name": "IndividualModule",
-      "npm": "@openimis/fe-individual@git+https://github.com/dpssf-stp/openimis-fe-individual_js.git#stp-changes"
+      "npm": "@stssocialst-stp/fe-individual@^0.1.0"
     },
     {
       "name": "SocialProtectionModule",
-      "npm": "@openimis/fe-social_protection@git+https://github.com/dpssf-stp/openimis-fe-social_protection_js.git#stp-changes"
+      "npm": "@stssocialst-stp/fe-social_protection@^0.1.0"
     },
     {
       "name": "OpenSearchReportsModule",
@@ -48,7 +48,7 @@
     },
     {
       "name": "GrievanceSocialProtectionModule",
-      "npm": "@openimis/fe-grievance_social_protection@git+https://github.com/dpssf-stp/openimis-fe-grievance_social_protection_js.git#stp-changes"
+      "npm": "@stssocialst-stp/fe-grievance_social_protection@^1.0.0"
     },
     {
       "name": "HomeModule",
@@ -80,7 +80,7 @@
     },
     {
       "name": "ContributionPlanModule",
-      "npm": "@openimis/fe-contribution_plan@git+https://github.com/dpssf-stp/openimis-fe-contribution_plan_js.git#stp-changes"
+      "npm": "@stssocialst-stp/fe-contribution_plan@^1.0.0"
     },
     {
       "name": "PaymentCycleModule",
@@ -100,7 +100,7 @@
     },
     {
       "name": "PayrollModule",
-      "npm": "@openimis/fe-payroll@git+https://github.com/dpssf-stp/openimis-fe-payroll_js.git#stp-changes"
+      "npm": "@stssocialst-stp/fe-payroll@^0.1.0"
     },
     {
       "name": "DeduplicationModule",
@@ -108,11 +108,11 @@
     },
     {
       "name": "AdminModule",
-      "npm": "@openimis/fe-admin@git+https://github.com/dpssf-stp/openimis-fe-admin_js.git#stp-changes"
+      "npm": "@stssocialst-stp/fe-admin@^1.3.0"
     },
     {
       "name": "LanguagePtModule",
-      "npm": "@openimis/fe-language_pt_st@git+https://github.com/dpssf-stp/openimis-fe-language_pt_st_js.git#develop"
+      "npm": "@stssocialst-stp/fe-language_pt_st@^1.5.0"
     },
     {
       "name": "CoreMISLanguageModule",

@@ -1,7 +1,7 @@
 import { injectIntl } from "react-intl";
 import { connect } from "react-redux";
 import { Settings } from "@material-ui/icons";
-import { formatMessage, MainMenuContribution, withModulesManager } from "@openimis/fe-core";
+import { formatMessage, MainMenuContribution, withModulesManager } from "@stssocialst-stp/fe-core";
 import {
   PARAMS_ROUTE_MODULO_PEP,
   PARAMS_ROUTE_ESCOLA,

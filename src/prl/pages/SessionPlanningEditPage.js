@@ -10,7 +10,7 @@ import SaveIcon from "@material-ui/icons/Save";
 import AddIcon from "@material-ui/icons/Add";
 import DeleteIcon from "@material-ui/icons/Delete";
 import { IconButton, Tooltip } from "@material-ui/core";
-import { formatMessage, withModulesManager, Helmet, baseApiUrl, apiHeaders } from "@openimis/fe-core";
+import { formatMessage, withModulesManager, Helmet, baseApiUrl, apiHeaders } from "@stssocialst-stp/fe-core";
 import { PRL_ROUTE_SESSION_PLANNING, PRL_ROUTE_SESSION_PLANNING_FORM } from "../constants";
 
 const styles = (theme) => ({

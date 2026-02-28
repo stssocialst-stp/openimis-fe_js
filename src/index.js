@@ -12,7 +12,7 @@ import store from "./helpers/store";
 import LocalesManager from "./LocalesManager";
 import ModulesManager from "./ModulesManager";
 import ModulesManagerProvider from "./ModulesManagerProvider";
-import { App, FatalError, baseApiUrl, apiHeaders } from "@openimis/fe-core";
+import { App, FatalError, baseApiUrl, apiHeaders } from "@stssocialst-stp/fe-core";
 import getConfiguredLogo from "./helpers/logo";
 import messages_ref from "./translations/ref.json";
 import "./index.css";
@@ -91,7 +91,7 @@ const AppContainer = () => {
     }, []);
 
     const middlewares = modulesManager.getContribs("middlewares");
-    
+
     return (
       <MuiThemeProvider theme={dynamicTheme}>
         <Provider store={store(reducers, middlewares)}>

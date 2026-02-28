@@ -7,7 +7,7 @@ import {
 import ChevronLeftIcon from "@material-ui/icons/ChevronLeft";
 import SaveIcon from "@material-ui/icons/Save";
 import DeleteIcon from "@material-ui/icons/Delete";
-import { formatMessage, withModulesManager, Helmet, baseApiUrl, apiHeaders } from "@openimis/fe-core";
+import { formatMessage, withModulesManager, Helmet, baseApiUrl, apiHeaders } from "@stssocialst-stp/fe-corefe-corefe-core";
 import { PRL_ROUTE_ATTENDANCE, PRL_ROUTE_ATTENDANCE_FORM } from "../constants";
 import AddIcon from "@material-ui/icons/Add";
 

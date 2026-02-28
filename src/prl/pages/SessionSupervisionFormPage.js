@@ -6,7 +6,7 @@ import {
 } from "@material-ui/core";
 import ChevronLeftIcon from "@material-ui/icons/ChevronLeft";
 import SaveIcon from "@material-ui/icons/Save";
-import { formatMessage, withModulesManager, Helmet, baseApiUrl, apiHeaders } from "@openimis/fe-core";
+import { formatMessage, withModulesManager, Helmet, baseApiUrl, apiHeaders } from "@stssocialst-stp/fe-core";
 import { PRL_ROUTE_SUPERVISION } from "../constants";
 import PracticesTable from "../components/PracticesTable";
 import LimitedChecklistComponent from "../components/LimitedChecklistComponent";

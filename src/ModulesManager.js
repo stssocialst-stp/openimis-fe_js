@@ -1,7 +1,7 @@
 import { loadModules, packages } from "./modules";
 import { memoize } from "lodash";
 import pkg from "../package.json";
-import { ensureArray } from "@openimis/fe-core";
+import { ensureArray } from "@stssocialst-stp/fe-core";
 
 class ModulesManager {
   constructor(cfg) {
@@ -11,7 +11,7 @@ class ModulesManager {
     } catch (error) {
       throw new Error(
         "Loading modules failed in ModulesManager.js. This might be caused by duplicated modules in /src/modules.js. \n ORIGINAL ERROR: " +
-          error,
+        error,
       );
     }
     this.contributionsCache = {};
