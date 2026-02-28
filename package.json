@@ -1,5 +1,5 @@
 {
-  "name": "@openimis/fe",
+  "name": "@stssocialst-stp/fe",
   "version": "25.04",
   "license": "AGPL-3.0-only",
   "proxy": "http://localhost:8000",
