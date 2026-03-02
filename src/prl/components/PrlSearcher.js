@@ -3,7 +3,7 @@ import {
   Searcher,
   useModulesManager,
   useTranslations,
-} from '@stssocialst-stp/fe-corefe-core';
+} from '@stssocialst-stp/fe-core';
 
 function PrlSearcher({
   module = 'prl',

@@ -10,10 +10,10 @@ this repository builds:
 the build content is defined by the openimis.json file
 
 more information for:
- 
-  - [docker Windows](/docs/WINDOWS_DOCKER.md) 
-  - [docker Linux](/docs/LINUX_DOCKER.md)
-  - [reverse proxy toward other openIMIS services](/docs/reverse_proxy.md)
+
+- [docker Windows](/docs/WINDOWS_DOCKER.md)
+- [docker Linux](/docs/LINUX_DOCKER.md)
+- [reverse proxy toward other openIMIS services](/docs/reverse_proxy.md)
 
 ## Developers setup
 
@@ -45,13 +45,13 @@ This issue is related to the link between userCore and tblUser tables.</td></tr>
 
     ```{
     	"name": "CoreModule", // If name is not provided, it will assume the module is exported as the `default` module
-    	"npm": "@openimis/fe-core@1.2.0-rc15"
+    	"npm": "@stssocialst-stp/fe-core@1.2.0-rc15"
     }```
 
 At this stage, your browser opened on localhost:3000 with current openIMIS frontend.
 In developement mode, the frontend connects to the backend via a proxy configuration, expecting to reach the backend on localhost:8000 (cfr. /package.json file, "proxy" entry).
 
-### To edit (modify) an existing openIMIS module (e.g. `@openimis/fe-claim`)
+### To edit (modify) an existing openIMIS module (e.g. `@stssocialst-stp/fe-claim`)
 
 - checkout the module's git repo NEXT TO (not within!) `openimis-fe_js` directory and create a git branch for your changes
 - from `openimis-fe-claim_js`
@@ -59,27 +59,27 @@ In developement mode, the frontend connects to the backend via a proxy configura
   - build current (dev) version of the module: `yarn build`
   - prepare a linkable version of your local package: `yarn link`
 - from `openimis-fe_js`
-  - uninstall the packaged module you want to work on (example @openimis/fe-claim): `yarn remove @openimis/fe-claim`
-  - link the local version of the module: `yarn link "@openimis/fe-claim"`
+  - uninstall the packaged module you want to work on (example @stssocialst-stp/fe-claim): `yarn remove @stssocialst-stp/fe-claim`
+  - link the local version of the module: `yarn link "@stssocialst-stp/fe-claim"`
 
 Note:
 
 - It is not necessary to register a linked module in the package.json file
-- To unlink a previously linked package: `yarn unlink "@openimis/fe-claim"`
+- To unlink a previously linked package: `yarn unlink "@stssocialst-stp/fe-claim"`
 - [OPTIONAL] To enable live reload of the module, from `openimis-fe-claim_js`, activate the watch: `yarn start` (if configured into the `package.json` of the module)
 
-### To create a new openIMIS module (e.g. `@openimis/fe-mymodule`)
+### To create a new openIMIS module (e.g. `@stssocialst-stp/fe-mymodule`)
 
 - create a (git-enabled) directory next to the other modules: `/openimis-fe-mymodule_js`.
-  Note: the module name can be different from the directory/github repo. The npm repo has an @openimis scope to group all openIMIS modules
+  Note: the module name can be different from the directory/github repo. The npm repo has an @stssocialst-stp scope to group all openIMIS modules
 - to be integrated in openIMIS ecosystem, you module should provide an entry entity (e.g. MyModule) with its contributions (MainMenu entries,...).
 - prepare a linkable version of your local package: `yarn link` (from within `/openimis-fe-mymodule_js`)
 - from /openimis-fe_js:
-  - install the linkable version of your package: `yarn link @openimis/fe-mymodule`
+  - install the linkable version of your package: `yarn link @stssocialst-stp/fe-mymodule`
   - add your module (name and entry entiry) in `openimis.json` and regenerate the modules import script: `node module-requirements.js`
-    Note: to ease development lifecycle, please consider using the 'rollup' mechanism (see @openimis/fe-core for an example)
+    Note: to ease development lifecycle, please consider using the 'rollup' mechanism (see @stssocialst-stp/fe-core for an example)
 
-### To create a distinct implementation of an existing openIMIS module (e.g. `@openimis/fe-location-dhis2`)
+### To create a distinct implementation of an existing openIMIS module (e.g. `@stssocialst-stp/fe-location-dhis2`)
 
 Unlike backend modules, there is 'shared logical name' between distinct implementations of a same 'module'.
 If you want to provide an distinct implementation for locations (example), just create a separate module, with a distinct module name and ensure the packaging (distribution) picks your module (and not the reference implementation).
@@ -126,14 +126,14 @@ Note: This image only provides the openimis frontend server. The full openIMIS d
   3. Within this directory run `yarn install` , `yarn build` and `yarn link` (according to that provided order)
   4. Within openimis-fe_js:
 
-  - execute `yarn remove @openimis/fe-invoice`
+  - execute `yarn remove @stssocialst-stp/fe-invoice`
 
   - In openimis.json openimis add:
 
     ```json
     {
       "name": "ContractModule",
-      "npm": "@openimis/fe-contract@0.1.0"
+      "npm": "@stssocialst-stp/fe-contract@0.1.0"
     }
     ```
 
@@ -144,7 +144,7 @@ Note: This image only provides the openimis frontend server. The full openIMIS d
          ...
          "dependencies": {
              ...
-             "@openimis/fe-contract": "file:../openimis-fe-contract_js",
+             "@stssocialst-stp/fe-contract": "file:../openimis-fe-contract_js",
              ...
          }
          ...
@@ -153,7 +153,7 @@ Note: This image only provides the openimis frontend server. The full openIMIS d
 
   - execute `node modules-config.js`
 
-  - run `yarn link <module>` for example: `yarn link "@openimis/fe-contract"`
+  - run `yarn link <module>` for example: `yarn link "@stssocialst-stp/fe-contract"`
 
   - run `yarn install`
 
@@ -177,29 +177,32 @@ Note: This image only provides the openimis frontend server. The full openIMIS d
   - run this command: `node dev_tools/installModuleLocallyAll.js`. This command will execute all required steps
     to fetch all modules present in `openimis.json` from the git repositories and install them as editable libraries.
 
-
 ## Managing translations/localization
 
 ### To add new translation/localisations:
-- create separate new module based on [frontend template module](https://github.com/openimis/openimis-fe-template_js). 
+
+- create separate new module based on [frontend template module](https://github.com/openimis/openimis-fe-template_js).
 - this module should be named like: `openimis-fe-language_{lang}_js` for example `openimis-fe-language_es_js` (Spanish language)
 - add to this module such files as: `.babelrc`, `.gitignore`, `.estlintrc`
 - within `src/translation` add `{lang}.json` file for example `es.json`
 - in `index.js` within `src` modified (for example we want to have 'es' Spanish language):
+
 ```js
-       import messages_es from "./translations/es.json";
+import messages_es from "./translations/es.json";
 
-       const DEFAULT_CONFIG = {
-           "translations": [{ key: "es", messages: messages_es }],
-       }
+const DEFAULT_CONFIG = {
+  "translations": [{ key: "es", messages: messages_es }],
+};
 
-       export const LanguageEsModule = (cfg) => {
-           return { ...DEFAULT_CONFIG, ...cfg };
-       }
+export const LanguageEsModule = (cfg) => {
+  return { ...DEFAULT_CONFIG, ...cfg };
+};
 ```
+
 - build your new module with translations by typing within this module `yarn build`, `yarn install` and `yarn link` commands.
 - in `tblLanguages` on database level add new language for example 'es' (Spanish language)
 - within assembly frontend module `openimis-fe_js` in `openimis.json` add language key for new language/localization for example:
+
 ```json
       ...
        "locales": [
@@ -230,71 +233,81 @@ Note: This image only provides the openimis frontend server. The full openIMIS d
       ],
       ...
 ```
+
 - in `openimis.json` add also this newly created module with translations
 - within `openimis-fe_js/src` in `locales.js` add new language like below:
+
 ```js
-      export const locales = ["es-ES","en-GB","fr-FR"]
-      export const fileNamesByLang = {"es":"es", "es-ES":"es","en":"en","en-GB":"en","fr":"fr","fr-FR":"fr"}
-      export default {"es":"es-ES", "es-ES": "es-ES","en":"en-GB","en-GB":"en-GB","fr":"fr-FR","fr-FR":"fr-FR"}  
+export const locales = ["es-ES", "en-GB", "fr-FR"];
+export const fileNamesByLang = { "es": "es", "es-ES": "es", "en": "en", "en-GB": "en", "fr": "fr", "fr-FR": "fr" };
+export default { "es": "es-ES", "es-ES": "es-ES", "en": "en-GB", "en-GB": "en-GB", "fr": "fr-FR", "fr-FR": "fr-FR" };
 ```
+
 - type `yarn build` and if success - type `yarn start` and you should see this translation in your app (go to 'users' page, select user, change language into the newly provided, refresh page and you should see texts in changed language)
 - if you encounter any problems by that point, run `yarn load-config` in the main module
 - there is also possibility to overwrite particular language for example 'English' into 'Gambian English' (without changes on database level). In your new translation module in index.js (for example new module called `openimis-fe-language_en_gm_js`):
- ```js
-       import messages_en from "./translations/en.json";
 
-       const DEFAULT_CONFIG = {
-           "translations": [{ key: "en", messages: messages_en }],
-       }
+```js
+import messages_en from "./translations/en.json";
 
-       export const LanguageEnGmModule = (cfg) => {
-           return { ...DEFAULT_CONFIG, ...cfg };
-       }
+const DEFAULT_CONFIG = {
+  "translations": [{ key: "en", messages: messages_en }],
+};
+
+export const LanguageEnGmModule = (cfg) => {
+  return { ...DEFAULT_CONFIG, ...cfg };
+};
 ```
-- this approach overwrites default `en` language translations into `en-gm` (Gambian English) translations without adding new language on database level and without changing 'locales' in 'openimis.json' and 'locales.js' file both on assembly frontend module (openimis-fe_js). 
 
+- this approach overwrites default `en` language translations into `en-gm` (Gambian English) translations without adding new language on database level and without changing 'locales' in 'openimis.json' and 'locales.js' file both on assembly frontend module (openimis-fe_js).
 
 ## Handling errors while running openIMIS app - the most common ones
 
 ### Handling error with ` no content display` after running frontend
+
 Based on error reported on that [ticket](https://openimis.atlassian.net/browse/OSD-176)
 
-Description of error: 
-* after `yarn start` the page loads but no content is display
-* sometimes it just keeps spinning the loader
-* web console doesn't show any errors
+Description of error:
 
-How to solve this? 
-* double check if you use proper versions of backend/frontend modules (assembly and core ones)
-* make sure you have the latest version of dockerized database
+- after `yarn start` the page loads but no content is display
+- sometimes it just keeps spinning the loader
+- web console doesn't show any errors
+
+How to solve this?
+
+- double check if you use proper versions of backend/frontend modules (assembly and core ones)
+- make sure you have the latest version of dockerized database
 
 Conclusions:
-* The reason of this error is usually using not up-to-date assembly and core modules (both backend and frontend ones)
 
+- The reason of this error is usually using not up-to-date assembly and core modules (both backend and frontend ones)
 
 ### Handling error with `400 error` after running frontend
+
 Based on error reported on that [ticket](https://openimis.atlassian.net/browse/OSD-181)
 
-Description of error: 
-* modular openIMIS deployed on server
-* backend is set on port 8000, frontend is set on port 3000
-* backend works fine, no errors
-* it is not possible to reach both login and home page due to 400 error
-* web console doesn't show any errors
+Description of error:
 
-How to solve this? 
-* double check if you use proper versions of backend/frontend modules (assembly and core ones)
-* make sure you added env variables on backend side (site root/sire url)
-* double check value for `proxy` key in package.json (IMPORTANT: be careful with this setting on production environment) 
+- modular openIMIS deployed on server
+- backend is set on port 8000, frontend is set on port 3000
+- backend works fine, no errors
+- it is not possible to reach both login and home page due to 400 error
+- web console doesn't show any errors
+
+How to solve this?
+
+- double check if you use proper versions of backend/frontend modules (assembly and core ones)
+- make sure you added env variables on backend side (site root/sire url)
+- double check value for `proxy` key in package.json (IMPORTANT: be careful with this setting on production environment)
 
 Conclusions:
-* The reason of this error is usually not setting up env variables on backend side and wrong value for `proxy` key
 
+- The reason of this error is usually not setting up env variables on backend side and wrong value for `proxy` key
 
-### How to report another issues? 
-If you face another issues not described in that section you could use our [ticketing site](https://openimis.atlassian.net/servicedesk/customer/portal/1). 
-Here you can report any bugs/problems you faced during setting up openIMIS app. 
+### How to report another issues?
 
+If you face another issues not described in that section you could use our [ticketing site](https://openimis.atlassian.net/servicedesk/customer/portal/1).
+Here you can report any bugs/problems you faced during setting up openIMIS app.
 
 ## 🎨 Theme & Logo Configuration
 
@@ -346,7 +359,7 @@ To override the default theme colors, provide a `theme` object under the `fe-cor
 
 #### 🖼️ Logo Configuration (`logo`)
 
-Add additional property 
+Add additional property
 under `fe-core` configuration in `moduleConfiguration`. Logos can also be configured via base64-encoded images. This allows the UI to show custom branding without bundling new static files.
 
 ```json
@@ -362,10 +375,10 @@ under `fe-core` configuration in `moduleConfiguration`. Logos can also be config
 
 ##### Logo Fields:
 
-| Property | Description                                                           |
-| -------- | --------------------------------------------------------------------- |
-| `value`  | Base64-encoded string of the main logo |
-| `disableTextLogo`  | *(Optional)* Do not show `openIMIS` text next to logo: `true` or `false`. By default `false` |
+| Property          | Description                                                                                  |
+| ----------------- | -------------------------------------------------------------------------------------------- |
+| `value`           | Base64-encoded string of the main logo                                                       |
+| `disableTextLogo` | _(Optional)_ Do not show `openIMIS` text next to logo: `true` or `false`. By default `false` |
 
 **Note:** If `logo.value` is not provided, the default openIMIS logo will be used instead.
 

@@ -7,7 +7,7 @@ import {
 } from "@material-ui/core";
 import ChevronLeftIcon from "@material-ui/icons/ChevronLeft";
 import SaveIcon from "@material-ui/icons/Save";
-import { formatMessage, withModulesManager, Helmet, baseApiUrl, apiHeaders } from "@stssocialst-stp/fe-corefe-corefe-corefe-core";
+import { formatMessage, withModulesManager, Helmet, baseApiUrl, apiHeaders } from "@stssocialst-stp/fe-core";
 import { PRL_ROUTE_ALUNO } from "../constants";
 import { escolaridadeList, sexoList } from "../../helpers/constants";
 

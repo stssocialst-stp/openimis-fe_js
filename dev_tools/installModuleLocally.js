@@ -62,7 +62,7 @@ function updateModuleInAssembly(packageVersion) {
     if (!moduleExists) {
       imisJSON["modules"].push({
         "name": titleCase(camalize(separatedName)) + "Module",
-        "npm": "@openimis/" + splitedModuleName + "@" + packageVersion,
+        "npm": "@stssocialst-stp/" + splitedModuleName + "@" + packageVersion,
       });
     }
 
@@ -89,10 +89,10 @@ function updatePackageInAssembly() {
     }
     imisPackageJSON = JSON.parse(data);
 
-    if ("@openimis/" + splitedModuleName in imisPackageJSON["dependencies"]) {
-      imisPackageJSON["dependencies"]["@openimis/" + splitedModuleName] = "file:../" + moduleName;
+    if ("@stssocialst-stp/" + splitedModuleName in imisPackageJSON["dependencies"]) {
+      imisPackageJSON["dependencies"]["@stssocialst-stp/" + splitedModuleName] = "file:../" + moduleName;
     } else {
-      imisPackageJSON["dependencies"]["@openimis/" + splitedModuleName] = "file:../" + moduleName;
+      imisPackageJSON["dependencies"]["@stssocialst-stp/" + splitedModuleName] = "file:../" + moduleName;
     }
 
     fs.writeFileSync(path.join(imisPackagePath, "package.json"), JSON.stringify(imisPackageJSON, null, 2), {
@@ -101,7 +101,7 @@ function updatePackageInAssembly() {
     });
     console.log("package.json is updated");
     //do last step to install app assembly again
-    shell.exec("yarn link " + '"@openimis/' + splitedModuleName + '"');
+    shell.exec("yarn link " + '"@stssocialst-stp/' + splitedModuleName + '"');
     shell.exec("yarn install");
     console.log("Application has been updated!");
   });
@@ -114,7 +114,7 @@ function reinstallAssemblyModule() {
   shell.exec("node modules-config.js");
 
   console.log("uninstall external module");
-  shell.exec("yarn remove @openimis/" + splitedModuleName, (error, data) => {
+  shell.exec("yarn remove @stssocialst-stp/" + splitedModuleName, (error, data) => {
     if (error) {
       console.log(error);
     }

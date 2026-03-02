@@ -36,15 +36,15 @@
     },
     {
       "name": "SocialProtectionModule",
-      "npm": "@stssocialst-stp/fe-social_protection@^0.1.0"
+      "npm": "@stssocialst-stp/fe-social_protection@^0.1.2"
     },
     {
       "name": "OpenSearchReportsModule",
-      "npm": "@openimis/fe-opensearch_reports@git+https://github.com/openimis/openimis-fe-opensearch_reports_js.git#develop"
+      "npm": "@stssocialst-stp/fe-opensearch_reports@^0.1.0"
     },
     {
       "name": "InvoiceModule",
-      "npm": "@openimis/fe-invoice@git+https://github.com/openimis/openimis-fe-invoice_js.git#develop"
+      "npm": "@stssocialst-stp/fe-invoice@^0.1.0"
     },
     {
       "name": "GrievanceSocialProtectionModule",
@@ -52,31 +52,31 @@
     },
     {
       "name": "HomeModule",
-      "npm": "@openimis/fe-home@git+https://github.com/openimis/openimis-fe-home_js.git#develop"
+      "npm": "@stssocialst-stp/fe-home@^1.4.3"
     },
     {
       "name": "LocationModule",
-      "npm": "@openimis/fe-location@git+https://github.com/openimis/openimis-fe-location_js.git#develop"
+      "npm": "@stssocialst-stp/fe-location@^1.3.0"
     },
     {
       "name": "MedicalModule",
-      "npm": "@openimis/fe-medical@git+https://github.com/openimis/openimis-fe-medical_js.git#develop"
+      "npm": "@stssocialst-stp/fe-medical@^1.3.0"
     },
     {
       "name": "ProfileModule",
-      "npm": "@openimis/fe-profile@git+https://github.com/openimis/openimis-fe-profile_js.git#develop"
+      "npm": "@stssocialst-stp/fe-profile@^1.4.0"
     },
     {
       "name": "LanguageFrModule",
-      "npm": "@openimis/fe-language_fr@git+https://github.com/openimis/openimis-fe-language_fr_js.git#develop"
+      "npm": "@stssocialst-stp/fe-language_fr@^1.5.0"
     },
     {
       "name": "CalculationModule",
-      "npm": "@openimis/fe-calculation@git+https://github.com/openimis/openimis-fe-calculation_js.git#develop"
+      "npm": "@stssocialst-stp/fe-calculation@^1.0.1"
     },
     {
       "name": "PolicyHolderModule",
-      "npm": "@openimis/fe-policyholder@git+https://github.com/openimis/openimis-fe-policyholder_js.git#develop"
+      "npm": "@stssocialst-stp/fe-policyholder@^1.0.0"
     },
     {
       "name": "ContributionPlanModule",
@@ -84,19 +84,19 @@
     },
     {
       "name": "PaymentCycleModule",
-      "npm": "@openimis/fe-payment_cycle@git+https://github.com/openimis/openimis-fe-payment_cycle_js.git#develop"
+      "npm": "@stssocialst-stp/fe-payment_cycle@^1.2.0-rc1"
     },
     {
       "name": "ContractModule",
-      "npm": "@openimis/fe-contract@git+https://github.com/openimis/openimis-fe-contract_js.git#develop"
+      "npm": "@stssocialst-stp/fe-contract@^1.0.0"
     },
     {
       "name": "TasksManagementModule",
-      "npm": "@openimis/fe-tasks_management@git+https://github.com/openimis/openimis-fe-tasks_management_js.git#develop"
+      "npm": "@stssocialst-stp/fe-tasks_management@^1.0.2"
     },
     {
       "name": "CoreMISLanguageModule",
-      "npm": "@openimis/fe-coremis_language_pack@git+https://github.com/openimis/openimis-fe-coremis_language_pack_js.git#develop"
+      "npm": "@stssocialst-stp/fe-coremis_language_pack@^1.2.0-rc1"
     },
     {
       "name": "PayrollModule",
@@ -104,7 +104,7 @@
     },
     {
       "name": "DeduplicationModule",
-      "npm": "@openimis/fe-deduplication@git+https://github.com/openimis/openimis-fe-deduplication_js.git#develop"
+      "npm": "@stssocialst-stp/fe-deduplication@^1.2.0-rc1"
     },
     {
       "name": "AdminModule",
@@ -113,10 +113,6 @@
     {
       "name": "LanguagePtModule",
       "npm": "@stssocialst-stp/fe-language_pt_st@^1.5.0"
-    },
-    {
-      "name": "CoreMISLanguageModule",
-      "npm": "@openimis/fe-coremis_language_pack@https://github.com/openimis/openimis-fe-coremis_language_pack_js.git#develop"
     }
   ],
   "localModules": [

@@ -9,7 +9,7 @@ import AddIcon from "@material-ui/icons/Add";
 import VisibilityIcon from "@material-ui/icons/Visibility";
 import EditIcon from "@material-ui/icons/Edit";
 import DeleteIcon from "@material-ui/icons/Delete";
-import { formatMessage, withModulesManager, Helmet, withTooltip, baseApiUrl, apiHeaders } from "@stssocialst-stp/fe-corefe-core";
+import { formatMessage, withModulesManager, Helmet, withTooltip, baseApiUrl, apiHeaders } from "@stssocialst-stp/fe-core";
 import PrlSearcher from "../components/PrlSearcher";
 import PrlFilter from "../components/PrlFilter";
 import { PRL_ROUTE_ATTENDANCE_FORM } from "../constants";

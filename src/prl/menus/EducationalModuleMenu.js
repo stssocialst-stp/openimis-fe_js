@@ -1,7 +1,7 @@
 import { injectIntl } from "react-intl";
 import { connect } from "react-redux";
 import { AssignmentTurnedIn } from "@material-ui/icons";
-import { formatMessage, MainMenuContribution, withModulesManager } from "@stssocialst-stp/fe-corefe-core";
+import { formatMessage, MainMenuContribution, withModulesManager } from "@stssocialst-stp/fe-core";
 import {
   PRL_ROUTE_EDUCATIONAL_MODULE,
   PRL_ROUTE_ALUNO,

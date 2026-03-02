@@ -48,8 +48,8 @@ export const packages = [
 export function loadModules(cfg = {}) {
   const loadedModules = [];
 ${modules
-.map(({ name, logicalName, moduleName }) => {
-return `
+      .map(({ name, logicalName, moduleName }) => {
+        return `
   try {
     loadedModules.push(require("${moduleName}").${name ?? "default"}(cfg["${logicalName}"] || {}));
   } catch (error) {
@@ -57,11 +57,11 @@ return `
     console.error(error);
   }
 `;
-})
-.join("")}
+      })
+      .join("")}
 ${localModules
-.map(({ name, path, logicalName }) => {
-return `
+      .map(({ name, path, logicalName }) => {
+        return `
   try {
     loadedModules.push(require("${path}").${name}(cfg["${logicalName || path.replace('./', '')}"] || {}));
   } catch (error) {
@@ -69,8 +69,8 @@ return `
     console.error(error);
   }
 `;
-})
-.join("")}
+      })
+      .join("")}
   return loadedModules;
 }
 `);
@@ -83,10 +83,10 @@ function main() {
   Load openIMIS configuration. Configuration is taken from args if provided or from the environment variable
   */
 
-  // Remove @openimis dependencies from package.json
-  console.log("Remove @openimis dependencies from package.json");
+  // Remove @stssocialst-stp dependencies from package.json
+  console.log("Remove @stssocialst-stp dependencies from package.json");
   for (const key in pkg.dependencies) {
-    if (key.startsWith("@openimis/")) {
+    if (key.startsWith("@stssocialst-stp/")) {
       // This only covers modules made from the openIMIS organization
       console.log(`  removed ${key}`);
       delete pkg.dependencies[key];
