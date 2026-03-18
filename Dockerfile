@@ -27,6 +27,9 @@ ENV NODE_ENV=production
 # Generate src/modules.js and src/locales.js from openimis.json
 RUN npm run load-config
 
+# Remove package lock to ensure fresh install with correct Babel version
+RUN rm -f package-lock.json
+
 # Clean npm cache and install with fresh lock
 RUN npm cache clean --force && npm install --legacy-peer-deps
 
