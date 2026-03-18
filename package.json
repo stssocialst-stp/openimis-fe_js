@@ -81,7 +81,8 @@
     ]
   },
   "resolutions": {
-    "caniuse-lite": "1.0.30001632"
+    "caniuse-lite": "1.0.30001632",
+    "@babel/core": "^7.16.0"
   },
   "devDependencies": {
     "http-proxy-middleware": "^2.0.1",

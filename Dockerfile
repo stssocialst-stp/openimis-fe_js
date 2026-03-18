@@ -27,7 +27,8 @@ ENV NODE_ENV=production
 # Generate src/modules.js and src/locales.js from openimis.json
 RUN npm run load-config
 
-RUN npm install --legacy-peer-deps
+# Clean npm cache and install with fresh lock
+RUN npm cache clean --force && npm install --legacy-peer-deps
 
 COPY --chown=node:node src/ ./src/
 COPY --chown=node:node public/ ./public/
