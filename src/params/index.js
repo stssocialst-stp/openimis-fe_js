@@ -15,6 +15,14 @@ import ClassePage from "./pages/ClassePage";
 import ClasseFormPage from "./pages/ClasseFormPage";
 import CoordenacaoDistritalPage from "./pages/CoordenacaoDistritalPage";
 import CoordenacaoDistritalFormPage from "./pages/CoordenacaoDistritalFormPage";
+import TicketCategoryPage from "./pages/TicketCategoryPage";
+import TicketCategoryFormPage from "./pages/TicketCategoryFormPage";
+import TicketChannelPage from "./pages/TicketChannelPage";
+import TicketChannelFormPage from "./pages/TicketChannelFormPage";
+import TicketFlagPage from "./pages/TicketFlagPage";
+import TicketFlagFormPage from "./pages/TicketFlagFormPage";
+import TicketPriorityPage from "./pages/TicketPriorityPage";
+import TicketPriorityFormPage from "./pages/TicketPriorityFormPage";
 
 import {
   PARAMS_ROUTE_MODULO_PEP,
@@ -29,6 +37,14 @@ import {
   PARAMS_ROUTE_CLASSE_FORM,
   PARAMS_ROUTE_COORDENACAO_DISTRITAL,
   PARAMS_ROUTE_COORDENACAO_DISTRITAL_FORM,
+  PARAMS_ROUTE_TICKET_CATEGORY,
+  PARAMS_ROUTE_TICKET_CATEGORY_FORM,
+  PARAMS_ROUTE_TICKET_CHANNEL,
+  PARAMS_ROUTE_TICKET_CHANNEL_FORM,
+  PARAMS_ROUTE_TICKET_FLAG,
+  PARAMS_ROUTE_TICKET_FLAG_FORM,
+  PARAMS_ROUTE_TICKET_PRIORITY,
+  PARAMS_ROUTE_TICKET_PRIORITY_FORM,
 } from "./constants";
 
 const DEFAULT_CONFIG = {
@@ -50,6 +66,14 @@ const DEFAULT_CONFIG = {
     { path: PARAMS_ROUTE_CLASSE_FORM, component: ClasseFormPage },
     { path: PARAMS_ROUTE_COORDENACAO_DISTRITAL, component: CoordenacaoDistritalPage },
     { path: PARAMS_ROUTE_COORDENACAO_DISTRITAL_FORM, component: CoordenacaoDistritalFormPage },
+    { path: PARAMS_ROUTE_TICKET_CATEGORY, component: TicketCategoryPage },
+    { path: PARAMS_ROUTE_TICKET_CATEGORY_FORM, component: TicketCategoryFormPage },
+    { path: PARAMS_ROUTE_TICKET_CHANNEL, component: TicketChannelPage },
+    { path: PARAMS_ROUTE_TICKET_CHANNEL_FORM, component: TicketChannelFormPage },
+    { path: PARAMS_ROUTE_TICKET_FLAG, component: TicketFlagPage },
+    { path: PARAMS_ROUTE_TICKET_FLAG_FORM, component: TicketFlagFormPage },
+    { path: PARAMS_ROUTE_TICKET_PRIORITY, component: TicketPriorityPage },
+    { path: PARAMS_ROUTE_TICKET_PRIORITY_FORM, component: TicketPriorityFormPage },
   ],
 };
 

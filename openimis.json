@@ -32,7 +32,7 @@
     },
     {
       "name": "IndividualModule",
-      "npm": "@stssocialst-stp/fe-individual@^0.1.0"
+      "npm": "@stssocialst-stp/fe-individual@^0.1.2"
     },
     {
       "name": "SocialProtectionModule",
@@ -48,7 +48,7 @@
     },
     {
       "name": "GrievanceSocialProtectionModule",
-      "npm": "@stssocialst-stp/fe-grievance_social_protection@^1.0.0"
+      "npm": "@stssocialst-stp/fe-grievance_social_protection@^1.0.2"
     },
     {
       "name": "HomeModule",

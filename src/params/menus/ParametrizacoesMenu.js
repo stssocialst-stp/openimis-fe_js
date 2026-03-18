@@ -9,6 +9,10 @@ import {
   PARAMS_ROUTE_TIPO_ENCAMINHAMENTO,
   PARAMS_ROUTE_CLASSE,
   PARAMS_ROUTE_COORDENACAO_DISTRITAL,
+  PARAMS_ROUTE_TICKET_CATEGORY,
+  PARAMS_ROUTE_TICKET_CHANNEL,
+  PARAMS_ROUTE_TICKET_FLAG,
+  PARAMS_ROUTE_TICKET_PRIORITY,
 } from "../constants";
 
 function ParametrizacoesMenu(props) {
@@ -55,6 +59,34 @@ function ParametrizacoesMenu(props) {
       text: formatMessage(intl, "params", "menu.coordenacaoDistrital"),
       icon: <Settings />,
       route: "/" + PARAMS_ROUTE_COORDENACAO_DISTRITAL,
+      withDivider: false,
+    },
+    {
+      id: "params.ticketCategory",
+      text: formatMessage(intl, "params", "menu.ticketCategory"),
+      icon: <Settings />,
+      route: "/" + PARAMS_ROUTE_TICKET_CATEGORY,
+      withDivider: true,
+    },
+    {
+      id: "params.ticketChannel",
+      text: formatMessage(intl, "params", "menu.ticketChannel"),
+      icon: <Settings />,
+      route: "/" + PARAMS_ROUTE_TICKET_CHANNEL,
+      withDivider: false,
+    },
+    {
+      id: "params.ticketFlag",
+      text: formatMessage(intl, "params", "menu.ticketFlag"),
+      icon: <Settings />,
+      route: "/" + PARAMS_ROUTE_TICKET_FLAG,
+      withDivider: false,
+    },
+    {
+      id: "params.ticketPriority",
+      text: formatMessage(intl, "params", "menu.ticketPriority"),
+      icon: <Settings />,
+      route: "/" + PARAMS_ROUTE_TICKET_PRIORITY,
       withDivider: false,
     },
   ];

@@ -30,3 +30,19 @@ export const CLASSE_NIVEL_OPTIONS = ["EP1", "EP2", "ESG1", "ESG2", "OUTRO"];
 // Coordenação Distrital
 export const PARAMS_ROUTE_COORDENACAO_DISTRITAL = "params/coordenacaoDistrital";
 export const PARAMS_ROUTE_COORDENACAO_DISTRITAL_FORM = "params/coordenacaoDistrital/form";
+
+// Ticket Category
+export const PARAMS_ROUTE_TICKET_CATEGORY = "params/ticketCategory";
+export const PARAMS_ROUTE_TICKET_CATEGORY_FORM = "params/ticketCategory/form";
+
+// Ticket Channel
+export const PARAMS_ROUTE_TICKET_CHANNEL = "params/ticketChannel";
+export const PARAMS_ROUTE_TICKET_CHANNEL_FORM = "params/ticketChannel/form";
+
+// Ticket Flag
+export const PARAMS_ROUTE_TICKET_FLAG = "params/ticketFlag";
+export const PARAMS_ROUTE_TICKET_FLAG_FORM = "params/ticketFlag/form";
+
+// Ticket Priority
+export const PARAMS_ROUTE_TICKET_PRIORITY = "params/ticketPriority";
+export const PARAMS_ROUTE_TICKET_PRIORITY_FORM = "params/ticketPriority/form";
