@@ -10,6 +10,8 @@ on:
 jobs:
   publish-docker-develop-image:
     runs-on: ubuntu-latest
+    outputs:
+      sha: ${{ steps.build.outputs.sha }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -23,10 +25,15 @@ jobs:
           password: ${{ secrets.GHCR_TOKEN }}
 
       - name: Build the Kenon Frontend Docker image
+        id: build
         run: |
-          LABEL=latest
-          docker build . --tag ghcr.io/stssocialst-stp/kenon-frontend:${LABEL}
-          docker push ghcr.io/stssocialst-stp/kenon-frontend:${LABEL}
+          SHA=$(echo ${{ github.sha }} | cut -c1-7)
+          docker build . \
+            --tag ghcr.io/stssocialst-stp/kenon-frontend:${SHA} \
+            --tag ghcr.io/stssocialst-stp/kenon-frontend:latest
+          docker push ghcr.io/stssocialst-stp/kenon-frontend:${SHA}
+          docker push ghcr.io/stssocialst-stp/kenon-frontend:latest
+          echo "sha=${SHA}" >> $GITHUB_OUTPUT
 
   trigger-orchestrator:
     needs: publish-docker-develop-image
@@ -38,3 +45,4 @@ jobs:
           token: ${{ secrets.GHCR_TOKEN }}
           repository: stssocialst-stp/openimis-dist_dkr
           event-type: deploy-kenon-frontend
+          client-payload: '{"fe_tag": "${{ needs.publish-docker-develop-image.outputs.sha }}"}'
