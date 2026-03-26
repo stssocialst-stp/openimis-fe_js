@@ -1106,7 +1106,7 @@ function BimonthlyReportFormPage(props) {
           <Typography variant="h6" className={classes.sectionTitle} style={{ marginBottom: 0 }}>
             6. Tabela com Número Total de Sessões Por Técnico Responsável
           </Typography>
-          {!readOnly && (
+          {/* {!readOnly && (
             <Button
               variant="outlined"
               color="primary"
@@ -1116,7 +1116,7 @@ function BimonthlyReportFormPage(props) {
             >
               Adicionar Técnico
             </Button>
-          )}
+          )} */}
         </Box>
         <TableContainer>
           <Table size="small">
@@ -1130,7 +1130,7 @@ function BimonthlyReportFormPage(props) {
                 <TableCell>Famílias Migraram</TableCell>
                 <TableCell>Não Compareceram 2 Sessões</TableCell>
                 <TableCell>Não Compareceram 1 Sessão</TableCell>
-                {!readOnly && <TableCell>Ações</TableCell>}
+                {/* {!readOnly && <TableCell>Ações</TableCell>} */}
               </TableRow>
             </TableHead>
             <TableBody>
@@ -1224,7 +1224,7 @@ function BimonthlyReportFormPage(props) {
                       style={{ width: 80 }}
                     />
                   </TableCell>
-                  {!readOnly && (
+                  {/* {!readOnly && (
                     <TableCell className={classes.tableCell}>
                       <Tooltip title="Remover">
                         <IconButton
@@ -1236,7 +1236,7 @@ function BimonthlyReportFormPage(props) {
                         </IconButton>
                       </Tooltip>
                     </TableCell>
-                  )}
+                  )} */}
                 </TableRow>
               ))}
             </TableBody>

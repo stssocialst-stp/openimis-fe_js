@@ -5,6 +5,7 @@ import {
   Paper, Typography, Grid, TextField, Button, MenuItem, Box,
   FormControl, FormLabel, RadioGroup, FormControlLabel, Radio,
 } from "@material-ui/core";
+import { Autocomplete } from "@stssocialst-stp/fe-core";
 import ChevronLeftIcon from "@material-ui/icons/ChevronLeft";
 import SaveIcon from "@material-ui/icons/Save";
 import AddIcon from "@material-ui/icons/Add";
@@ -211,7 +212,7 @@ function SessionPlanningEditPage(props) {
 
   const [formData, setFormData] = useState({
     codigoSessao: "",
-    dataPlanejamento: "",
+    dataPlanejamento: new Date().toISOString().slice(0, 10),
     coordenadorDistrital: null,
     tecnicoSocial: null,
     distrito: null,
@@ -467,12 +468,65 @@ function SessionPlanningEditPage(props) {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleSelectChange = (field) => (event) => {
+
+  // Busca todas as coordenações distritais ao montar
+  const [districtCoordinations, setDistrictCoordinations] = useState([]);
+  useEffect(() => {
+    const fetchCoordenacoesDistritais = async () => {
+      const query = `query ListCoordenacoes($first: Int) {
+        coordenacoesDistritais(first: $first) {
+          edges {
+            node {
+              id
+              distrito { id name }
+              coordenador { id lastName }
+              tecnicosOperacionais { tecnico { id lastName } }
+            }
+          }
+        }
+      }`;
+      try {
+        const res = await fetch(`${baseApiUrl}/graphql`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "X-CSRFToken": getCookie("csrftoken"), ...apiHeaders() },
+          body: JSON.stringify({ query, variables: { first: 100 } }),
+        });
+        const json = await res.json();
+        const edges = json?.data?.coordenacoesDistritais?.edges ?? [];
+        setDistrictCoordinations(edges.map(e => e.node));
+      } catch (e) { console.error(e); }
+    };
+    fetchCoordenacoesDistritais();
+  }, []);
+
+  // Ao selecionar distrito, preenche coordenador e técnicos sociais
+  const handleSelectChange = (field) => async (event) => {
     if (readOnly) return;
     const { value } = event.target;
-    console.log('Select change:', field, value);
     setFormData((prev) => ({ ...prev, [field]: { id: value } }));
+    if (field === 'distrito') {
+      // Busca a coordenação do distrito selecionado
+      const coord = districtCoordinations.find(c => c.distrito?.id === value);
+      if (coord) {
+        // Preenche coordenador
+        if (coord.coordenador) {
+          setFormData(prev => ({ ...prev, coordenadorDistrital: { id: coord.coordenador.id } }));
+        }
+        // Preenche técnicos sociais
+        if (Array.isArray(coord.tecnicosOperacionais)) {
+          setSocialTechnicians(coord.tecnicosOperacionais.map(t => ({ value: t.tecnico.id, label: t.tecnico.lastName })));
+        } else {
+          setSocialTechnicians([]);
+        }
+      } else {
+        setFormData(prev => ({ ...prev, coordenadorDistrital: null }));
+        setSocialTechnicians([]);
+      }
+    }
   };
+
+
+  // (Apenas a versão que consome districtCoordinations deve existir)
 
   const handleSessionChange = (field) => (event) => {
     if (readOnly) return;
@@ -565,7 +619,7 @@ function SessionPlanningEditPage(props) {
             fullWidth
             type="date"
             label={formatMessage(intl, "prl", "sessionPlanning.plannedDate")}
-            value={session.dataSessao}
+            value={session.dataSessao || new Date().toISOString().slice(0, 10)}
             onChange={(event) => handleSessionUpdate(index, 'dataSessao', event.target.value)}
             variant="outlined"
             size="small"
@@ -615,7 +669,7 @@ function SessionPlanningEditPage(props) {
             variant="outlined"
             size="small"
             required
-            disabled={readOnly}
+            disabled={true}
           />
         </Grid>
         <Grid item xs={12} sm={4}>
@@ -930,40 +984,6 @@ function SessionPlanningEditPage(props) {
             <TextField
               select
               fullWidth
-              label={formatMessage(intl, "prl", "sessionPlanning.selectCoordinator")}
-              value={formData.coordenadorDistrital?.id || ""}
-              onChange={handleSelectChange("coordenadorDistrital")}
-              variant="outlined"
-              size="small"
-              required
-              disabled={readOnly}
-            >
-              {coordinators.map((option) => (
-                <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>
-              ))}
-            </TextField>
-          </Grid>
-          <Grid item xs={12} sm={4}>
-            <TextField
-              select
-              fullWidth
-              label={formatMessage(intl, "prl", "sessionPlanning.selectTrainer")}
-              value={formData.tecnicoSocial?.id || ""}
-              onChange={handleSelectChange("tecnicoSocial")}
-              variant="outlined"
-              size="small"
-              required
-              disabled={readOnly}
-            >
-              {socialTechnicians.map((option) => (
-                <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>
-              ))}
-            </TextField>
-          </Grid>
-          <Grid item xs={12} sm={4}>
-            <TextField
-              select
-              fullWidth
               label={formatMessage(intl, "prl", "sessionPlanning.selectDistrict")}
               value={formData.distrito?.id || ""}
               onChange={handleSelectChange("distrito")}
@@ -976,6 +996,38 @@ function SessionPlanningEditPage(props) {
                 <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>
               ))}
             </TextField>
+          </Grid>
+          <Grid item xs={12} sm={4}>
+            <TextField
+              select
+              fullWidth
+              label={formatMessage(intl, "prl", "sessionPlanning.selectCoordinator")}
+              value={formData.coordenadorDistrital?.id || ""}
+              onChange={handleSelectChange("coordenadorDistrital")}
+              variant="outlined"
+              size="small"
+              required
+              disabled={true}
+            >
+              {coordinators.map((option) => (
+                <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>
+              ))}
+            </TextField>
+          </Grid>
+          <Grid item xs={12} sm={4}>
+            <Autocomplete
+              options={socialTechnicians}
+              value={socialTechnicians.find(option => option.value === formData.tecnicoSocial?.id) || null}
+              onChange={newValue => setFormData(prev => ({ ...prev, tecnicoSocial: newValue ? { id: newValue.value } : null }))}
+              getOptionLabel={option => option.label || ''}
+              getOptionSelected={(option, value) => option.value === value.value}
+              fullWidth
+              required
+              readOnly={readOnly}
+              label={formatMessage(intl, "prl", "sessionPlanning.selectTrainer")}
+              placeholder={formatMessage(intl, "prl", "sessionPlanning.selectTrainer")}
+              onInputChange={() => { }}
+            />
           </Grid>
           <Grid item xs={12} sm={4}>
             <TextField
@@ -1047,139 +1099,141 @@ function SessionPlanningEditPage(props) {
           )}
         </Box>
 
-        <Grid container spacing={3} style={{ marginBottom: "24px", paddingBottom: "16px", borderBottom: "1px solid #e0e0e0" }}>
-          <Grid item xs={12} sm={4}>
-            <TextField
-              select
-              fullWidth
-              label={formatMessage(intl, "prl", "sessionPlanning.dayOfWeek")}
-              value={sessionData.diaSemana}
-              onChange={handleSessionChange("diaSemana")}
-              variant="outlined"
-              size="small"
-              required
-              disabled={readOnly}
-            >
-              {DAYS_OF_WEEK.map((option) => (
-                <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>
-              ))}
-            </TextField>
-          </Grid>
-          <Grid item xs={12} sm={4}>
-            <TextField
-              fullWidth
-              type="date"
-              label={formatMessage(intl, "prl", "sessionPlanning.plannedDate")}
-              value={sessionData.dataSessao}
-              onChange={handleSessionChange("dataSessao")}
-              variant="outlined"
-              size="small"
-              InputLabelProps={{ shrink: true }}
-              required
-              disabled={readOnly}
-            />
-          </Grid>
-          <Grid item xs={12} sm={4}>
-            <TextField
-              fullWidth
-              label={formatMessage(intl, "prl", "sessionPlanning.zone")}
-              placeholder="Ex: A, B, C, D"
-              value={sessionData.zona}
-              onChange={handleSessionChange("zona")}
-              variant="outlined"
-              size="small"
-              required
-              InputLabelProps={{ shrink: true }}
-              disabled={readOnly}
-            />
-          </Grid>
-          <Grid item xs={12} sm={4}>
-            <TextField
-              select
-              fullWidth
-              label={formatMessage(intl, "prl", "sessionPlanning.selectFamilyGroup")}
-              value={sessionData.grupoFamilia?.id || ""}
-              onChange={handleSessionSelectChange("grupoFamilia")}
-              variant="outlined"
-              size="small"
-              required
-              disabled={readOnly}
-            >
-              {familyGroups.map((option) => (
-                <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>
-              ))}
-            </TextField>
-          </Grid>
-          <Grid item xs={12} sm={4}>
-            <TextField
-              fullWidth
-              type="number"
-              label={formatMessage(intl, "prl", "sessionPlanning.numFamilies")}
-              value={sessionData.numeroFamilias}
-              onChange={handleSessionChange("numeroFamilias")}
-              variant="outlined"
-              size="small"
-              required
-              disabled={readOnly}
-            />
-          </Grid>
-          <Grid item xs={12} sm={4}>
-            <TextField
-              fullWidth
-              type="number"
-              label={formatMessage(intl, "prl", "sessionPlanning.travelTime")}
-              value={sessionData.tempoDeslocamento}
-              onChange={handleSessionChange("tempoDeslocamento")}
-              variant="outlined"
-              size="small"
-              required
-              disabled={readOnly}
-            />
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              type="time"
-              label={formatMessage(intl, "prl", "sessionPlanning.sessionTime")}
-              value={sessionData.horaSessao}
-              onChange={handleSessionChange("horaSessao")}
-              variant="outlined"
-              size="small"
-              InputLabelProps={{ shrink: true }}
-              required
-              disabled={readOnly}
-            />
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <FormControl component="fieldset" className={classes.formControl} disabled={readOnly}>
-              <FormLabel component="legend">{formatMessage(intl, "prl", "sessionPlanning.isSupervised")}</FormLabel>
-              <RadioGroup
-                row
-                value={sessionData.temSupervisao ? "Sim" : "Não"}
-                onChange={(event) => setSessionData((prev) => ({ ...prev, temSupervisao: event.target.value === "Sim" }))}
+        {!readOnly && !initialData?.id &&
+          <Grid container spacing={3} style={{ marginBottom: "24px", paddingBottom: "16px", borderBottom: "1px solid #e0e0e0" }}>
+            <Grid item xs={12} sm={4}>
+              <TextField
+                select
+                fullWidth
+                label={formatMessage(intl, "prl", "sessionPlanning.dayOfWeek")}
+                value={sessionData.diaSemana}
+                onChange={handleSessionChange("diaSemana")}
+                variant="outlined"
+                size="small"
+                required
+                disabled={readOnly}
               >
-                <FormControlLabel value="Sim" control={<Radio color="primary" />} label="Sim" />
-                <FormControlLabel value="Não" control={<Radio color="primary" />} label="Não" />
-              </RadioGroup>
-            </FormControl>
+                {DAYS_OF_WEEK.map((option) => (
+                  <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>
+                ))}
+              </TextField>
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <TextField
+                fullWidth
+                type="date"
+                label={formatMessage(intl, "prl", "sessionPlanning.plannedDate")}
+                value={sessionData.dataSessao}
+                onChange={handleSessionChange("dataSessao")}
+                variant="outlined"
+                size="small"
+                InputLabelProps={{ shrink: true }}
+                required
+                disabled={readOnly}
+              />
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <TextField
+                fullWidth
+                label={formatMessage(intl, "prl", "sessionPlanning.zone")}
+                placeholder="Ex: A, B, C, D"
+                value={sessionData.zona}
+                onChange={handleSessionChange("zona")}
+                variant="outlined"
+                size="small"
+                required
+                InputLabelProps={{ shrink: true }}
+                disabled={readOnly}
+              />
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <TextField
+                select
+                fullWidth
+                label={formatMessage(intl, "prl", "sessionPlanning.selectFamilyGroup")}
+                value={sessionData.grupoFamilia?.id || ""}
+                onChange={handleSessionSelectChange("grupoFamilia")}
+                variant="outlined"
+                size="small"
+                required
+                disabled={readOnly}
+              >
+                {familyGroups.map((option) => (
+                  <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>
+                ))}
+              </TextField>
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <TextField
+                fullWidth
+                type="number"
+                label={formatMessage(intl, "prl", "sessionPlanning.numFamilies")}
+                value={sessionData.numeroFamilias}
+                onChange={handleSessionChange("numeroFamilias")}
+                variant="outlined"
+                size="small"
+                required
+                disabled={true}
+              />
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <TextField
+                fullWidth
+                type="number"
+                label={formatMessage(intl, "prl", "sessionPlanning.travelTime")}
+                value={sessionData.tempoDeslocamento}
+                onChange={handleSessionChange("tempoDeslocamento")}
+                variant="outlined"
+                size="small"
+                required
+                disabled={readOnly}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                type="time"
+                label={formatMessage(intl, "prl", "sessionPlanning.sessionTime")}
+                value={sessionData.horaSessao}
+                onChange={handleSessionChange("horaSessao")}
+                variant="outlined"
+                size="small"
+                InputLabelProps={{ shrink: true }}
+                required
+                disabled={readOnly}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <FormControl component="fieldset" className={classes.formControl} disabled={readOnly}>
+                <FormLabel component="legend">{formatMessage(intl, "prl", "sessionPlanning.isSupervised")}</FormLabel>
+                <RadioGroup
+                  row
+                  value={sessionData.temSupervisao ? "Sim" : "Não"}
+                  onChange={(event) => setSessionData((prev) => ({ ...prev, temSupervisao: event.target.value === "Sim" }))}
+                >
+                  <FormControlLabel value="Sim" control={<Radio color="primary" />} label="Sim" />
+                  <FormControlLabel value="Não" control={<Radio color="primary" />} label="Não" />
+                </RadioGroup>
+              </FormControl>
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                multiline
+                rows={3}
+                label={formatMessage(intl, "prl", "sessionPlanning.feedback")}
+                placeholder="Feedback da documentação..."
+                value={sessionData.feedbackDocumentacao}
+                onChange={handleSessionChange("feedbackDocumentacao")}
+                variant="outlined"
+                size="small"
+                required
+                InputLabelProps={{ shrink: true }}
+                disabled={readOnly}
+              />
+            </Grid>
           </Grid>
-          <Grid item xs={12}>
-            <TextField
-              fullWidth
-              multiline
-              rows={3}
-              label={formatMessage(intl, "prl", "sessionPlanning.feedback")}
-              placeholder="Feedback da documentação..."
-              value={sessionData.feedbackDocumentacao}
-              onChange={handleSessionChange("feedbackDocumentacao")}
-              variant="outlined"
-              size="small"
-              required
-              InputLabelProps={{ shrink: true }}
-              disabled={readOnly}
-            />
-          </Grid>
-        </Grid>
+        }
 
         {sessions.map((session, index) => renderSessionForm(session, index))}
       </Paper>
