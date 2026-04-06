@@ -69,6 +69,18 @@ function PrlSearcher({
       module={module}
       FilterPane={FilterPane}
       fetch={fetch}
+      filtersToQueryParams={({ filters, orderBy, pageSize }) => {
+        // Monta objeto variables para o backend
+        const variables = {};
+        Object.keys(filters || {}).forEach((key) => {
+          if (filters[key] && filters[key].value !== undefined && filters[key].value !== null && filters[key].value !== "") {
+            variables[key] = filters[key].value;
+          }
+        });
+        if (orderBy) variables.orderBy = [orderBy];
+        if (pageSize) variables.first = pageSize;
+        return { variables };
+      }}
       items={items}
       itemsPageInfo={pageInfo}
       fetchingItems={fetching}
