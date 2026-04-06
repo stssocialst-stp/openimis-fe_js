@@ -15,7 +15,9 @@ function PrlFilter({ filters, onChangeFilters, filterConfig, formatMessage }) {
       };
     }
 
-    onChangeFilters(newFilters);
+    // Convert object to array for Searcher compatibility
+    const filtersArray = Object.entries(newFilters).map(([field, { value, filter }]) => ({ id: field, value, filter }));
+    onChangeFilters(filtersArray);
   };
 
   return (
