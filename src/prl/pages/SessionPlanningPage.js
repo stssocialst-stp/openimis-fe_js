@@ -85,17 +85,19 @@ function SessionPlanningPage(props) {
 
   const fetchSessions = async (params) => {
     const filters = params.filters || {};
-    const variables = {
-      first: params.pageSize || 10,
-      distritoId: filters.distrito_Id?.value || null,
-      dataSessao_Gte: filters.dataSessao_Gte?.value || null,
-      dataSessao_Lte: filters.dataSessao_Lte?.value || null,
-      status: filters.status?.value || null,
-      codigoSessao_Icontains: filters.codigoSessao_Icontains?.value || null,
-      moduloId: filters.moduloId?.value || null,
-      dataPlanejamento_Gte: filters.dataPlanejamento_Gte?.value || null,
-      orderBy: params.orderBy || ["-dataSessao"],
-    };
+    // Monta variables apenas com campos preenchidos
+    const variables = {};
+    if (params.first || params.pageSize) variables.first = params.pageSize || params.first || 10;
+    if (filters.distritoId?.value) variables.distritoId = filters.distritoId.value;
+    if (filters.dataSessao_Gte?.value) variables.dataSessao_Gte = filters.dataSessao_Gte.value;
+    if (filters.dataSessao_Lte?.value) variables.dataSessao_Lte = filters.dataSessao_Lte.value;
+    if (filters.status?.value) variables.status = filters.status.value;
+    if (filters.codigoSessao_Icontains?.value) variables.codigoSessao_Icontains = filters.codigoSessao_Icontains.value;
+    if (filters.moduloId?.value) variables.moduloId = filters.moduloId.value;
+    if (filters.dataPlanejamento_Gte?.value) variables.dataPlanejamento_Gte = filters.dataPlanejamento_Gte.value;
+    if (params.orderBy) variables.orderBy = params.orderBy;
+    else variables.orderBy = ["-dataSessao"];
+
 
     const response = await fetch(`${baseApiUrl}/graphql`, {
       method: 'POST',
