@@ -84,19 +84,12 @@ function SessionPlanningPage(props) {
   }`;
 
   const fetchSessions = async (params) => {
-    const filters = params.filters || {};
-    // Monta variables apenas com campos preenchidos
-    const variables = {};
-    if (params.first || params.pageSize) variables.first = params.pageSize || params.first || 10;
-    if (filters.distritoId?.value) variables.distritoId = filters.distritoId.value;
-    if (filters.dataSessao_Gte?.value) variables.dataSessao_Gte = filters.dataSessao_Gte.value;
-    if (filters.dataSessao_Lte?.value) variables.dataSessao_Lte = filters.dataSessao_Lte.value;
-    if (filters.status?.value) variables.status = filters.status.value;
-    if (filters.codigoSessao_Icontains?.value) variables.codigoSessao_Icontains = filters.codigoSessao_Icontains.value;
-    if (filters.moduloId?.value) variables.moduloId = filters.moduloId.value;
-    if (filters.dataPlanejamento_Gte?.value) variables.dataPlanejamento_Gte = filters.dataPlanejamento_Gte.value;
-    if (params.orderBy) variables.orderBy = params.orderBy;
-    else variables.orderBy = ["-dataSessao"];
+    // Se vier params.variables, use diretamente, filtrando apenas os campos preenchidos
+    let variables = params.variables || {};
+    // Remove campos nulos ou vazios
+    variables = Object.fromEntries(Object.entries(variables).filter(([_, v]) => v !== null && v !== undefined && v !== ""));
+    // Garante orderBy
+    if (!variables.orderBy) variables.orderBy = ["-dataSessao"];
 
 
     const response = await fetch(`${baseApiUrl}/graphql`, {
