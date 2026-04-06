@@ -80,6 +80,9 @@ function SupervisionReportPage(props) {
   `;
 
   const fetchReports = async (params) => {
+    let variables = params.variables || {};
+    variables = Object.fromEntries(Object.entries(variables).filter(([_, v]) => v !== null && v !== undefined && v !== ""));
+    if (!variables.first) variables.first = params.pageSize || 10;
     const filters = params.filters || {};
     let periodoValue = filters.periodo?.value || null;
 

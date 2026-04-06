@@ -127,6 +127,10 @@ function AlunoPage(props) {
   }`;
 
   const fetchAlunos = async (params) => {
+    // Se vier params.variables, use diretamente, filtrando apenas os campos preenchidos
+    let variables = params.variables || {};
+    variables = Object.fromEntries(Object.entries(variables).filter(([_, v]) => v !== null && v !== undefined && v !== ""));
+    if (!variables.first) variables.first = params.pageSize || 10;
     const filters = params.filters || {};
     const pageSize = params.pageSize || 10;
     const offset = ((params.page || 1) - 1) * pageSize;

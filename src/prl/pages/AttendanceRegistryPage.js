@@ -84,16 +84,10 @@ function AttendanceRegistryPage(props) {
   }`;
 
   const fetchAttendances = async (params) => {
-    const filters = params.filters || {};
-    const variables = {
-      first: params.pageSize || 10,
-      sessaoId: filters.sessaoId?.value || null,
-      familiaId: filters.familiaId?.value || null,
-      nomeFamilia_Icontains: filters.nomeFamilia?.value || null,
-      grupoId: filters.grupoId?.value || null,
-      estado: filters.estado?.value || null,
-      codigoEncaminhamento_Icontains: filters.codigoEncaminhamento?.value || null,
-    };
+    // Se vier params.variables, use diretamente, filtrando apenas os campos preenchidos
+    let variables = params.variables || {};
+    variables = Object.fromEntries(Object.entries(variables).filter(([_, v]) => v !== null && v !== undefined && v !== ""));
+    if (!variables.first) variables.first = params.pageSize || 10;
 
     const response = await fetch(`${baseApiUrl}/graphql`, {
       method: 'POST',

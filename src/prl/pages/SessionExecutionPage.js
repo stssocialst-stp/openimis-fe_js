@@ -81,6 +81,9 @@ function SessionExecutionPage(props) {
   }`;
 
   const fetchExecutions = useCallback(async (params = {}) => {
+    let variables = params.variables || {};
+    variables = Object.fromEntries(Object.entries(variables).filter(([_, v]) => v !== null && v !== undefined && v !== ""));
+    if (!variables.first) variables.first = params.pageSize || 10;
     setLoading(true);
     try {
       const filters = params.filters || {};
