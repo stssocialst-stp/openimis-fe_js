@@ -80,13 +80,14 @@ function SupervisionReportPage(props) {
   `;
 
   const fetchReports = async (params) => {
-    let variables = params.variables || {};
-    variables = Object.fromEntries(Object.entries(variables).filter(([_, v]) => v !== null && v !== undefined && v !== ""));
-    if (!variables.first) variables.first = params.pageSize || 10;
+    let filteredVariables = params.variables || {};
+    filteredVariables = Object.fromEntries(Object.entries(filteredVariables).filter(([_, v]) => v !== null && v !== undefined && v !== ""));
+    if (!filteredVariables.first) filteredVariables.first = params.pageSize || 10;
     const filters = params.filters || {};
     let periodoValue = filters.periodo?.value || null;
 
     const variables = {
+      ...filteredVariables,
       first: params.pageSize || 10,
       periodo: periodoValue,
       ano: filters.ano?.value || null,

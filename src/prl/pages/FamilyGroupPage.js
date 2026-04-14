@@ -83,15 +83,7 @@ function FamilyGroupPage(props) {
     const pageSize = params.pageSize || 10;
     const offset = ((params.page || 1) - 1) * pageSize;
 
-    const variables = {
-      first: pageSize,
-      offset,
-      codigo_Icontains: filters.codigo?.value || null,
-      nome_Icontains: filters.nome?.value || null,
-      distritoId: filters.distrito_id?.value || null,
-      localidadeId: filters.localidade_id?.value || null,
-      ativo: filters.ativo?.value !== undefined ? filters.ativo.value === 'true' : null,
-    };
+
 
     const response = await fetch(`${baseApiUrl}/graphql`, {
       method: 'POST',

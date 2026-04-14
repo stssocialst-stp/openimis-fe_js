@@ -81,14 +81,15 @@ function SessionSupervisionPage(props) {
   }`;
 
   const fetchSupervisions = async (params) => {
-    let variables = params.variables || {};
-    variables = Object.fromEntries(Object.entries(variables).filter(([_, v]) => v !== null && v !== undefined && v !== ""));
-    if (!variables.first) variables.first = params.pageSize || 10;
+    let filteredVariables = params.variables || {};
+    filteredVariables = Object.fromEntries(Object.entries(filteredVariables).filter(([_, v]) => v !== null && v !== undefined && v !== ""));
+    if (!filteredVariables.first) filteredVariables.first = params.pageSize || 10;
     const filters = params.filters || {};
     const pageSize = params.pageSize || 10;
     const offset = ((params.page || 1) - 1) * pageSize;
 
     const variables = {
+      ...filteredVariables,
       first: pageSize,
       offset,
       sessaoId: filters.sessao_id?.value || null,

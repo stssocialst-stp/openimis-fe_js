@@ -143,18 +143,7 @@ function EducationalModulePage(props) {
     const pageSize = params.pageSize || 10;
     const offset = ((params.page || 1) - 1) * pageSize;
 
-    const variables = {
-      first: pageSize,
-      offset,
-      nome_Icontains: filters.nome?.value || null,
-      sexo: filters.sexo?.value || null,
-      escolaId: filters.escolaId?.value || null,
-      classeQueFrequentaId: filters.classeQueFrequentaId?.value || null,
-      anoRegisto: filters.anoRegisto?.value ? parseInt(filters.anoRegisto.value) : null,
-      distritoId: filters.distritoId?.value || null,
-      localidadeId: filters.localidadeId?.value || null,
-      faixaDeFaltas: filters.faixaDeFaltas?.value || null,
-    };
+
 
     const result = await gqlFetch(query, variables);
 

@@ -131,24 +131,13 @@ function AlunoPage(props) {
     let variables = params.variables || {};
     variables = Object.fromEntries(Object.entries(variables).filter(([_, v]) => v !== null && v !== undefined && v !== ""));
     if (!variables.first) variables.first = params.pageSize || 10;
-    const filters = params.filters || {};
-    const pageSize = params.pageSize || 10;
-    const offset = ((params.page || 1) - 1) * pageSize;
+    // Remove declaração duplicada
+    // const filters = params.filters || {};
+    // const pageSize = params.pageSize || 10;
+    // const offset = ((params.page || 1) - 1) * pageSize;
 
-    const variables = {
-      first: pageSize,
-      offset,
-      idMembroCrianca: filters.idMembroCrianca?.value || null,
-      idDaCrianca_Icontains: filters.idDaCrianca?.value || null,
-      sexo: filters.sexo?.value || null,
-      distritoId: filters.distritoId?.value || null,
-      localidadeId: filters.localidadeId?.value || null,
-      escolaId: filters.escolaId?.value || null,
-      escolaridadeActual: filters.escolaridadeActual?.value || null,
-      classeId: filters.classeId?.value || null,
-      dadosEscolaresCorrectos: filters.dadosEscolaresCorrectos?.value != null ? filters.dadosEscolaresCorrectos.value === "true" : null,
-      ativo: true,
-    };
+    // Se precisar adicionar campos extras, faça merge aqui
+    // variables = { ...variables, ...outrosCampos }
 
     const response = await fetch(`${baseApiUrl}/graphql`, {
       method: 'POST',

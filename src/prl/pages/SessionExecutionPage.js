@@ -81,13 +81,14 @@ function SessionExecutionPage(props) {
   }`;
 
   const fetchExecutions = useCallback(async (params = {}) => {
-    let variables = params.variables || {};
-    variables = Object.fromEntries(Object.entries(variables).filter(([_, v]) => v !== null && v !== undefined && v !== ""));
-    if (!variables.first) variables.first = params.pageSize || 10;
+    let filteredVariables = params.variables || {};
+    filteredVariables = Object.fromEntries(Object.entries(filteredVariables).filter(([_, v]) => v !== null && v !== undefined && v !== ""));
+    if (!filteredVariables.first) filteredVariables.first = params.pageSize || 10;
     setLoading(true);
     try {
       const filters = params.filters || {};
       const variables = {
+        ...filteredVariables,
         first: params.pageSize || 100,
       };
 

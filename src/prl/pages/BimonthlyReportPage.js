@@ -113,13 +113,7 @@ function BimonthlyReportPage(props) {
     const pageSize = params.pageSize || 10;
     const offset = ((params.page || 1) - 1) * pageSize;
 
-    const variables = {
-      first: pageSize,
-      offset,
-      distritoId: filters.distrito_id?.value || null,
-      ano: filters.ano?.value ? parseInt(filters.ano.value) : null,
-      periodo: filters.periodo?.value || null,
-    };
+
 
     const response = await fetch(`${baseApiUrl}/graphql`, {
       method: 'POST',
