@@ -12,7 +12,7 @@ import store from "./helpers/store";
 import LocalesManager from "./LocalesManager";
 import ModulesManager from "./ModulesManager";
 import ModulesManagerProvider from "./ModulesManagerProvider";
-import { App, FatalError, baseApiUrl, apiHeaders } from "@stssocialst-stp/fe-core";
+import { App, baseApiUrl, apiHeaders } from "@stssocialst-stp/fe-core";
 import getConfiguredLogo from "./helpers/logo";
 import messages_ref from "./translations/ref.json";
 import "./index.css";
@@ -76,12 +76,13 @@ const AppContainer = () => {
     );
   } else if (appState.error) {
     return (
-      <FatalError
-        error={{
-          code: appState.error.status,
-          message: appState.error.statusText,
-        }}
-      />
+      <MuiThemeProvider theme={dynamicTheme}>
+        <div style={{ padding: 24 }}>
+          <h2>Error loading configuration</h2>
+          <p>Code: {appState.error?.status || "unknown"}</p>
+          <p>Message: {appState.error?.statusText || appState.error?.message || "unidentified error"}</p>
+        </div>
+      </MuiThemeProvider>
     );
   } else {
     const modulesManager = new ModulesManager(appState.config);
