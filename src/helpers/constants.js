@@ -1,9 +1,17 @@
 export const faltasList = [
-  { value: "1-3", label: "1-3" },
-  { value: "4-6", label: "4-6" },
-  { value: "7-10", label: "7-10" },
-  { value: "+10", label: "+10" },
+  { value: "low", label: "Pouca falta" },
+  { value: "medium", label: "Falta moderada" },
+  { value: "high", label: "Muita falta" },
 ];
+export const faltasLabelMap = {
+  low: "Pouca falta",
+  medium: "Falta moderada",
+  high: "Muita falta",
+  "1-3": "Pouca falta",
+  "4-6": "Falta moderada",
+  "7-10": "Muita falta",
+  "+10": "Muita falta",
+};
 export const aproveitamentoList = [
   { value: "A_0", label: "0" },
   { value: "A_1", label: "1" },

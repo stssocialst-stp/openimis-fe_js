@@ -896,7 +896,7 @@ function SupervisionReportFormPage(props) {
         </Typography>
         <LimitedChecklistComponent
           items={modulosOptions}
-          maxSelections={1}
+          maxSelections={3}
           onSelectionChange={(updated) => !isView && setModulosDificuldade(updated)}
           selections={modulosDificuldade}
           footer={false}

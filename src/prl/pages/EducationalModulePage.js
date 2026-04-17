@@ -13,6 +13,7 @@ import DeleteIcon from "@material-ui/icons/Delete";
 import { formatMessage, withModulesManager, Helmet, baseApiUrl, apiHeaders } from "@stssocialst-stp/fe-core";
 import PrlSearcher from "../components/PrlSearcher";
 import { PRL_ROUTE_EDUCATIONAL_MODULE_FORM } from "../constants";
+import { faltasLabelMap } from "../../helpers/constants";
 
 const styles = (theme) => ({
   page: theme.page,
@@ -213,7 +214,7 @@ function EducationalModulePage(props) {
     (item) => item.ano,
     (item) => item.escolaActual,
     (item) => item.disciplinas,
-    (item) => item.faixaDeFaltas,
+    (item) => faltasLabelMap[item.faixaDeFaltas] || item.faixaDeFaltas || "-",
     (item) => (
       <div style={{ display: 'flex', justifyContent: 'center' }}>
         <Tooltip title={formatMessage(intl, "prl", "button.view")}>
@@ -379,10 +380,9 @@ function EducationalModulePage(props) {
               label={formatMessage(intl, "prl", "educationalModule.filterFaixaFaltas")}
             >
               <MenuItem value="">{formatMessage(intl, "prl", "filter.all")}</MenuItem>
-              <MenuItem value="1-3">1-3</MenuItem>
-              <MenuItem value="4-6">4-6</MenuItem>
-              <MenuItem value="7-10">7-10</MenuItem>
-              <MenuItem value="+10">+10</MenuItem>
+              <MenuItem value="low">Pouca falta</MenuItem>
+              <MenuItem value="medium">Falta moderada</MenuItem>
+              <MenuItem value="high">Muita falta</MenuItem>
             </Select>
           </FormControl>
         </Grid>

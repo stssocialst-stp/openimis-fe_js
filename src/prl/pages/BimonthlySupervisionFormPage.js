@@ -112,6 +112,8 @@ function BimonthlySupervisionFormPage(props) {
     coordenadorNacionalId: "",
     participantes: [],
   });
+  const [participantesManuais, setParticipantesManuais] = useState([]);
+  const [manualParticipantInput, setManualParticipantInput] = useState("");
 
   // Agenda da Reunião
   const [agendaItems, setAgendaItems] = useState(
@@ -188,6 +190,7 @@ function BimonthlySupervisionFormPage(props) {
         otherNames
       }
       participantes
+      participantesManuais
       principaisDesafios
       oportunidadesMelhoria
       apreciacaoRelatorios
@@ -242,6 +245,18 @@ function BimonthlySupervisionFormPage(props) {
         participantes: initialData.participantes ? (typeof initialData.participantes === 'string' ? JSON.parse(initialData.participantes) : initialData.participantes) : [],
       });
 
+      let participantesManuais = [];
+      if (initialData.participantesManuais) {
+        try {
+          participantesManuais = typeof initialData.participantesManuais === 'string'
+            ? JSON.parse(initialData.participantesManuais)
+            : initialData.participantesManuais;
+        } catch (e) {
+          console.log('Could not parse participantesManuais:', e);
+        }
+      }
+      setParticipantesManuais(Array.isArray(participantesManuais) ? participantesManuais : []);
+
       setPrincipaisDesafios(initialData.principaisDesafios || "");
       setOportunidadesMelhoria(initialData.oportunidadesMelhoria || "");
       setApreciacaoRelatorios(initialData.apreciacaoRelatorios || "");
@@ -284,6 +299,30 @@ function BimonthlySupervisionFormPage(props) {
 
   const handleBack = () => {
     history.push('/prl/bimonthlySupervision');
+  };
+
+  const handleAddManualParticipant = () => {
+    if (isView) return;
+    const name = manualParticipantInput.trim();
+    if (!name) return;
+    if (participantesManuais.includes(name)) {
+      setManualParticipantInput("");
+      return;
+    }
+    setParticipantesManuais((prev) => [...prev, name]);
+    setManualParticipantInput("");
+  };
+
+  const handleRemoveManualParticipant = (nameToRemove) => {
+    if (isView) return;
+    setParticipantesManuais((prev) => prev.filter((name) => name !== nameToRemove));
+  };
+
+  const handleManualParticipantKeyDown = (event) => {
+    if (event.key === 'Enter' || event.key === ',') {
+      event.preventDefault();
+      handleAddManualParticipant();
+    }
   };
 
   const handleToggleAgendaItem = (id) => {
@@ -359,6 +398,7 @@ function BimonthlySupervisionFormPage(props) {
         horario: formData.horario,
         coordenadorNacionalId: formData.coordenadorNacionalId,
         participantes: JSON.stringify(formData.participantes),
+        participantesManuais: JSON.stringify(participantesManuais),
         resumoDaAgenda: JSON.stringify([resumoDaAgenda]),
         principaisDesafios: principaisDesafios,
         oportunidadesMelhoria: oportunidadesMelhoria,
@@ -502,6 +542,51 @@ function BimonthlySupervisionFormPage(props) {
                 ))}
               </Select>
             </FormControl>
+          </Grid>
+
+          <Grid item xs={12}>
+            <Typography variant="subtitle2" gutterBottom>
+              Participantes Manuais
+            </Typography>
+            {!isView && (
+              <Box display="flex" gap={1} alignItems="center" mb={1}>
+                <TextField
+                  fullWidth
+                  value={manualParticipantInput}
+                  onChange={(e) => setManualParticipantInput(e.target.value)}
+                  onKeyDown={handleManualParticipantKeyDown}
+                  variant="outlined"
+                  size="small"
+                  placeholder="Digite o nome e pressione Enter"
+                />
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={handleAddManualParticipant}
+                  disabled={!manualParticipantInput.trim()}
+                  style={{ marginLeft: 8 }}
+                >
+                  Adicionar
+                </Button>
+              </Box>
+            )}
+            <Box display="flex" flexWrap="wrap" gridGap={8}>
+              {participantesManuais.length > 0 ? (
+                participantesManuais.map((name) => (
+                  <Chip
+                    key={name}
+                    label={name}
+                    onDelete={isView ? undefined : () => handleRemoveManualParticipant(name)}
+                    color="default"
+                    size="small"
+                  />
+                ))
+              ) : (
+                <Typography variant="body2" color="textSecondary">
+                  Sem participantes manuais adicionados.
+                </Typography>
+              )}
+            </Box>
           </Grid>
         </Grid>
       </Paper>
