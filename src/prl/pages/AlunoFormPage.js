@@ -285,7 +285,6 @@ function AlunoFormPage(props) {
     input.sexo = formData.sexo || null;
     input.nomeEncarregado = formData.nomeEncarregado || null;
     input.idMembroCrianca = formData.idMembroCrianca || null;
-    input.idDaCrianca = formData.idDaCrianca || null;
     input.distritoId = formData.distritoId || null;
     input.localidadeId = formData.localidadeId || null;
     input.pontoReferencia = formData.pontoReferencia || null;
@@ -444,8 +443,8 @@ function AlunoFormPage(props) {
                   label={formatMessage(intl, "prl", "aluno.idDaCrianca") || "ID da Criança"}
                   fullWidth
                   value={formData.idDaCrianca}
-                  onChange={handleChange("idDaCrianca")}
-                  disabled={isView}
+                  disabled
+                  helperText={!isEdit ? "ID gerado automaticamente ao criar o aluno" : "ID não pode ser alterado"}
                 />
               </Grid>
               <Grid item xs={12} sm={6}>
