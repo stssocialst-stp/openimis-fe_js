@@ -245,10 +245,6 @@ function FamilyGroupFormPage(props) {
   const handleSave = async () => {
     try {
       // Validate required fields
-      if (!formData.codigo) {
-        alert('Por favor, defina o código do grupo familiar.');
-        return;
-      }
       if (!formData.nome) {
         alert('Por favor, defina o nome do grupo familiar.');
         return;
@@ -263,7 +259,6 @@ function FamilyGroupFormPage(props) {
       }
 
       const input = {
-        codigo: formData.codigo,
         nome: formData.nome,
         distritoId: String(formData.distritoId),
         localidadeId: String(formData.localidadeId),
@@ -328,13 +323,11 @@ function FamilyGroupFormPage(props) {
             <TextField
               fullWidth
               label={formatMessage(intl, "prl", "familyGroup.code")}
-              value={formData.codigo}
-              onChange={handleChange("codigo")}
+              value={isEdit ? formData.codigo : ""}
               variant="outlined"
               size="small"
-              required
-              disabled={isEdit}
-              helperText={isEdit ? "Código não pode ser alterado" : "Código único do grupo"}
+              disabled
+              helperText={isEdit ? "Código não pode ser alterado" : "Código será gerado automaticamente ao salvar"}
             />
           </Grid>
 
