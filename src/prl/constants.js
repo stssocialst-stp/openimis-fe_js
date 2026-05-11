@@ -23,6 +23,9 @@ export const PRL_ROUTE_ALUNO_FORM = "prl/alunos/form";
 // Module Name
 export const MODULE_NAME = "prl";
 
+export const RIGHT_ALUNO_MANAGE = 159061;
+export const RIGHT_ALUNO_DELETE = 159062;
+
 // Status
 export const SESSION_STATUS = {
   PLANNED: "PLANNED",

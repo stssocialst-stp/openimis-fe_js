@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { injectIntl } from "react-intl";
+import { connect } from "react-redux";
 import { withTheme, withStyles } from "@material-ui/core/styles";
 import {
   Paper, Typography, Grid, TextField, Button, MenuItem, Divider,
@@ -8,7 +9,7 @@ import {
 import ChevronLeftIcon from "@material-ui/icons/ChevronLeft";
 import SaveIcon from "@material-ui/icons/Save";
 import { formatMessage, withModulesManager, Helmet, baseApiUrl, apiHeaders } from "@stssocialst-stp/fe-core";
-import { PRL_ROUTE_ALUNO } from "../constants";
+import { PRL_ROUTE_ALUNO, RIGHT_ALUNO_MANAGE } from "../constants";
 import { escolaridadeList, sexoList } from "../../helpers/constants";
 
 const styles = (theme) => ({
@@ -43,7 +44,8 @@ const styles = (theme) => ({
 });
 
 function AlunoFormPage(props) {
-  const { classes, intl, history, location } = props;
+  const { classes, intl, history, location, rights } = props;
+  const canManageAluno = rights.includes(RIGHT_ALUNO_MANAGE);
   const [loading, setLoading] = useState(false);
   const [useExistingIndividual, setUseExistingIndividual] = useState(false);
   const [formData, setFormData] = useState({
@@ -235,6 +237,11 @@ function AlunoFormPage(props) {
     }
     // eslint-disable-next-line
   }, []);
+
+  // Permission check after all hooks
+  if (!isView && !canManageAluno) {
+    return null;
+  }
 
   const handleChange = (field) => (event) => {
     const value = event.target.type === 'checkbox' ? event.target.checked : event.target.value;
@@ -641,4 +648,8 @@ function AlunoFormPage(props) {
   );
 }
 
-export default withModulesManager(injectIntl(withTheme(withStyles(styles)(AlunoFormPage))));
+const mapStateToProps = (state) => ({
+  rights: state.core?.user?.i_user?.rights ?? [],
+});
+
+export default withModulesManager(injectIntl(withTheme(withStyles(styles)(connect(mapStateToProps)(AlunoFormPage)))));

@@ -12,7 +12,7 @@ import EditIcon from "@material-ui/icons/Edit";
 import DeleteIcon from "@material-ui/icons/Delete";
 import { formatMessage, withModulesManager, Helmet, baseApiUrl, apiHeaders } from "@stssocialst-stp/fe-core";
 import PrlSearcher from "../components/PrlSearcher";
-import { PRL_ROUTE_ALUNO_FORM } from "../constants";
+import { PRL_ROUTE_ALUNO_FORM, RIGHT_ALUNO_DELETE, RIGHT_ALUNO_MANAGE } from "../constants";
 
 const styles = (theme) => ({
   page: theme.page,
@@ -22,6 +22,8 @@ const styles = (theme) => ({
 
 function AlunoPage(props) {
   const { classes, intl, rights, history } = props;
+  const canManageAluno = rights.includes(RIGHT_ALUNO_MANAGE);
+  const canDeleteAluno = rights.includes(RIGHT_ALUNO_DELETE);
 
   const [escolasAPI, setEscolasAPI] = useState([]);
   const [classesAPI, setClassesAPI] = useState([]);
@@ -242,16 +244,20 @@ function AlunoPage(props) {
             <VisibilityIcon fontSize="small" />
           </IconButton>
         </Tooltip>
-        <Tooltip title={formatMessage(intl, "prl", "button.edit")}>
-          <IconButton size="small" className={classes.actionIcon} onClick={() => handleEdit(item)}>
-            <EditIcon fontSize="small" />
-          </IconButton>
-        </Tooltip>
-        <Tooltip title={formatMessage(intl, "prl", "button.delete")}>
-          <IconButton size="small" className={classes.actionIcon} onClick={() => handleDelete(item)}>
-            <DeleteIcon fontSize="small" />
-          </IconButton>
-        </Tooltip>
+        {canManageAluno && (
+          <Tooltip title={formatMessage(intl, "prl", "button.edit")}>
+            <IconButton size="small" className={classes.actionIcon} onClick={() => handleEdit(item)}>
+              <EditIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        )}
+        {canDeleteAluno && (
+          <Tooltip title={formatMessage(intl, "prl", "button.delete")}>
+            <IconButton size="small" className={classes.actionIcon} onClick={() => handleDelete(item)}>
+              <DeleteIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        )}
       </div>
     ),
   ];
@@ -439,11 +445,13 @@ function AlunoPage(props) {
         rights={rights}
       />
 
-      <Tooltip title={formatMessage(intl, "prl", "button.add")}>
-        <Fab color="primary" className={classes.fab} onClick={handleAdd}>
-          <AddIcon />
-        </Fab>
-      </Tooltip>
+      {canManageAluno && (
+        <Tooltip title={formatMessage(intl, "prl", "button.add")}>
+          <Fab color="primary" className={classes.fab} onClick={handleAdd}>
+            <AddIcon />
+          </Fab>
+        </Tooltip>
+      )}
     </div>
   );
 }
