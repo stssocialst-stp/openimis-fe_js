@@ -4,6 +4,7 @@ import { withTheme, withStyles } from "@material-ui/core/styles";
 import {
   Paper, Typography, Grid, TextField, Button, MenuItem, Box,
   FormControl, FormLabel, RadioGroup, FormControlLabel, Radio,
+  Chip, Select, InputLabel,
 } from "@material-ui/core";
 import ChevronLeftIcon from "@material-ui/icons/ChevronLeft";
 import SaveIcon from "@material-ui/icons/Save";
@@ -107,6 +108,11 @@ function SessionPlanningEditPage(props) {
       tecnicoSocial {
         id
         username
+      }
+      tecnicosFormadores {
+        id
+        username
+        lastName
       }
       distrito {
         id
@@ -213,7 +219,7 @@ function SessionPlanningEditPage(props) {
     codigoSessao: "",
     dataPlanejamento: new Date().toISOString().slice(0, 10),
     coordenadorDistrital: null,
-    tecnicoSocial: null,
+    tecnicosFormadores: [],
     distrito: null,
     modulo: null,
     mesModuloAnterior: "",
@@ -316,6 +322,9 @@ function SessionPlanningEditPage(props) {
       setFormData({
         ...pep,
         modulo: pep.modulo || null,
+        tecnicosFormadores: (pep.tecnicosFormadores && pep.tecnicosFormadores.length > 0) 
+          ? pep.tecnicosFormadores 
+          : (pep.tecnicoSocial ? [pep.tecnicoSocial] : []),
       });
       // Populate sessions array for display
       setSessions([{
@@ -518,7 +527,7 @@ function SessionPlanningEditPage(props) {
           setSocialTechnicians([]);
         }
       } else {
-        setFormData(prev => ({ ...prev, coordenadorDistrital: null }));
+        setFormData(prev => ({ ...prev, coordenadorDistrital: null, tecnicosFormadores: [] }));
         setSocialTechnicians([]);
       }
     }
@@ -762,7 +771,7 @@ function SessionPlanningEditPage(props) {
       if (!formData.codigoSessao) missingBasicFields.push('Código da Sessão');
       if (!formData.dataPlanejamento) missingBasicFields.push('Data do Planejamento');
       if (!formData.coordenadorDistrital?.id || formData.coordenadorDistrital.id === "") missingBasicFields.push('Coordenador Distrital');
-      if (!formData.tecnicoSocial?.id || formData.tecnicoSocial.id === "") missingBasicFields.push('Técnico Social');
+      if (!formData.tecnicosFormadores || formData.tecnicosFormadores.length === 0) missingBasicFields.push('Técnicos Formadores');
       if (!formData.distrito?.id || formData.distrito.id === "") missingBasicFields.push('Distrito');
       if (!formData.modulo?.id) missingBasicFields.push('Módulo PEP+');
 
@@ -813,6 +822,20 @@ function SessionPlanningEditPage(props) {
         }
       };
 
+      // Helper to extract UUID from Relay Global ID
+      const extractUuid = (relayId) => {
+        if (!relayId) return null;
+        try {
+          // If it's already a UUID (contains dashes and no colon), return it
+          if (relayId.includes('-') && !relayId.includes(':')) return relayId;
+          const decoded = atob(relayId);
+          const parts = decoded.split(':');
+          return parts.length > 1 ? parts[1] : relayId;
+        } catch {
+          return relayId;
+        }
+      };
+
       // Helper to check if a session ID is a valid database ID (not a Date.now() timestamp)
       const isValidDbId = (id) => {
         const numericId = extractNumericId(id);
@@ -823,7 +846,7 @@ function SessionPlanningEditPage(props) {
       if (isEditMode) {
         // Update existing sessions only
         const coordenadorId = formData.coordenadorDistrital.id;
-        const tecnicoId = formData.tecnicoSocial.id;
+        const tecnicosIds = (formData.tecnicosFormadores || []).map(t => extractUuid(t.id));
         const distritoId = formData.distrito.id;
 
         const sessionsToUpdate = sessions.map(session => ({
@@ -832,7 +855,7 @@ function SessionPlanningEditPage(props) {
           dataPlanejamento: formData.dataPlanejamento,
           moduloId: extractNumericId(formData.modulo?.id),
           coordenadorDistritalId: coordenadorId,
-          tecnicoSocialId: tecnicoId,
+          tecnicosFormadoresIds: tecnicosIds,
           distritoId: distritoId,
           mesModuloAnterior: formData.mesModuloAnterior,
           diaSemana: session.diaSemana,
@@ -855,12 +878,12 @@ function SessionPlanningEditPage(props) {
       } else {
         // Create mode - create multiple sessions
         const coordenadorId = formData.coordenadorDistrital.id;
-        const tecnicoId = formData.tecnicoSocial.id;
+        const tecnicosIds = (formData.tecnicosFormadores || []).map(t => extractUuid(t.id));
         const distritoId = formData.distrito.id;
 
         // Validate that IDs are not empty
-        if (!coordenadorId || !tecnicoId || !distritoId) {
-          console.error('Invalid IDs:', { coordenadorId, tecnicoId, distritoId });
+        if (!coordenadorId || tecnicosIds.length === 0 || !distritoId) {
+          console.error('Invalid IDs:', { coordenadorId, tecnicosIds, distritoId });
           alert('Erro: IDs inválidos. Por favor, selecione novamente os coordenadores, técnicos e distritos.');
           return;
         }
@@ -869,7 +892,7 @@ function SessionPlanningEditPage(props) {
           codigoSessao: formData.codigoSessao,
           dataPlanejamento: formData.dataPlanejamento,
           coordenadorDistritalId: coordenadorId,
-          tecnicoSocialId: tecnicoId,
+          tecnicosFormadoresIds: tecnicosIds,
           distritoId: distritoId,
           moduloId: extractNumericId(formData.modulo?.id),
           mesModuloAnterior: formData.mesModuloAnterior,
@@ -1014,19 +1037,42 @@ function SessionPlanningEditPage(props) {
             </TextField>
           </Grid>
           <Grid item xs={12} sm={4}>
-            <Autocomplete
-              options={socialTechnicians}
-              value={socialTechnicians.find(option => option.value === formData.tecnicoSocial?.id) || null}
-              onChange={newValue => setFormData(prev => ({ ...prev, tecnicoSocial: newValue ? { id: newValue.value } : null }))}
-              getOptionLabel={option => option.label || ''}
-              getOptionSelected={(option, value) => option.value === value.value}
-              fullWidth
-              required
-              readOnly={readOnly}
-              label={formatMessage(intl, "prl", "sessionPlanning.selectTrainer")}
-              placeholder={formatMessage(intl, "prl", "sessionPlanning.selectTrainer")}
-              onInputChange={() => { }}
-            />
+            <FormControl fullWidth variant="outlined" size="small" required>
+              <InputLabel shrink={!!formData.tecnicosFormadores?.length}>
+                {formatMessage(intl, "prl", "sessionPlanning.selectTrainer")}
+              </InputLabel>
+              <Select
+                multiple
+                value={(formData.tecnicosFormadores || []).map(t => t.id)}
+                onChange={(event) => {
+                  const ids = event.target.value;
+                  const selectedItems = ids.map(id => {
+                    const found = socialTechnicians.find(opt => opt.value === id);
+                    return { id, lastName: found ? found.label : "" };
+                  });
+                  setFormData(prev => ({ ...prev, tecnicosFormadores: selectedItems }));
+                }}
+                label={formatMessage(intl, "prl", "sessionPlanning.selectTrainer")}
+                renderValue={(selected) => (
+                  <Box style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                    {selected.map((id) => {
+                      const found = socialTechnicians.find(opt => opt.value === id);
+                      const tecnicoNaFormData = (formData.tecnicosFormadores || []).find(t => t.id === id);
+                      const label = found ? found.label : (tecnicoNaFormData?.lastName || tecnicoNaFormData?.username || id);
+                      return <Chip key={id} size="small" label={label} />;
+                    })}
+                  </Box>
+                )}
+                disabled={readOnly}
+                notched={!!formData.tecnicosFormadores?.length}
+              >
+                {socialTechnicians.map((opt) => (
+                  <MenuItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
           </Grid>
           <Grid item xs={12} sm={4}>
             <TextField

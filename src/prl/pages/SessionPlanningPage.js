@@ -78,6 +78,9 @@ function SessionPlanningPage(props) {
             nome
           }
           status
+          tecnicosFormadores {
+            lastName
+          }
         }
       }
     }
@@ -121,7 +124,7 @@ function SessionPlanningPage(props) {
       module: session.modulo?.nome || '',
       district: session.distrito?.name || '',
       plannedDate: session.dataSessao,
-      trainer: session.grupoFamilia?.nome || '',
+      trainer: (session.tecnicosFormadores || []).map(t => t.lastName).join(', ') || '',
       status: session.status === 'PLAN' ? 'Planeado' : session.status === 'EXEC' ? 'Executado' : session.status === 'CANC' ? 'Cancelado' : session.status,
     }));
 
