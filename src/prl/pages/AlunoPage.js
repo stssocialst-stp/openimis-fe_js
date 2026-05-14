@@ -22,6 +22,10 @@ const styles = (theme) => ({
 
 function AlunoPage(props) {
   const { classes, intl, rights, history } = props;
+  const hasManageRight = rights.includes(159061); // RIGHT_ALUNO_MANAGE
+  console.debug("DEBUG: User Rights:", rights);
+  console.debug("DEBUG: Has RIGHT_ALUNO_MANAGE (159061):", hasManageRight);
+
   const canManageAluno = rights.includes(RIGHT_ALUNO_MANAGE);
   const canDeleteAluno = rights.includes(RIGHT_ALUNO_DELETE);
 

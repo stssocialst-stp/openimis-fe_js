@@ -291,6 +291,9 @@ function EducationalModulePage(props) {
       else delete newFilters.localidadeId;
       onChangeFilters(newFilters);
     };
+    const hasManageRight = rights.includes(159061); // RIGHT_ALUNO_MANAGE
+    console.debug("DEBUG: EducationalModulePage - User Rights:", rights);
+    console.debug("DEBUG: EducationalModulePage - Has RIGHT_ALUNO_MANAGE (159061):", hasManageRight);
 
     return (
       <Grid container spacing={2}>
