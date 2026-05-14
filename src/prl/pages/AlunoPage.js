@@ -10,7 +10,7 @@ import AddIcon from "@material-ui/icons/Add";
 import VisibilityIcon from "@material-ui/icons/Visibility";
 import EditIcon from "@material-ui/icons/Edit";
 import DeleteIcon from "@material-ui/icons/Delete";
-import { formatMessage, withModulesManager, Helmet, baseApiUrl, apiHeaders } from "@stssocialst-stp/fe-core";
+import { formatMessage, withModulesManager, Helmet, baseApiUrl, apiHeaders, withTooltip } from "@stssocialst-stp/fe-core";
 import PrlSearcher from "../components/PrlSearcher";
 import { PRL_ROUTE_ALUNO_FORM, RIGHT_ALUNO_DELETE, RIGHT_ALUNO_MANAGE } from "../constants";
 
@@ -445,12 +445,13 @@ function AlunoPage(props) {
         rights={rights}
       />
 
-      {canManageAluno && (
-        <Tooltip title={formatMessage(intl, "prl", "button.add")}>
-          <Fab color="primary" className={classes.fab} onClick={handleAdd}>
+      {canManageAluno && withTooltip(
+        <div className={classes.fab}>
+          <Fab color="primary" onClick={handleAdd}>
             <AddIcon />
           </Fab>
-        </Tooltip>
+        </div>,
+        formatMessage(intl, "prl", "button.add")
       )}
     </div>
   );

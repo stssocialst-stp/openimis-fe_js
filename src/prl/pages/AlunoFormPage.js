@@ -637,7 +637,9 @@ function AlunoFormPage(props) {
               <Button variant="contained" color="primary" type="submit" startIcon={<SaveIcon />} disabled={loading}>
                 {loading
                   ? (formatMessage(intl, "prl", "aluno.saving") || "A guardar...")
-                  : (formatMessage(intl, "prl", "button.save") || "Guardar")
+                  : (!isEdit 
+                      ? (formatMessage(intl, "prl", "title.createAluno") || "Registar Aluno") 
+                      : (formatMessage(intl, "prl", "button.save") || "Guardar"))
                 }
               </Button>
             </div>

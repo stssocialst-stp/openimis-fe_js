@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { injectIntl } from "react-intl";
 import { connect } from "react-redux";
 import { withTheme, withStyles } from "@material-ui/core/styles";
@@ -10,7 +10,7 @@ import AddIcon from "@material-ui/icons/Add";
 import EditIcon from "@material-ui/icons/Edit";
 import VisibilityIcon from "@material-ui/icons/Visibility";
 import DeleteIcon from "@material-ui/icons/Delete";
-import { formatMessage, withModulesManager, Helmet, baseApiUrl, apiHeaders } from "@stssocialst-stp/fe-core";
+import { formatMessage, withModulesManager, Helmet, baseApiUrl, apiHeaders, withTooltip } from "@stssocialst-stp/fe-core";
 import PrlSearcher from "../components/PrlSearcher";
 import { PRL_ROUTE_EDUCATIONAL_MODULE_FORM } from "../constants";
 import { faltasLabelMap } from "../../helpers/constants";
@@ -422,11 +422,14 @@ function EducationalModulePage(props) {
         rights={rights}
       />
 
-      <Tooltip title={formatMessage(intl, "prl", "button.add")}>
-        <Fab color="primary" className={classes.fab} onClick={handleAdd}>
-          <AddIcon />
-        </Fab>
-      </Tooltip>
+      {withTooltip(
+        <div className={classes.fab}>
+          <Fab color="primary" onClick={handleAdd}>
+            <AddIcon />
+          </Fab>
+        </div>,
+        formatMessage(intl, "prl", "button.add")
+      )}
     </div>
   );
 }

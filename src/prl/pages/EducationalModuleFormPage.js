@@ -1,14 +1,15 @@
-﻿import { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { injectIntl } from "react-intl";
 import { withTheme, withStyles } from "@material-ui/core/styles";
 import {
   Paper, Typography, Grid, TextField, Button, MenuItem, Divider,
-  Checkbox, FormControlLabel, FormGroup, Select, InputLabel, FormControl,
+  Checkbox, FormControlLabel, FormGroup, Select, InputLabel, FormControl, IconButton, Tooltip,
 } from "@material-ui/core";
 import ChevronLeftIcon from "@material-ui/icons/ChevronLeft";
 import SaveIcon from "@material-ui/icons/Save";
+import AddIcon from "@material-ui/icons/Add";
 import { formatMessage, withModulesManager, Helmet, baseApiUrl, apiHeaders } from "@stssocialst-stp/fe-core";
-import { PRL_ROUTE_EDUCATIONAL_MODULE } from "../constants";
+import { PRL_ROUTE_EDUCATIONAL_MODULE, PRL_ROUTE_ALUNO_FORM } from "../constants";
 import { aproveitamentoList, escolaridadeList, faltasList, sexoList } from "../../helpers/constants";
 
 const styles = (theme) => ({
@@ -537,7 +538,7 @@ function EducationalModuleFormPage(props) {
               {formatMessage(intl, "prl", "educationalModule.selectAluno") || "Seleccionar Aluno"}
             </Typography>
             <Grid container spacing={2}>
-              <Grid item xs={12} sm={8}>
+              <Grid item xs={12} sm={7}>
                 <FormControl fullWidth variant="outlined" size="small">
                   <InputLabel>{formatMessage(intl, "prl", "educationalModule.searchAluno") || "Seleccionar Aluno"}</InputLabel>
                   <Select
@@ -554,6 +555,18 @@ function EducationalModuleFormPage(props) {
                     })}
                   </Select>
                 </FormControl>
+              </Grid>
+              <Grid item xs={12} sm={1} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Tooltip title={formatMessage(intl, "prl", "button.add") || "Adicionar Aluno"}>
+                  <IconButton 
+                    color="primary" 
+                    onClick={() => history.push(`/${PRL_ROUTE_ALUNO_FORM}`)}
+                    disabled={isView}
+                    size="small"
+                  >
+                    <AddIcon />
+                  </IconButton>
+                </Tooltip>
               </Grid>
               <Grid item xs={12} sm={4}>
                 <TextField
