@@ -24,7 +24,7 @@ const styles = (theme) => ({
 
 const LIST_QUERY = `query ListModulosPEP($first: Int, $offset: Int) {
   modulosPep(first: $first, offset: $offset) {
-    edges { node { id codigo nome ordem duracaoSemanas ativo } }
+    edges { node { id codigo nome ordem duracao ativo } }
     totalCount
   }
 }`;
@@ -79,7 +79,7 @@ function ModuloPEPPage(props) {
               <TableCell className={classes.tableHeaderCell}>{formatMessage(intl, "params", "moduloPEP.codigo")}</TableCell>
               <TableCell className={classes.tableHeaderCell}>{formatMessage(intl, "params", "moduloPEP.nome")}</TableCell>
               <TableCell className={classes.tableHeaderCell}>{formatMessage(intl, "params", "moduloPEP.ordem")}</TableCell>
-              <TableCell className={classes.tableHeaderCell}>{formatMessage(intl, "params", "moduloPEP.duracaoSemanas")}</TableCell>
+              <TableCell className={classes.tableHeaderCell}>{formatMessage(intl, "params", "moduloPEP.duracao")}</TableCell>
               <TableCell className={classes.tableHeaderCell}>{formatMessage(intl, "params", "label.ativo")}</TableCell>
               <TableCell className={classes.tableHeaderCell}>{formatMessage(intl, "params", "label.actions")}</TableCell>
             </TableRow>
@@ -93,7 +93,7 @@ function ModuloPEPPage(props) {
                 <TableCell>{row.codigo}</TableCell>
                 <TableCell>{row.nome}</TableCell>
                 <TableCell>{row.ordem}</TableCell>
-                <TableCell>{row.duracaoSemanas}</TableCell>
+                <TableCell>{row.duracao}</TableCell>
                 <TableCell>
                   <Chip size="small" label={row.ativo ? formatMessage(intl, "params", "label.active") : formatMessage(intl, "params", "label.inactive")} color={row.ativo ? "primary" : "default"} />
                 </TableCell>

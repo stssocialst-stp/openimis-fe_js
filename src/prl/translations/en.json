@@ -341,5 +341,19 @@
   "prl.aluno.filterEscola": "School",
   "prl.aluno.filterEscolaridade": "Education Level",
   "prl.aluno.filterClasse": "Class",
-  "select.none": "None"
+  "select.none": "None",
+  "prl.menu.encaminhamentos": "Referrals",
+  "prl.title.encaminhamentos": "Referrals",
+  "prl.encaminhamentos.title": "Referral Management",
+  "prl.encaminhamentos.codigo": "Referral Code",
+  "prl.encaminhamentos.familiaId": "Family ID",
+  "prl.encaminhamentos.nomeFamilia": "Family Name",
+  "prl.encaminhamentos.tipo": "Referral Type",
+  "prl.encaminhamentos.status": "Status",
+  "prl.encaminhamentos.sessao": "Session",
+  "prl.encaminhamentos.tecnico": "Technician",
+  "prl.encaminhamentos.descricao": "Description",
+  "prl.encaminhamentos.observacoes": "Observations",
+  "prl.encaminhamentos.details": "Referral Details",
+  "prl.encaminhamentos.confirmCancel": "Are you sure you want to cancel this referral?"
 }

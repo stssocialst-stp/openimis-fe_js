@@ -19,7 +19,7 @@ const styles = (theme) => ({
 });
 
 const FETCH_QUERY = `query GetModuloPEP($id: ID!) {
-  moduloPep(id: $id) { id codigo nome descricao ordem duracaoSemanas ativo }
+  moduloPep(id: $id) { id codigo nome descricao ordem duracao ativo }
 }`;
 const CREATE_MUTATION = `mutation CreateModuloPEP($input: CreateModuloPEPMutationInput!) {
   createModuloPep(input: $input) { clientMutationId internalId }
@@ -33,7 +33,7 @@ function ModuloPEPFormPage(props) {
   const id = new URLSearchParams(location?.search).get("id");
   const isEdit = !!id;
 
-  const [form, setForm] = useState({ codigo: "", nome: "", descricao: "", ordem: "", duracaoSemanas: "", ativo: true });
+  const [form, setForm] = useState({ codigo: "", nome: "", descricao: "", ordem: "", duracao: "", ativo: true });
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -46,7 +46,7 @@ function ModuloPEPFormPage(props) {
       .then((r) => r.json())
       .then((json) => {
         const d = json?.data?.moduloPep;
-        if (d) setForm({ codigo: d.codigo ?? "", nome: d.nome ?? "", descricao: d.descricao ?? "", ordem: d.ordem ?? "", duracaoSemanas: d.duracaoSemanas ?? "", ativo: d.ativo ?? true });
+        if (d) setForm({ codigo: d.codigo ?? "", nome: d.nome ?? "", descricao: d.descricao ?? "", ordem: d.ordem ?? "", duracao: d.duracao ?? "", ativo: d.ativo ?? true });
       })
       .catch(console.error);
   }, [id]);
@@ -63,7 +63,7 @@ function ModuloPEPFormPage(props) {
         nome: form.nome,
         descricao: form.descricao || undefined,
         ordem: form.ordem !== "" ? parseInt(form.ordem) : undefined,
-        duracaoSemanas: form.duracaoSemanas !== "" ? parseInt(form.duracaoSemanas) : undefined,
+        duracao: form.duracao !== "" ? parseInt(form.duracao) : undefined,
         ativo: form.ativo,
       };
       await fetch(`${baseApiUrl}/graphql`, {
@@ -100,7 +100,7 @@ function ModuloPEPFormPage(props) {
             <TextField fullWidth type="number" label={formatMessage(intl, "params", "moduloPEP.ordem")} value={form.ordem} onChange={handleChange("ordem")} variant="outlined" size="small" />
           </Grid>
           <Grid item xs={12} sm={4}>
-            <TextField fullWidth type="number" label={formatMessage(intl, "params", "moduloPEP.duracaoSemanas")} value={form.duracaoSemanas} onChange={handleChange("duracaoSemanas")} variant="outlined" size="small" />
+            <TextField fullWidth type="number" label={formatMessage(intl, "params", "moduloPEP.duracao")} value={form.duracao} onChange={handleChange("duracao")} variant="outlined" size="small" />
           </Grid>
           <Grid item xs={12} sm={4} style={{ display: "flex", alignItems: "center" }}>
             <FormControlLabel

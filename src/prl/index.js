@@ -24,6 +24,8 @@ import SupervisionReportFormPage from "./pages/SupervisionReportFormPage";
 import SessionExecutionPage from "./pages/SessionExecutionPage";
 import AlunoPage from "./pages/AlunoPage";
 import AlunoFormPage from "./pages/AlunoFormPage";
+import EncaminhamentosPage from "./pages/EncaminhamentosPage";
+import EncaminhamentosFormPage from "./pages/EncaminhamentosFormPage";
 
 // Constants
 import {
@@ -47,6 +49,8 @@ import {
   PRL_ROUTE_SUPERVISION_REPORT_FORM,
   PRL_ROUTE_ALUNO,
   PRL_ROUTE_ALUNO_FORM,
+  PRL_ROUTE_ENCAMINHAMENTOS,
+  PRL_ROUTE_ENCAMINHAMENTOS_FORM,
 } from "./constants";
 
 const DEFAULT_CONFIG = {
@@ -82,6 +86,8 @@ const DEFAULT_CONFIG = {
     { path: `${PRL_ROUTE_SUPERVISION_REPORT_FORM}/:id`, component: SupervisionReportFormPage },
     { path: PRL_ROUTE_ALUNO, component: AlunoPage },
     { path: PRL_ROUTE_ALUNO_FORM, component: AlunoFormPage },
+    { path: PRL_ROUTE_ENCAMINHAMENTOS, component: EncaminhamentosPage },
+    { path: PRL_ROUTE_ENCAMINHAMENTOS_FORM, component: EncaminhamentosFormPage },
   ],
   refs: [
     { key: "prl.route.sessionPlanning", ref: PRL_ROUTE_SESSION_PLANNING },

@@ -23,6 +23,9 @@ import TicketFlagPage from "./pages/TicketFlagPage";
 import TicketFlagFormPage from "./pages/TicketFlagFormPage";
 import TicketPriorityPage from "./pages/TicketPriorityPage";
 import TicketPriorityFormPage from "./pages/TicketPriorityFormPage";
+import RolePage from "./pages/RolePage";
+import RoleFormPage from "./pages/RoleFormPage";
+import UserRolePage from "./pages/UserRolePage";
 
 import {
   PARAMS_ROUTE_MODULO_PEP,
@@ -45,6 +48,9 @@ import {
   PARAMS_ROUTE_TICKET_FLAG_FORM,
   PARAMS_ROUTE_TICKET_PRIORITY,
   PARAMS_ROUTE_TICKET_PRIORITY_FORM,
+  PARAMS_ROUTE_ROLE,
+  PARAMS_ROUTE_ROLE_FORM,
+  PARAMS_ROUTE_USER_ROLE,
 } from "./constants";
 
 const DEFAULT_CONFIG = {
@@ -74,6 +80,9 @@ const DEFAULT_CONFIG = {
     { path: PARAMS_ROUTE_TICKET_FLAG_FORM, component: TicketFlagFormPage },
     { path: PARAMS_ROUTE_TICKET_PRIORITY, component: TicketPriorityPage },
     { path: PARAMS_ROUTE_TICKET_PRIORITY_FORM, component: TicketPriorityFormPage },
+    { path: PARAMS_ROUTE_ROLE, component: RolePage },
+    { path: PARAMS_ROUTE_ROLE_FORM, component: RoleFormPage },
+    { path: PARAMS_ROUTE_USER_ROLE, component: UserRolePage },
   ],
 };
 

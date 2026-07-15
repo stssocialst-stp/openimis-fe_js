@@ -354,5 +354,19 @@
   "core.menuSection.programasSociais": "Programas Sociais",
   "core.menuSection.operacoesFinanceiras": "Operações Financeiras",
   "core.menuSection.monitorizacao": "Monitorização",
-  "core.menuSection.administracao": "Administração"
+  "core.menuSection.administracao": "Administração",
+  "prl.menu.encaminhamentos": "Encaminhamentos",
+  "prl.title.encaminhamentos": "Encaminhamentos",
+  "prl.encaminhamentos.title": "Gestão de Encaminhamentos",
+  "prl.encaminhamentos.codigo": "Código",
+  "prl.encaminhamentos.familiaId": "ID da Família",
+  "prl.encaminhamentos.nomeFamilia": "Nome da Família",
+  "prl.encaminhamentos.tipo": "Tipo de Encaminhamento",
+  "prl.encaminhamentos.status": "Estado",
+  "prl.encaminhamentos.sessao": "Sessão",
+  "prl.encaminhamentos.tecnico": "Técnico Responsável",
+  "prl.encaminhamentos.descricao": "Descrição",
+  "prl.encaminhamentos.observacoes": "Observações",
+  "prl.encaminhamentos.details": "Detalhes do Encaminhamento",
+  "prl.encaminhamentos.confirmCancel": "Tem certeza que deseja cancelar este encaminhamento?"
 }

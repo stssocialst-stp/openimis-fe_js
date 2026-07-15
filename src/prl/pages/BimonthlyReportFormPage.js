@@ -270,6 +270,20 @@ function BimonthlyReportFormPage(props) {
     }
   }`;
 
+  const addEncaminhamentoRelatorioMutation = `mutation AddEncaminhamentoRelatorio($input: AddEncaminhamentoRelatorioMutationInput!) {
+    addEncaminhamentoRelatorio(input: $input) {
+      clientMutationId
+      errors { message }
+    }
+  }`;
+
+  const removeEncaminhamentoRelatorioMutation = `mutation RemoveEncaminhamentoRelatorio($input: RemoveEncaminhamentoRelatorioMutationInput!) {
+    removeEncaminhamentoRelatorio(input: $input) {
+      clientMutationId
+      errors { message }
+    }
+  }`;
+
   const createMutation = `mutation CreateRelatorioDistrital($input: CreateRelatorioDistritalMutationInput!) {
     createRelatorioDistrital(input: $input) {
       clientMutationId
@@ -1399,6 +1413,94 @@ function BimonthlyReportFormPage(props) {
         </TableContainer>
       </Paper>
 
+      {/* 8c. Gestão individual de encaminhamentos (após salvar) */}
+      {initialData?.id && !readOnly && (
+        <Paper className={classes.paper}>
+          <Typography variant="h6" className={classes.sectionTitle}>
+            8c. Gerir Encaminhamentos do Relatório
+          </Typography>
+          <Typography variant="body2" color="textSecondary" style={{ marginBottom: 16 }}>
+            Adicione ou remova encaminhamentos individuais deste relatório.
+          </Typography>
+
+          {presencasDisponiveis.filter(p => selectedPresencasIds.includes(p.id)).length > 0 && (
+            <Box mb={2}>
+              <Typography variant="subtitle2" style={{ fontWeight: 'bold', marginBottom: 8 }}>
+                Encaminhamentos vinculados:
+              </Typography>
+              {presencasDisponiveis.filter(p => selectedPresencasIds.includes(p.id)).map(p => (
+                <Box key={p.id} display="flex" alignItems="center" mb={1}>
+                  <Typography variant="body2" style={{ flex: 1 }}>
+                    {p.nomeFamilia || p.familiaId} — {p.tipoEncaminhamento?.nome || ''} ({p.sessao?.codigoSessao || ''})
+                  </Typography>
+                  <Button
+                    size="small"
+                    color="secondary"
+                    variant="outlined"
+                    onClick={async () => {
+                      try {
+                        await fetch(`${baseApiUrl}/graphql`, {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken'), ...apiHeaders() },
+                          body: JSON.stringify({
+                            query: removeEncaminhamentoRelatorioMutation,
+                            variables: { input: { relatorioId: initialData.id, presencaId: p.id } },
+                          }),
+                        });
+                        setSelectedPresencasIds(prev => prev.filter(id => id !== p.id));
+                      } catch (e) {
+                        console.error('Error removing encaminhamento:', e);
+                        alert('Erro ao remover encaminhamento.');
+                      }
+                    }}
+                  >
+                    Remover
+                  </Button>
+                </Box>
+              ))}
+            </Box>
+          )}
+
+          {presencasDisponiveis.filter(p => !selectedPresencasIds.includes(p.id)).length > 0 && (
+            <Box>
+              <Typography variant="subtitle2" style={{ fontWeight: 'bold', marginBottom: 8 }}>
+                Adicionar encaminhamento disponível:
+              </Typography>
+              {presencasDisponiveis.filter(p => !selectedPresencasIds.includes(p.id)).map(p => (
+                <Box key={p.id} display="flex" alignItems="center" mb={1}>
+                  <Typography variant="body2" style={{ flex: 1 }}>
+                    {p.nomeFamilia || p.familiaId} — {p.tipoEncaminhamento?.nome || ''} ({p.sessao?.codigoSessao || ''})
+                  </Typography>
+                  <Button
+                    size="small"
+                    color="primary"
+                    variant="outlined"
+                    onClick={async () => {
+                      try {
+                        await fetch(`${baseApiUrl}/graphql`, {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken'), ...apiHeaders() },
+                          body: JSON.stringify({
+                            query: addEncaminhamentoRelatorioMutation,
+                            variables: { input: { relatorioId: initialData.id, presencaId: p.id } },
+                          }),
+                        });
+                        setSelectedPresencasIds(prev => [...prev, p.id]);
+                      } catch (e) {
+                        console.error('Error adding encaminhamento:', e);
+                        alert('Erro ao adicionar encaminhamento.');
+                      }
+                    }}
+                  >
+                    Adicionar
+                  </Button>
+                </Box>
+              ))}
+            </Box>
+          )}
+        </Paper>
+      )}
+
       {/* Observações */}
       <Paper className={classes.paper}>
         <Typography variant="h6" className={classes.sectionTitle}>
@@ -1424,7 +1526,7 @@ function BimonthlyReportFormPage(props) {
         >
           {readOnly ? formatMessage(intl, "prl", "button.back") : formatMessage(intl, "prl", "button.cancel")}
         </Button>
-        {/* {!readOnly && (
+        {!readOnly && (
           <Button
             variant="contained"
             color="primary"
@@ -1434,7 +1536,7 @@ function BimonthlyReportFormPage(props) {
           >
             Submeter Relatório Distrital
           </Button>
-        )} */}
+        )}
       </Box>
     </div>
   );

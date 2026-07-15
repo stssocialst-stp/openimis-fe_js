@@ -22,6 +22,7 @@ const styles = (theme) => ({
 const STATUS_OPTIONS = [
   { value: "PLAN", label: "Planeado" },
   { value: "EXEC", label: "Executado" },
+  { value: "CONC", label: "Concluído" },
   { value: "CANC", label: "Cancelado" },
 ];
 
@@ -125,7 +126,7 @@ function SessionPlanningPage(props) {
       district: session.distrito?.name || '',
       plannedDate: session.dataSessao,
       trainer: (session.tecnicosFormadores || []).map(t => t.lastName).join(', ') || '',
-      status: session.status === 'PLAN' ? 'Planeado' : session.status === 'EXEC' ? 'Executado' : session.status === 'CANC' ? 'Cancelado' : session.status,
+      status: session.status === 'PLAN' ? 'Planeado' : session.status === 'EXEC' ? 'Executado' : session.status === 'CONC' ? 'Concluído' : session.status === 'CANC' ? 'Cancelado' : session.status,
     }));
 
     return mappedData;

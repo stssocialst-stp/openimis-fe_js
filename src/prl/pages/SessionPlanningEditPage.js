@@ -46,13 +46,13 @@ const styles = (theme) => ({
 });
 
 const DAYS_OF_WEEK = [
-  { value: "SEG", label: "Segunda-feira" },
-  { value: "TER", label: "Terça-feira" },
-  { value: "QUA", label: "Quarta-feira" },
-  { value: "QUI", label: "Quinta-feira" },
-  { value: "SEX", label: "Sexta-feira" },
-  { value: "SAB", label: "Sábado" },
-  { value: "DOM", label: "Domingo" },
+  { value: "SEGUNDA", label: "Segunda-feira" },
+  { value: "TERCA", label: "Terça-feira" },
+  { value: "QUARTA", label: "Quarta-feira" },
+  { value: "QUINTA", label: "Quinta-feira" },
+  { value: "SEXTA", label: "Sexta-feira" },
+  { value: "SABADO", label: "Sábado" },
+  { value: "DOMINGO", label: "Domingo" },
 ];
 
 const MONTHS = [
@@ -182,7 +182,7 @@ function SessionPlanningEditPage(props) {
           codigo
           nome
           ordem
-          duracaoSemanas
+          duracao
         }
       }
     }

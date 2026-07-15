@@ -12,6 +12,7 @@ import {
   PRL_ROUTE_BIMONTHLY_REPORT,
   PRL_ROUTE_BIMONTHLY_SUPERVISION,
   PRL_ROUTE_SUPERVISION_REPORT,
+  PRL_ROUTE_ENCAMINHAMENTOS,
 } from "../constants";
 
 function PrlMainMenu(props) {
@@ -72,6 +73,13 @@ function PrlMainMenu(props) {
       text: formatMessage(intl, "prl", "menu.supervisionReport"),
       icon: <AssignmentTurnedIn />,
       route: "/" + PRL_ROUTE_SUPERVISION_REPORT,
+      withDivider: false,
+    },
+    {
+      id: "prl.encaminhamentos",
+      text: formatMessage(intl, "prl", "menu.encaminhamentos"),
+      icon: <AssignmentTurnedIn />,
+      route: "/" + PRL_ROUTE_ENCAMINHAMENTOS,
       withDivider: false,
     },
   ];

@@ -26,7 +26,7 @@
   "params.moduloPEP.nome": "Name",
   "params.moduloPEP.descricao": "Description",
   "params.moduloPEP.ordem": "Order",
-  "params.moduloPEP.duracaoSemanas": "Duration (weeks)",
+  "params.moduloPEP.duracao": "Duration (weeks)",
   "params.escola.nome": "Name",
   "params.escola.codigo": "Code",
   "params.escola.nivel": "Level",
@@ -99,5 +99,18 @@
   "params.ticketPriority.codigo": "Code",
   "params.ticketPriority.nome": "Name",
   "params.ticketPriority.ordem": "Order",
-  "params.ticketPriority.ordem.helperText": "Display order (0 = first)"
+  "params.ticketPriority.ordem.helperText": "Display order (0 = first)",
+  "params.coordenacaoDistrital.confirmRemoveTecnico": "Are you sure you want to remove this technician?",
+  "params.menu.role": "Roles & Permissions",
+  "params.title.roles": "Roles & Permissions",
+  "params.title.rolePermissions": "Manage Permissions",
+  "params.title.roleUsers": "Assign Role to Users",
+  "params.role.nome": "Role Name",
+  "params.role.permissoesCount": "Permissions",
+  "params.role.managePermissions": "Manage Permissions",
+  "params.role.assignUsers": "Assign to Users",
+  "params.role.filterModulo": "Filter by Module",
+  "params.role.currentPermissions": "Current Permissions",
+  "params.role.availablePermissions": "Available Permissions",
+  "params.role.users": "Users"
 }

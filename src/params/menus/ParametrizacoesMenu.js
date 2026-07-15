@@ -13,6 +13,7 @@ import {
   PARAMS_ROUTE_TICKET_CHANNEL,
   PARAMS_ROUTE_TICKET_FLAG,
   PARAMS_ROUTE_TICKET_PRIORITY,
+  PARAMS_ROUTE_ROLE,
 } from "../constants";
 
 function ParametrizacoesMenu(props) {
@@ -87,6 +88,13 @@ function ParametrizacoesMenu(props) {
       text: formatMessage(intl, "params", "menu.ticketPriority"),
       icon: <Settings />,
       route: "/" + PARAMS_ROUTE_TICKET_PRIORITY,
+      withDivider: false,
+    },
+    {
+      id: "params.role",
+      text: formatMessage(intl, "params", "menu.role"),
+      icon: <Settings />,
+      route: "/" + PARAMS_ROUTE_ROLE,
       withDivider: false,
     },
   ];

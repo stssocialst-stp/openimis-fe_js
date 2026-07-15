@@ -46,3 +46,8 @@ export const PARAMS_ROUTE_TICKET_FLAG_FORM = "params/ticketFlag/form";
 // Ticket Priority
 export const PARAMS_ROUTE_TICKET_PRIORITY = "params/ticketPriority";
 export const PARAMS_ROUTE_TICKET_PRIORITY_FORM = "params/ticketPriority/form";
+
+// Roles & Permissions
+export const PARAMS_ROUTE_ROLE = "params/role";
+export const PARAMS_ROUTE_ROLE_FORM = "params/role/form";
+export const PARAMS_ROUTE_USER_ROLE = "params/role/users";

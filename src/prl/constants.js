@@ -26,10 +26,14 @@ export const MODULE_NAME = "prl";
 export const RIGHT_ALUNO_MANAGE = 159061;
 export const RIGHT_ALUNO_DELETE = 159062;
 
+// Encaminhamentos
+export const PRL_ROUTE_ENCAMINHAMENTOS = "prl/encaminhamentos";
+export const PRL_ROUTE_ENCAMINHAMENTOS_FORM = "prl/encaminhamentos/form";
+
 // Status
 export const SESSION_STATUS = {
-  PLANNED: "PLANNED",
-  IN_PROGRESS: "IN_PROGRESS",
-  COMPLETED: "COMPLETED",
-  CANCELLED: "CANCELLED",
+  PLAN: "PLAN",
+  EXEC: "EXEC",
+  CONC: "CONC",
+  CANC: "CANC",
 };
