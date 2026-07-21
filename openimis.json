@@ -100,7 +100,7 @@
     },
     {
       "name": "PayrollModule",
-      "npm": "@stssocialst-stp/fe-payroll@^0.1.0"
+      "npm": "@stssocialst-stp/fe-payroll@^0.1.3"
     },
     {
       "name": "DeduplicationModule",
