@@ -29,7 +29,7 @@
     "@stssocialst-stp/fe-medical": "^1.3.0",
     "@stssocialst-stp/fe-opensearch_reports": "^0.1.0",
     "@stssocialst-stp/fe-payment_cycle": "^1.2.0-rc1",
-    "@stssocialst-stp/fe-payroll": "^0.3.4",
+    "@stssocialst-stp/fe-payroll": "^0.3.5",
     "@stssocialst-stp/fe-policyholder": "^1.0.0",
     "@stssocialst-stp/fe-profile": "^1.4.0",
     "@stssocialst-stp/fe-social_protection": "^0.1.2",
