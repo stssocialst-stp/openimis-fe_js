@@ -72,7 +72,7 @@
     },
     {
       "name": "CalculationModule",
-      "npm": "@stssocialst-stp/fe-calculation@^1.0.1"
+      "npm": "@stssocialst-stp/fe-calculation@^1.0.2"
     },
     {
       "name": "PolicyHolderModule",
