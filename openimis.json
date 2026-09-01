@@ -80,7 +80,7 @@
     },
     {
       "name": "ContributionPlanModule",
-      "npm": "@stssocialst-stp/fe-contribution_plan@^1.0.0"
+      "npm": "@stssocialst-stp/fe-contribution_plan@^1.0.2"
     },
     {
       "name": "PaymentCycleModule",

@@ -15,7 +15,7 @@
     "@stssocialst-stp/fe-admin": "^1.3.0",
     "@stssocialst-stp/fe-calculation": "^1.0.2",
     "@stssocialst-stp/fe-contract": "^1.0.0",
-    "@stssocialst-stp/fe-contribution_plan": "^1.0.0",
+    "@stssocialst-stp/fe-contribution_plan": "^1.0.2",
     "@stssocialst-stp/fe-core": "^1.4.0",
     "@stssocialst-stp/fe-coremis_language_pack": "^1.2.0-rc1",
     "@stssocialst-stp/fe-deduplication": "^1.2.0-rc1",
