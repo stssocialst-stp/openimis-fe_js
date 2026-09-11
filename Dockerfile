@@ -1,12 +1,11 @@
-FROM node:16-bullseye AS build-stage
+FROM node:18-alpine AS build-stage
 
-RUN apt-get update && apt-get install -y nano openssl software-properties-common && \
+RUN apk add --no-cache nano openssl && \
     openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
     -keyout /etc/ssl/private/privkey.pem \
     -out /etc/ssl/private/fullchain.pem \
     -subj "/C=DE/ST=_/L=_/O=_/OU=_/CN=localhost" && \
-    npm install --global serve && \
-    rm -rf /var/lib/apt/lists/*
+    npm install --global serve
 
 RUN mkdir /app && chown node:node /app
 WORKDIR /app
