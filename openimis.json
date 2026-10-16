@@ -32,11 +32,11 @@
     },
     {
       "name": "IndividualModule",
-      "npm": "@stssocialst-stp/fe-individual@^0.1.4"
+      "npm": "@stssocialst-stp/fe-individual@https://github.com/stssocialst-stp/openimis-fe-individual_js/releases/download/v0.1.4/stssocialst-stp-fe-individual-0.1.4.tgz"
     },
     {
       "name": "SocialProtectionModule",
-      "npm": "@stssocialst-stp/fe-social_protection@^0.1.4"
+      "npm": "@stssocialst-stp/fe-social_protection@https://github.com/stssocialst-stp/openimis-fe-social_protection_js/releases/download/v0.1.4/stssocialst-stp-fe-social_protection-0.1.4.tgz"
     },
     {
       "name": "OpenSearchReportsModule",
@@ -100,7 +100,7 @@
     },
     {
       "name": "PayrollModule",
-      "npm": "@stssocialst-stp/fe-payroll@^0.3.8"
+      "npm": "@stssocialst-stp/fe-payroll@https://github.com/stssocialst-stp/openimis-fe-payroll_js/releases/download/v0.3.8/stssocialst-stp-fe-payroll-0.3.8.tgz"
     },
     {
       "name": "DeduplicationModule",
