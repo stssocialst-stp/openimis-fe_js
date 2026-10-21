@@ -100,7 +100,7 @@
     },
     {
       "name": "PayrollModule",
-      "npm": "@stssocialst-stp/fe-payroll@https://github.com/stssocialst-stp/openimis-fe-payroll_js/releases/download/v0.3.8/stssocialst-stp-fe-payroll-0.3.8.tgz"
+      "npm": "@stssocialst-stp/fe-payroll@https://github.com/stssocialst-stp/openimis-fe-payroll_js/releases/download/v0.3.9/stssocialst-stp-fe-payroll-0.3.9.tgz"
     },
     {
       "name": "DeduplicationModule",
