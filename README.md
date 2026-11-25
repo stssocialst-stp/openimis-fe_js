@@ -1,7 +1,5 @@
 # openIMIS frontend assembly
 
-## running
-
 this repository builds:
 
 - a docker image `ghcr.io/openimis/openimis-fe` that can be use in a docker compose
