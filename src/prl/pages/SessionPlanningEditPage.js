@@ -182,7 +182,7 @@ function SessionPlanningEditPage(props) {
           codigo
           nome
           ordem
-          duracao
+          duracaoSemanas
         }
       }
     }
