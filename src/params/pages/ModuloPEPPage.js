@@ -24,7 +24,7 @@ const styles = (theme) => ({
 
 const LIST_QUERY = `query ListModulosPEP($first: Int, $offset: Int) {
   modulosPep(first: $first, offset: $offset) {
-    edges { node { id codigo nome ordem duracao ativo } }
+    edges { node { id codigo nome ordem duracaoSemanas ativo } }
     totalCount
   }
 }`;
@@ -93,7 +93,7 @@ function ModuloPEPPage(props) {
                 <TableCell>{row.codigo}</TableCell>
                 <TableCell>{row.nome}</TableCell>
                 <TableCell>{row.ordem}</TableCell>
-                <TableCell>{row.duracao}</TableCell>
+                <TableCell>{row.duracaoSemanas}</TableCell>
                 <TableCell>
                   <Chip size="small" label={row.ativo ? formatMessage(intl, "params", "label.active") : formatMessage(intl, "params", "label.inactive")} color={row.ativo ? "primary" : "default"} />
                 </TableCell>
