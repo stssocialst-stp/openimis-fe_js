@@ -2,8 +2,6 @@ import messages_en from "./translations/en.json";
 import messages_pt from "./translations/pt.json";
 import PrlMainMenu from "./menus/PrlMainMenu";
 import EducationalModuleMenu from "./menus/EducationalModuleMenu";
-import AssessmentIcon from "@material-ui/icons/Assessment";
-import AnalyticsPage from "./pages/AnalyticsPage";
 
 // Pages
 import SessionPlanningPage from "./pages/SessionPlanningPage";
@@ -64,16 +62,7 @@ const DEFAULT_CONFIG = {
     { name: "PrlMainMenu", component: PrlMainMenu },
     { name: "EducationalModuleMenu", component: EducationalModuleMenu },
   ],
-  "openSearchReports.MainMenu": [
-    {
-      text: "Analytics",
-      icon: <AssessmentIcon />,
-      route: "/analytics",
-      id: "openSearch.analytics",
-    },
-  ],
   "core.Router": [
-    { path: "/analytics", component: AnalyticsPage },
     { path: PRL_ROUTE_SESSION_PLANNING, component: SessionPlanningPage },
     { path: PRL_ROUTE_SESSION_PLANNING_FORM, component: SessionPlanningEditPage },
     { path: PRL_ROUTE_ATTENDANCE, component: AttendanceRegistryPage },
