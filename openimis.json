@@ -40,7 +40,7 @@
     },
     {
       "name": "OpenSearchReportsModule",
-      "npm": "@stssocialst-stp/fe-opensearch_reports@^0.1.0"
+      "npm": "@stssocialst-stp/fe-opensearch_reports@https://github.com/stssocialst-stp/openimis-fe-opensearch_reports_js/releases/download/v0.1.1/stssocialst-stp-fe-opensearch_reports-0.1.1.tgz"
     },
     {
       "name": "InvoiceModule",
