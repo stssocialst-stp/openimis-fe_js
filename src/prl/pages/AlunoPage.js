@@ -82,6 +82,7 @@ function AlunoPage(props) {
 
   const query = `query GetAlunos(
     $first: Int, $offset: Int,
+    $search: String,
     $idMembroCrianca: String,
     $idDaCrianca_Icontains: String,
     $sexo: AlunoSexo,
@@ -96,6 +97,7 @@ function AlunoPage(props) {
     alunos(
       first: $first
       offset: $offset
+      search: $search
       idMembroCrianca: $idMembroCrianca
       idDaCrianca_Icontains: $idDaCrianca_Icontains
       sexo: $sexo
@@ -334,6 +336,16 @@ function AlunoPage(props) {
 
     return (
       <Grid container spacing={2}>
+        <Grid item xs={12} sm={4}>
+          <TextField
+            fullWidth
+            label={formatMessage(intl, "prl", "aluno.filterName") || "Nome"}
+            value={filters.search?.value || ""}
+            onChange={handleChange("search")}
+            variant="outlined"
+            size="small"
+          />
+        </Grid>
         <Grid item xs={12} sm={4}>
           <TextField
             fullWidth
