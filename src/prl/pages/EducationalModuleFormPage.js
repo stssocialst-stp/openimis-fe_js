@@ -479,8 +479,8 @@ function EducationalModuleFormPage(props) {
         distritoId: decodeId(formData.informacoesLocalizacao.distritoId) || "",
       }),
       classeQueFrequentaId: decodeId(formData.classeQueFrequenta) || null,
-      aproveitamentoPrimeiroTrimestre: formData.aproveitamentoPrimeiroTrimestre || null,
-      faixaDeFaltas: formData.faixaDeFaltas || null,
+      aproveitamentoPrimeiroTrimestre: formData.aproveitamentoPrimeiroTrimestre || undefined,
+      faixaDeFaltas: formData.faixaDeFaltas || undefined,
       disciplinasIds: [
         ...formData.disciplinasBasicas.map(d => decodeId(d.disciplinaId)),
         ...formData.disciplinasAvancadas.map(d => decodeId(d.disciplinaId)),
