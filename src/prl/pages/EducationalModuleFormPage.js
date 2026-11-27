@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { injectIntl } from "react-intl";
 import { withTheme, withStyles } from "@material-ui/core/styles";
 import {
@@ -66,6 +66,7 @@ function EducationalModuleFormPage(props) {
   // --- Aluno list state ---
   const [alunosAPI, setAlunosAPI] = useState([]);
   const [selectedAluno, setSelectedAluno] = useState(null);
+  const searchTimeoutRef = useRef(null);
 
   const [formData, setFormData] = useState({
     alunoId: "",
@@ -557,7 +558,15 @@ function EducationalModuleFormPage(props) {
                   onChange={(_, newValue) => handleAlunoSelect({ target: { value: newValue?.id || "" } })}
                   onInputChange={(_, newInputValue, reason) => {
                     if (reason === "input") {
-                      fetchAlunos(newInputValue);
+                      if (searchTimeoutRef.current) {
+                        clearTimeout(searchTimeoutRef.current);
+                      }
+                      const trimmed = (newInputValue || "").trim();
+                      if (trimmed.length >= 3 || trimmed.length === 0) {
+                        searchTimeoutRef.current = setTimeout(() => {
+                          fetchAlunos(trimmed);
+                        }, 300);
+                      }
                     }
                   }}
                   renderInput={(params) => (
