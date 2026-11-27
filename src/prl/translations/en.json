@@ -355,5 +355,10 @@
   "prl.encaminhamentos.descricao": "Description",
   "prl.encaminhamentos.observacoes": "Observations",
   "prl.encaminhamentos.details": "Referral Details",
-  "prl.encaminhamentos.confirmCancel": "Are you sure you want to cancel this referral?"
+  "prl.encaminhamentos.confirmCancel": "Are you sure you want to cancel this referral?",
+  "prl.aluno.filterName": "Name",
+  "prl.title.viewAttendance": "View Attendance",
+  "prl.bimonthlyReport.addNew": "New Bimonthly Report",
+  "prl.button.update": "Update",
+  "prl.title.sessionSupervision": "Session Supervision"
 }

@@ -368,5 +368,10 @@
   "prl.encaminhamentos.descricao": "Descrição",
   "prl.encaminhamentos.observacoes": "Observações",
   "prl.encaminhamentos.details": "Detalhes do Encaminhamento",
-  "prl.encaminhamentos.confirmCancel": "Tem certeza que deseja cancelar este encaminhamento?"
+  "prl.encaminhamentos.confirmCancel": "Tem certeza que deseja cancelar este encaminhamento?",
+  "prl.aluno.filterName": "Nome",
+  "prl.title.viewAttendance": "Ver Presenças",
+  "prl.bimonthlyReport.addNew": "Novo Relatório Bimestral",
+  "prl.button.update": "Atualizar",
+  "prl.title.sessionSupervision": "Supervisão de Sessão"
 }
