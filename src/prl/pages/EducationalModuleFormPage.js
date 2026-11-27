@@ -551,7 +551,7 @@ function EducationalModuleFormPage(props) {
   const activeClasseId = formData.classeQueFrequenta || formData.classe;
   const activeClasse = classesAPI.find(c => c.id === activeClasseId);
   const assocDisciplinas = activeClasse?.disciplinasAssociadas || [];
-  const useClasseFilter = !!activeClasse && assocDisciplinas.length > 0;
+  const useClasseFilter = !!activeClasse;
   const visibleDisciplinasBasicas = useClasseFilter
     ? assocDisciplinas.filter(d => d.nivel === 'BASICA')
     : disciplinasBasicasAPI;
@@ -856,7 +856,7 @@ function EducationalModuleFormPage(props) {
                       <div key={d.id} style={{ marginBottom: 8 }}>
                         <FormControlLabel
                           control={<Checkbox color="primary" checked={checked} onChange={handleDisciplinaToggle("disciplinasAvancadas", d.id)} disabled={isView} />}
-                          label={`${d.nome} (Básica) (máx. ${maxFaltas} faltas)`}
+                          label={`${d.nome} (Avançada) (máx. ${maxFaltas} faltas)`}
                         />
                         {checked && (
                           <Grid container spacing={1} style={{ paddingLeft: 32 }}>
