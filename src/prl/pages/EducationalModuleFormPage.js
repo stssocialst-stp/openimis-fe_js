@@ -8,7 +8,7 @@ import {
 import ChevronLeftIcon from "@material-ui/icons/ChevronLeft";
 import SaveIcon from "@material-ui/icons/Save";
 import AddIcon from "@material-ui/icons/Add";
-import { formatMessage, withModulesManager, Helmet, baseApiUrl, apiHeaders } from "@stssocialst-stp/fe-core";
+import { formatMessage, withModulesManager, Helmet, baseApiUrl, apiHeaders, PublishedComponent } from "@stssocialst-stp/fe-core";
 import { PRL_ROUTE_EDUCATIONAL_MODULE, PRL_ROUTE_ALUNO_FORM } from "../constants";
 import { aproveitamentoList, escolaridadeList, faltasList, sexoList } from "../../helpers/constants";
 
@@ -619,9 +619,14 @@ function EducationalModuleFormPage(props) {
                 </FormControl>
               </Grid>
               <Grid item xs={12} sm={6}>
-                <TextField label="Data de Nascimento" type="date" fullWidth InputLabelProps={{ shrink: true }}
-                  value={formData.dataNascimento} onChange={handleChange("dataNascimento")}
-                  disabled className={selectedAluno?.dob ? classes.autoFilledField : ""} />
+                <PublishedComponent
+                  pubRef="core.DatePicker"
+                  module="prl"
+                  label="Data de Nascimento"
+                  value={formData.dataNascimento || ""}
+                  onChange={(v) => setFormData((f) => ({ ...f, dataNascimento: v }))}
+                  readOnly
+                />
               </Grid>
               <Grid item xs={12} sm={6}>
                 <TextField label="ID da Criança" fullWidth value={formData.ID_da_crianca} onChange={handleChange("ID_da_crianca")}

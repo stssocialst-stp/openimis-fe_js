@@ -8,7 +8,7 @@ import {
 } from "@material-ui/core";
 import ChevronLeftIcon from "@material-ui/icons/ChevronLeft";
 import SaveIcon from "@material-ui/icons/Save";
-import { formatMessage, withModulesManager, Helmet, baseApiUrl, apiHeaders } from "@stssocialst-stp/fe-core";
+import { formatMessage, withModulesManager, Helmet, baseApiUrl, apiHeaders, PublishedComponent } from "@stssocialst-stp/fe-core";
 import { PRL_ROUTE_ALUNO, RIGHT_ALUNO_MANAGE } from "../constants";
 import { escolaridadeList, sexoList } from "../../helpers/constants";
 
@@ -406,15 +406,14 @@ function AlunoFormPage(props) {
                   />
                 </Grid>
                 <Grid item xs={12} sm={6}>
-                  <TextField
-                    label={formatMessage(intl, "prl", "aluno.dob") || "Data de Nascimento"}
-                    type="date"
-                    fullWidth
-                    InputLabelProps={{ shrink: true }}
-                    value={formData.dob}
-                    onChange={handleChange("dob")}
-                    disabled={isView || isEdit}
+                  <PublishedComponent
+                    pubRef="core.DatePicker"
+                    module="prl"
+                    label="aluno.dob"
+                    value={formData.dob || ""}
+                    onChange={(v) => setFormData((f) => ({ ...f, dob: v }))}
                     required={!isEdit && !isView}
+                    readOnly={isView || isEdit}
                   />
                 </Grid>
                 <Grid item xs={12} sm={6}>

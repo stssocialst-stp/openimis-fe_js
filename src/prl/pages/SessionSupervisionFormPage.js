@@ -6,7 +6,7 @@ import {
 } from "@material-ui/core";
 import ChevronLeftIcon from "@material-ui/icons/ChevronLeft";
 import SaveIcon from "@material-ui/icons/Save";
-import { formatMessage, withModulesManager, Helmet, baseApiUrl, apiHeaders } from "@stssocialst-stp/fe-core";
+import { formatMessage, withModulesManager, Helmet, baseApiUrl, apiHeaders, PublishedComponent } from "@stssocialst-stp/fe-core";
 import { PRL_ROUTE_SUPERVISION } from "../constants";
 import PracticesTable from "../components/PracticesTable";
 import LimitedChecklistComponent from "../components/LimitedChecklistComponent";
@@ -649,15 +649,13 @@ function SessionSupervisionFormPage(props) {
             />
           </Grid>
           <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
+            <PublishedComponent
+              pubRef="core.DatePicker"
+              module="prl"
               label="Data da Sessão"
-              value={selectedSession?.dataSessao}
-              type="date"
-              variant="outlined"
-              size="small"
-              InputLabelProps={{ shrink: true }}
-              disabled
+              value={selectedSession?.dataSessao || ""}
+              onChange={() => {}}
+              readOnly
             />
           </Grid>
           <Grid item xs={12} sm={6}>
@@ -693,30 +691,24 @@ function SessionSupervisionFormPage(props) {
           </Grid>
 
           <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
+            <PublishedComponent
+              pubRef="core.DatePicker"
+              module="prl"
               label="Data de Supervisão"
-              value={formData.dataSupervisao}
-              onChange={handleChange("dataSupervisao")}
-              type="date"
-              variant="outlined"
-              size="small"
+              value={formData.dataSupervisao || ""}
+              onChange={(v) => setFormData((f) => ({ ...f, dataSupervisao: v }))}
               required
-              InputLabelProps={{ shrink: true }}
             />
           </Grid>
 
           <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
+            <PublishedComponent
+              pubRef="core.DatePicker"
+              module="prl"
               label="Data do Módulo Anterior"
-              value={formData.dataModuloAnterior}
-              onChange={handleChange("dataModuloAnterior")}
-              type="date"
-              variant="outlined"
-              size="small"
+              value={formData.dataModuloAnterior || ""}
+              onChange={(v) => setFormData((f) => ({ ...f, dataModuloAnterior: v }))}
               required
-              InputLabelProps={{ shrink: true }}
             />
           </Grid>
 

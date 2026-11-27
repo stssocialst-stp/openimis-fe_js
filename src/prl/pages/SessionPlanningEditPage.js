@@ -11,7 +11,7 @@ import SaveIcon from "@material-ui/icons/Save";
 import AddIcon from "@material-ui/icons/Add";
 import DeleteIcon from "@material-ui/icons/Delete";
 import { IconButton, Tooltip } from "@material-ui/core";
-import { Autocomplete, formatMessage, withModulesManager, Helmet, baseApiUrl, apiHeaders } from "@stssocialst-stp/fe-core";
+import { Autocomplete, formatMessage, withModulesManager, Helmet, baseApiUrl, apiHeaders, PublishedComponent } from "@stssocialst-stp/fe-core";
 import { PRL_ROUTE_SESSION_PLANNING, PRL_ROUTE_SESSION_PLANNING_FORM } from "../constants";
 
 const styles = (theme) => ({
@@ -623,17 +623,14 @@ function SessionPlanningEditPage(props) {
           </TextField>
         </Grid>
         <Grid item xs={12} sm={4}>
-          <TextField
-            fullWidth
-            type="date"
-            label={formatMessage(intl, "prl", "sessionPlanning.plannedDate")}
+          <PublishedComponent
+            pubRef="core.DatePicker"
+            module="prl"
+            label="sessionPlanning.plannedDate"
             value={session.dataSessao || new Date().toISOString().slice(0, 10)}
-            onChange={(event) => handleSessionUpdate(index, 'dataSessao', event.target.value)}
-            variant="outlined"
-            size="small"
-            InputLabelProps={{ shrink: true }}
+            onChange={(v) => handleSessionUpdate(index, 'dataSessao', v)}
             required
-            disabled={readOnly}
+            readOnly={readOnly}
           />
         </Grid>
         <Grid item xs={12} sm={4}>
@@ -989,17 +986,14 @@ function SessionPlanningEditPage(props) {
             />
           </Grid>
           <Grid item xs={12} sm={4}>
-            <TextField
-              fullWidth
-              type="date"
-              label={formatMessage(intl, "prl", "sessionPlanning.planningDate")}
-              value={formData.dataPlanejamento}
-              onChange={handleChange("dataPlanejamento")}
-              variant="outlined"
-              size="small"
+            <PublishedComponent
+              pubRef="core.DatePicker"
+              module="prl"
+              label="sessionPlanning.planningDate"
+              value={formData.dataPlanejamento || ""}
+              onChange={(v) => setFormData((f) => ({ ...f, dataPlanejamento: v }))}
               required
-              InputLabelProps={{ shrink: true }}
-              disabled={readOnly}
+              readOnly={readOnly}
             />
           </Grid>
           <Grid item xs={12} sm={4}>
@@ -1164,17 +1158,14 @@ function SessionPlanningEditPage(props) {
               </TextField>
             </Grid>
             <Grid item xs={12} sm={4}>
-              <TextField
-                fullWidth
-                type="date"
-                label={formatMessage(intl, "prl", "sessionPlanning.plannedDate")}
-                value={sessionData.dataSessao}
-                onChange={handleSessionChange("dataSessao")}
-                variant="outlined"
-                size="small"
-                InputLabelProps={{ shrink: true }}
+              <PublishedComponent
+                pubRef="core.DatePicker"
+                module="prl"
+                label="sessionPlanning.plannedDate"
+                value={sessionData.dataSessao || ""}
+                onChange={(v) => handleSessionChange("dataSessao")({ target: { value: v } })}
                 required
-                disabled={readOnly}
+                readOnly={readOnly}
               />
             </Grid>
             <Grid item xs={12} sm={4}>

@@ -10,7 +10,7 @@ import ChevronLeftIcon from "@material-ui/icons/ChevronLeft";
 import SaveIcon from "@material-ui/icons/Save";
 import DeleteIcon from "@material-ui/icons/Delete";
 import AddIcon from "@material-ui/icons/Add";
-import { formatMessage, withModulesManager, Helmet, baseApiUrl, apiHeaders } from "@stssocialst-stp/fe-core";
+import { formatMessage, withModulesManager, Helmet, baseApiUrl, apiHeaders, PublishedComponent } from "@stssocialst-stp/fe-core";
 
 const styles = (theme) => ({
   page: theme.page,
@@ -467,17 +467,14 @@ function BimonthlySupervisionFormPage(props) {
       <Paper className={classes.paper}>
         <Grid container spacing={3}>
           <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              type="date"
+            <PublishedComponent
+              pubRef="core.DatePicker"
+              module="prl"
               label="Data da Reunião *"
-              value={formData.dataReuniao}
-              onChange={handleChange("dataReuniao")}
-              variant="outlined"
-              size="small"
+              value={formData.dataReuniao || ""}
+              onChange={(v) => setFormData((f) => ({ ...f, dataReuniao: v }))}
               required
-              InputLabelProps={{ shrink: true }}
-              disabled={isView}
+              readOnly={isView}
             />
           </Grid>
 
@@ -798,16 +795,13 @@ function BimonthlySupervisionFormPage(props) {
         </Typography>
         <Grid container spacing={3}>
           <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              type="date"
+            <PublishedComponent
+              pubRef="core.DatePicker"
+              module="prl"
               label="Data da Próxima Reunião"
-              value={dataProximaReuniao}
-              onChange={handleProximaReuniaoDateChange}
-              variant="outlined"
-              size="small"
-              InputLabelProps={{ shrink: true }}
-              disabled={isView}
+              value={dataProximaReuniao || ""}
+              onChange={(v) => handleProximaReuniaoDateChange({ target: { value: v } })}
+              readOnly={isView}
             />
           </Grid>
           <Grid item xs={12}>
