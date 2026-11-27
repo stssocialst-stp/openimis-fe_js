@@ -288,8 +288,14 @@ function AlunoPage(props) {
 
     const handleChange = (field) => (event) => {
       const value = event.target.value;
+      if (Array.isArray(filters)) {
+        const next = filters.filter((f) => f.id !== field);
+        if (value !== "" && value != null) next.push({ id: field, value });
+        onChangeFilters(next);
+        return;
+      }
       const newFilters = { ...filters };
-      if (value === '' || value == null) delete newFilters[field];
+      if (value === "" || value == null) delete newFilters[field];
       else newFilters[field] = { value };
       onChangeFilters(newFilters);
     };

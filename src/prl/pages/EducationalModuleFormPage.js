@@ -542,43 +542,42 @@ function EducationalModuleFormPage(props) {
               {formatMessage(intl, "prl", "educationalModule.selectAluno") || "Seleccionar Aluno"}
             </Typography>
             <Grid container spacing={2}>
-              <Grid item xs={12} sm={7}>
-                <Autocomplete
-                  options={alunosAPI}
-                  value={selectedAluno}
+              <Grid item xs={12} sm={3}>
+                <TextField
+                  fullWidth
+                  variant="outlined"
+                  size="small"
+                  label={formatMessage(intl, "prl", "educationalModule.searchAluno") || "Pesquisar Aluno (mín. 3 letras)"}
+                  placeholder="Nome ou ID..."
                   disabled={isView}
-                  getOptionLabel={(a) => {
-                    if (!a) return "";
-                    const name = `${a.firstName || ""} ${a.lastName || ""}`.trim();
-                    const childId = a.idDaCrianca ? ` (${a.idDaCrianca})` : "";
-                    return `${name}${childId}`;
-                  }}
-                  getOptionSelected={(option, val) => option?.id === val?.id}
-                  filterOptions={(x) => x}
-                  onChange={(_, newValue) => handleAlunoSelect({ target: { value: newValue?.id || "" } })}
-                  onInputChange={(_, newInputValue, reason) => {
-                    if (reason === "input") {
-                      if (searchTimeoutRef.current) {
-                        clearTimeout(searchTimeoutRef.current);
-                      }
-                      const trimmed = (newInputValue || "").trim();
-                      if (trimmed.length >= 3 || trimmed.length === 0) {
-                        searchTimeoutRef.current = setTimeout(() => {
-                          fetchAlunos(trimmed);
-                        }, 300);
-                      }
+                  onChange={(e) => {
+                    const val = (e.target.value || "").trim();
+                    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+                    if (val.length >= 3 || val.length === 0) {
+                      searchTimeoutRef.current = setTimeout(() => {
+                        fetchAlunos(val);
+                      }, 300);
                     }
                   }}
-                  renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      label={formatMessage(intl, "prl", "educationalModule.searchAluno") || "Seleccionar Aluno"}
-                      variant="outlined"
-                      size="small"
-                      fullWidth
-                    />
-                  )}
                 />
+              </Grid>
+              <Grid item xs={12} sm={4}>
+                <FormControl fullWidth variant="outlined" size="small">
+                  <InputLabel>{formatMessage(intl, "prl", "educationalModule.selectAluno") || "Seleccionar Aluno"}</InputLabel>
+                  <Select
+                    value={formData.alunoId}
+                    onChange={handleAlunoSelect}
+                    label={formatMessage(intl, "prl", "educationalModule.selectAluno") || "Seleccionar Aluno"}
+                    disabled={isView}
+                  >
+                    <MenuItem value="">—</MenuItem>
+                    {alunosAPI.map((a) => {
+                      const name = `${a.firstName || ""} ${a.lastName || ""}`.trim();
+                      const childId = a.idDaCrianca ? ` (${a.idDaCrianca})` : "";
+                      return <MenuItem key={a.id} value={a.id}>{name}{childId}</MenuItem>;
+                    })}
+                  </Select>
+                </FormControl>
               </Grid>
               <Grid item xs={12} sm={1} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <Tooltip title={formatMessage(intl, "prl", "button.add") || "Adicionar Aluno"}>
