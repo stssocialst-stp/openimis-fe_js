@@ -1,9 +1,12 @@
 export const faltasList = [
-  { value: "low", label: "Pouca falta" },
-  { value: "medium", label: "Falta moderada" },
-  { value: "high", label: "Muita falta" },
+  { value: "LOW", label: "Pouca falta" },
+  { value: "MEDIUM", label: "Falta moderada" },
+  { value: "HIGH", label: "Muita falta" },
 ];
 export const faltasLabelMap = {
+  LOW: "Pouca falta",
+  MEDIUM: "Falta moderada",
+  HIGH: "Muita falta",
   low: "Pouca falta",
   medium: "Falta moderada",
   high: "Muita falta",
