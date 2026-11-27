@@ -553,6 +553,7 @@ function EducationalModuleFormPage(props) {
                     return `${name}${childId}`;
                   }}
                   getOptionSelected={(option, val) => option?.id === val?.id}
+                  filterOptions={(x) => x}
                   onChange={(_, newValue) => handleAlunoSelect({ target: { value: newValue?.id || "" } })}
                   onInputChange={(_, newInputValue, reason) => {
                     if (reason === "input") {
