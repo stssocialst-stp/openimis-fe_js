@@ -232,7 +232,18 @@ function EducationalModuleFormPage(props) {
 
   const classesQuery = `query GetClasses {
     classes(ativo: true, orderBy: ["ordem"]) {
-      edges { node { id codigo nome nivel ordem } }
+      edges {
+        node {
+          id codigo nome nivel ordem
+          disciplinasAssociadas {
+            edges {
+              node {
+                disciplina { id nome nivel quantidadeFaltasAceitaveis faixaFaltasAceitaveis }
+              }
+            }
+          }
+        }
+      }
     }
   }`;
 
@@ -265,7 +276,22 @@ function EducationalModuleFormPage(props) {
     try {
       const result = await gqlFetch(classesQuery);
       if (result.data?.classes?.edges) {
-        setClassesAPI(result.data.classes.edges.map(c => ({ id: c.node.id, codigo: c.node.codigo, nome: c.node.nome, nivel: c.node.nivel })));
+        setClassesAPI(result.data.classes.edges.map(c => ({
+          id: c.node.id,
+          codigo: c.node.codigo,
+          nome: c.node.nome,
+          nivel: c.node.nivel,
+          disciplinasAssociadas: (c.node.disciplinasAssociadas?.edges || [])
+            .map(e => e.node?.disciplina)
+            .filter(Boolean)
+            .map(d => ({
+              id: d.id,
+              nome: d.nome,
+              nivel: d.nivel,
+              quantidadeFaltasAceitaveis: d.quantidadeFaltasAceitaveis || 0,
+              faixaFaltasAceitaveis: d.faixaFaltasAceitaveis || '',
+            })),
+        })));
       }
     } catch (error) { setClassesAPI([]); }
   };
@@ -522,6 +548,17 @@ function EducationalModuleFormPage(props) {
       ? "title.viewSchoolAttendance"
       : "title.createSchoolAttendance";
 
+  const activeClasseId = formData.classeQueFrequenta || formData.classe;
+  const activeClasse = classesAPI.find(c => c.id === activeClasseId);
+  const assocDisciplinas = activeClasse?.disciplinasAssociadas || [];
+  const useClasseFilter = !!activeClasse && assocDisciplinas.length > 0;
+  const visibleDisciplinasBasicas = useClasseFilter
+    ? assocDisciplinas.filter(d => d.nivel === 'BASICA')
+    : disciplinasBasicasAPI;
+  const visibleDisciplinasAvancadas = useClasseFilter
+    ? assocDisciplinas.filter(d => d.nivel === 'AVANCADA')
+    : disciplinasAvancadasAPI;
+
   return (
     <div className={classes.page}>
       <Helmet title={formatMessage(intl, "prl", pageTitle)} />
@@ -766,14 +803,26 @@ function EducationalModuleFormPage(props) {
           <div className={classes.formSection}>
             <Typography variant="h6" className={classes.sectionTitle}>Disciplinas</Typography>
             <Grid container spacing={2}>
+              {visibleDisciplinasBasicas.length > 0 && (
               <Grid item xs={12} sm={6}>
                 <Typography variant="subtitle1">Disciplinas Básicas</Typography>
                 <FormGroup>
-                  {disciplinasBasicasAPI.map((d) => {
+                  {visibleDisciplinasBasicas.map((d) => {
                     const sel = (formData.disciplinasBasicas || []).find(x => x.disciplinaId === d.id);
                     const checked = !!sel;
                     const maxFaltas = d.quantidadeFaltasAceitaveis || 10;
-                    return (
+                    const activeClasseId = formData.classeQueFrequenta || formData.classe;
+  const activeClasse = classesAPI.find(c => c.id === activeClasseId);
+  const assocDisciplinas = activeClasse?.disciplinasAssociadas || [];
+  const useClasseFilter = !!activeClasse && assocDisciplinas.length > 0;
+  const visibleDisciplinasBasicas = useClasseFilter
+    ? assocDisciplinas.filter(d => d.nivel === 'BASICA')
+    : disciplinasBasicasAPI;
+  const visibleDisciplinasAvancadas = useClasseFilter
+    ? assocDisciplinas.filter(d => d.nivel === 'AVANCADA')
+    : disciplinasAvancadasAPI;
+
+  return (
                       <div key={d.id} style={{ marginBottom: 8 }}>
                         <FormControlLabel
                           control={<Checkbox color="primary" checked={checked} onChange={handleDisciplinaToggle("disciplinasBasicas", d.id)} disabled={isView} />}
@@ -805,14 +854,27 @@ function EducationalModuleFormPage(props) {
                   })}
                 </FormGroup>
               </Grid>
+              )}
+              {visibleDisciplinasAvancadas.length > 0 && (
               <Grid item xs={12} sm={6}>
                 <Typography variant="subtitle1">Disciplinas Avançadas</Typography>
                 <FormGroup>
-                  {disciplinasAvancadasAPI.map((d) => {
+                  {visibleDisciplinasAvancadas.map((d) => {
                     const sel = (formData.disciplinasAvancadas || []).find(x => x.disciplinaId === d.id);
                     const checked = !!sel;
                     const maxFaltas = d.quantidadeFaltasAceitaveis || 10;
-                    return (
+                    const activeClasseId = formData.classeQueFrequenta || formData.classe;
+  const activeClasse = classesAPI.find(c => c.id === activeClasseId);
+  const assocDisciplinas = activeClasse?.disciplinasAssociadas || [];
+  const useClasseFilter = !!activeClasse && assocDisciplinas.length > 0;
+  const visibleDisciplinasBasicas = useClasseFilter
+    ? assocDisciplinas.filter(d => d.nivel === 'BASICA')
+    : disciplinasBasicasAPI;
+  const visibleDisciplinasAvancadas = useClasseFilter
+    ? assocDisciplinas.filter(d => d.nivel === 'AVANCADA')
+    : disciplinasAvancadasAPI;
+
+  return (
                       <div key={d.id} style={{ marginBottom: 8 }}>
                         <FormControlLabel
                           control={<Checkbox color="primary" checked={checked} onChange={handleDisciplinaToggle("disciplinasAvancadas", d.id)} disabled={isView} />}
@@ -844,6 +906,7 @@ function EducationalModuleFormPage(props) {
                   })}
                 </FormGroup>
               </Grid>
+              )}
             </Grid>
           </div>
 
