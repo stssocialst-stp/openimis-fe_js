@@ -8,7 +8,7 @@ import {
 import ChevronLeftIcon from "@material-ui/icons/ChevronLeft";
 import SaveIcon from "@material-ui/icons/Save";
 import AddIcon from "@material-ui/icons/Add";
-import { formatMessage, withModulesManager, Helmet, baseApiUrl, apiHeaders, PublishedComponent } from "@stssocialst-stp/fe-core";
+import { Autocomplete, formatMessage, withModulesManager, Helmet, baseApiUrl, apiHeaders, PublishedComponent } from "@stssocialst-stp/fe-core";
 import { PRL_ROUTE_EDUCATIONAL_MODULE, PRL_ROUTE_ALUNO_FORM } from "../constants";
 import { aproveitamentoList, escolaridadeList, faltasList, sexoList } from "../../helpers/constants";
 
@@ -140,8 +140,8 @@ function EducationalModuleFormPage(props) {
   };
 
   // --- GraphQL queries ---
-  const alunosListQuery = `query ListAlunos($first: Int) {
-    alunos(first: $first) {
+  const alunosListQuery = `query ListAlunos($first: Int, $search: String) {
+    alunos(first: $first, search: $search) {
       edges {
         node {
           id
@@ -292,10 +292,13 @@ function EducationalModuleFormPage(props) {
     } catch (error) { console.error('Error fetching disciplinas:', error); }
   };
 
-  // --- Fetch all alunos ---
-  const fetchAlunos = async () => {
+  // --- Fetch alunos (with optional search) ---
+  const fetchAlunos = async (search = "") => {
     try {
-      const result = await gqlFetch(alunosListQuery, { first: 100 });
+      const result = await gqlFetch(alunosListQuery, {
+        first: 50,
+        ...(search ? { search } : {}),
+      });
       if (result.data?.alunos?.edges) {
         setAlunosAPI(result.data.alunos.edges.map(e => e.node));
       }
@@ -539,22 +542,33 @@ function EducationalModuleFormPage(props) {
             </Typography>
             <Grid container spacing={2}>
               <Grid item xs={12} sm={7}>
-                <FormControl fullWidth variant="outlined" size="small">
-                  <InputLabel>{formatMessage(intl, "prl", "educationalModule.searchAluno") || "Seleccionar Aluno"}</InputLabel>
-                  <Select
-                    value={formData.alunoId}
-                    onChange={handleAlunoSelect}
-                    label={formatMessage(intl, "prl", "educationalModule.searchAluno") || "Seleccionar Aluno"}
-                    disabled={isView}
-                  >
-                    <MenuItem value="">—</MenuItem>
-                    {alunosAPI.map((a) => {
-                      const name = `${a.firstName || ""} ${a.lastName || ""}`.trim();
-                      const childId = a.idDaCrianca ? ` (${a.idDaCrianca})` : "";
-                      return <MenuItem key={a.id} value={a.id}>{name}{childId}</MenuItem>;
-                    })}
-                  </Select>
-                </FormControl>
+                <Autocomplete
+                  options={alunosAPI}
+                  value={selectedAluno}
+                  disabled={isView}
+                  getOptionLabel={(a) => {
+                    if (!a) return "";
+                    const name = `${a.firstName || ""} ${a.lastName || ""}`.trim();
+                    const childId = a.idDaCrianca ? ` (${a.idDaCrianca})` : "";
+                    return `${name}${childId}`;
+                  }}
+                  getOptionSelected={(option, val) => option?.id === val?.id}
+                  onChange={(_, newValue) => handleAlunoSelect({ target: { value: newValue?.id || "" } })}
+                  onInputChange={(_, newInputValue, reason) => {
+                    if (reason === "input") {
+                      fetchAlunos(newInputValue);
+                    }
+                  }}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label={formatMessage(intl, "prl", "educationalModule.searchAluno") || "Seleccionar Aluno"}
+                      variant="outlined"
+                      size="small"
+                      fullWidth
+                    />
+                  )}
+                />
               </Grid>
               <Grid item xs={12} sm={1} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <Tooltip title={formatMessage(intl, "prl", "button.add") || "Adicionar Aluno"}>
