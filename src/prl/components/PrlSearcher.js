@@ -72,7 +72,7 @@ function PrlSearcher({
       module={module}
       FilterPane={FilterPane}
       fetch={fetch}
-      filtersToQueryParams={({ filters, orderBy, pageSize }) => {
+      filtersToQueryParams={({ filters, orderBy, page, pageSize }) => {
         // Monta objeto variables para o backend
         const variables = {};
         Object.keys(filters || {}).forEach((key) => {
@@ -82,6 +82,7 @@ function PrlSearcher({
         });
         if (orderBy) variables.orderBy = [orderBy];
         if (pageSize) variables.first = pageSize;
+        if (page && pageSize) variables.offset = (page - 1) * pageSize;
         return { variables };
       }}
       items={items}
@@ -89,7 +90,7 @@ function PrlSearcher({
       fetchingItems={fetching}
       fetchedItems={fetched}
       errorItems={error}
-      tableTitle={tableTitle || formatMessageWithValues('searcher.resultsTitle', { count: items.length || 0 })}
+      tableTitle={tableTitle || formatMessageWithValues('searcher.resultsTitle', { count: pageInfo.totalCount || items.length || 0 })}
       headers={typeof headers === 'function' ? headers : () => headers}
       itemFormatters={typeof itemFormatters === 'function' ? itemFormatters : () => itemFormatters}
       sorts={typeof sorts === 'function' ? sorts : (sorts ? () => sorts : undefined)}
