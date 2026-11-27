@@ -40,11 +40,14 @@ function PrlSearcher({
         throw new Error('No fetch function provided to PrlSearcher');
       }
 
-      const data = await fetchProp(params);
+      const res = await fetchProp(params);
+      const data = Array.isArray(res) ? res : (res?.data || []);
+      const totalCount = Array.isArray(res) ? res.length : (res?.totalCount ?? data.length);
       setItems(data);
       setPageInfo(prev => ({
         ...prev,
-        totalCount: data.length,
+        totalCount,
+        pageSize: params.pageSize || prev.pageSize || 10,
         page: params.page || 1
       }));
       setFetched(true);

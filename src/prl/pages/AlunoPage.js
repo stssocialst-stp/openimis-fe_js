@@ -137,6 +137,9 @@ function AlunoPage(props) {
     let variables = params.variables || {};
     variables = Object.fromEntries(Object.entries(variables).filter(([_, v]) => v !== null && v !== undefined && v !== ""));
     if (!variables.first) variables.first = params.pageSize || 10;
+    if (variables.offset === undefined) {
+      variables.offset = ((params.page || 1) - 1) * variables.first;
+    }
     // Remove declaração duplicada
     // const filters = params.filters || {};
     // const pageSize = params.pageSize || 10;
@@ -161,7 +164,10 @@ function AlunoPage(props) {
     if (result.errors) throw new Error(result.errors[0].message);
 
     const alunos = result.data.alunos.edges.map(edge => edge.node);
-    return alunos.map(aluno => ({
+    const totalCount = result.data.alunos.totalCount ?? alunos.length;
+    return {
+      totalCount,
+      data: alunos.map(aluno => ({
       id: aluno.id,
       firstName: aluno.firstName || "",
       lastName: aluno.lastName || "",
@@ -180,7 +186,8 @@ function AlunoPage(props) {
       classeQueFrequenta: aluno.classeQueFrequenta?.nome || "",
       dadosEscolaresCorrectos: aluno.dadosEscolaresCorrectos,
       ativo: aluno.ativo,
-    }));
+      })),
+    };
   };
 
   const headers = [
