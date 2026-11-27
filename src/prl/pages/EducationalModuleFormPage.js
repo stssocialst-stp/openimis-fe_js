@@ -811,18 +811,7 @@ function EducationalModuleFormPage(props) {
                     const sel = (formData.disciplinasBasicas || []).find(x => x.disciplinaId === d.id);
                     const checked = !!sel;
                     const maxFaltas = d.quantidadeFaltasAceitaveis || 10;
-                    const activeClasseId = formData.classeQueFrequenta || formData.classe;
-  const activeClasse = classesAPI.find(c => c.id === activeClasseId);
-  const assocDisciplinas = activeClasse?.disciplinasAssociadas || [];
-  const useClasseFilter = !!activeClasse && assocDisciplinas.length > 0;
-  const visibleDisciplinasBasicas = useClasseFilter
-    ? assocDisciplinas.filter(d => d.nivel === 'BASICA')
-    : disciplinasBasicasAPI;
-  const visibleDisciplinasAvancadas = useClasseFilter
-    ? assocDisciplinas.filter(d => d.nivel === 'AVANCADA')
-    : disciplinasAvancadasAPI;
-
-  return (
+                    return (
                       <div key={d.id} style={{ marginBottom: 8 }}>
                         <FormControlLabel
                           control={<Checkbox color="primary" checked={checked} onChange={handleDisciplinaToggle("disciplinasBasicas", d.id)} disabled={isView} />}
@@ -863,18 +852,7 @@ function EducationalModuleFormPage(props) {
                     const sel = (formData.disciplinasAvancadas || []).find(x => x.disciplinaId === d.id);
                     const checked = !!sel;
                     const maxFaltas = d.quantidadeFaltasAceitaveis || 10;
-                    const activeClasseId = formData.classeQueFrequenta || formData.classe;
-  const activeClasse = classesAPI.find(c => c.id === activeClasseId);
-  const assocDisciplinas = activeClasse?.disciplinasAssociadas || [];
-  const useClasseFilter = !!activeClasse && assocDisciplinas.length > 0;
-  const visibleDisciplinasBasicas = useClasseFilter
-    ? assocDisciplinas.filter(d => d.nivel === 'BASICA')
-    : disciplinasBasicasAPI;
-  const visibleDisciplinasAvancadas = useClasseFilter
-    ? assocDisciplinas.filter(d => d.nivel === 'AVANCADA')
-    : disciplinasAvancadasAPI;
-
-  return (
+                    return (
                       <div key={d.id} style={{ marginBottom: 8 }}>
                         <FormControlLabel
                           control={<Checkbox color="primary" checked={checked} onChange={handleDisciplinaToggle("disciplinasAvancadas", d.id)} disabled={isView} />}
