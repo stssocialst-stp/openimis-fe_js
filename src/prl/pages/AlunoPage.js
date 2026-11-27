@@ -288,16 +288,14 @@ function AlunoPage(props) {
 
     const handleChange = (field) => (event) => {
       const value = event.target.value;
-      if (Array.isArray(filters)) {
-        const next = filters.filter((f) => f.id !== field);
-        if (value !== "" && value != null) next.push({ id: field, value });
-        onChangeFilters(next);
-        return;
-      }
-      const newFilters = { ...filters };
-      if (value === "" || value == null) delete newFilters[field];
-      else newFilters[field] = { value };
-      onChangeFilters(newFilters);
+      const base = Array.isArray(filters)
+        ? filters
+        : Object.entries(filters || {})
+            .filter(([, v]) => v && v.value !== undefined && v.value !== "" && v.value != null)
+            .map(([k, v]) => ({ id: k, value: v.value }));
+      const next = base.filter((f) => f.id !== field);
+      if (value !== "" && value != null) next.push({ id: field, value });
+      onChangeFilters(next);
     };
 
     // Cascading: unique distritos from all escolas
