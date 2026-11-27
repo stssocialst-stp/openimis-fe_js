@@ -767,7 +767,7 @@ function EducationalModuleFormPage(props) {
                       <div key={d.id} style={{ marginBottom: 8 }}>
                         <FormControlLabel
                           control={<Checkbox color="primary" checked={checked} onChange={handleDisciplinaToggle("disciplinasBasicas", d.id)} disabled={isView} />}
-                          label={`${d.nome} (máx. ${maxFaltas} faltas)`}
+                          label={`${d.nome} (Básica) (máx. ${maxFaltas} faltas)`}
                         />
                         {checked && (
                           <Grid container spacing={1} style={{ paddingLeft: 32 }}>
@@ -806,7 +806,7 @@ function EducationalModuleFormPage(props) {
                       <div key={d.id} style={{ marginBottom: 8 }}>
                         <FormControlLabel
                           control={<Checkbox color="primary" checked={checked} onChange={handleDisciplinaToggle("disciplinasAvancadas", d.id)} disabled={isView} />}
-                          label={`${d.nome} (máx. ${maxFaltas} faltas)`}
+                          label={`${d.nome} (Básica) (máx. ${maxFaltas} faltas)`}
                         />
                         {checked && (
                           <Grid container spacing={1} style={{ paddingLeft: 32 }}>

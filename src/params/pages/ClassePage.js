@@ -136,7 +136,16 @@ function ClassePage(props) {
                       <Typography variant="caption" color="textSecondary">—</Typography>
                     )}
                     {(row.disciplinasAssociadas?.edges || []).map(e => (
-                      <Chip key={e.node.disciplina.id} size="small" label={e.node.disciplina.nome} variant="outlined" />
+                      <Chip
+                        key={e.node.disciplina.id}
+                        size="small"
+                        label={
+                          e.node.disciplina.nivel
+                            ? `${e.node.disciplina.nome} (${e.node.disciplina.nivel === "BASICA" ? "Básica" : "Avançada"})`
+                            : e.node.disciplina.nome
+                        }
+                        variant="outlined"
+                      />
                     ))}
                   </div>
                 </TableCell>
